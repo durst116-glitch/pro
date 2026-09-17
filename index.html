@@ -89,6 +89,12 @@
 
     .notice-badge{background:var(--danger);color:#fff;font-size:.6rem;font-weight:900;border-radius:50%;min-width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;margin-left:5px;vertical-align:top;}
 
+    .indicator-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;transition:background .15s;}
+    .indicator-row:hover{background:#f5f7fa;}
+    .indicator-row input[type="checkbox"]{width:18px;height:18px;cursor:pointer;flex-shrink:0;}
+    .indicator-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+    .indicator-row label{font-weight:700;font-size:.88rem;color:var(--text-main);cursor:pointer;flex:1;}
+
     /* SISTEMA DE LOGIN OVERLAY */
     #login-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -921,6 +927,12 @@
       <button class="fab-btn btn-import" id="btn-tool-import" onclick="toggleSidePanel(); triggerImportExcel()">
         <i class="fas fa-file-import"></i> Cargar Ventas (Excel)
       </button>
+      <button class="fab-btn" id="btn-tool-budget" style="background:linear-gradient(135deg,#1a237e,#0d47a1);" onclick="toggleSidePanel(); triggerImportBudget()">
+        <i class="fas fa-file-invoice-dollar"></i> Cargar Presupuesto Inicial
+      </button>
+      <button class="fab-btn" id="btn-tool-indicators" style="background:linear-gradient(135deg,#00838f,#006064);" onclick="toggleSidePanel(); openIndicatorSettingsModal()">
+        <i class="fas fa-sliders-h"></i> Indicadores Visibles
+      </button>
 
       <div style="border-top:2px dashed #ddd; margin:15px 0;"></div>
 
@@ -1015,6 +1027,38 @@
     </div>
   </div>
 
+  <div id="budget-import-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width:550px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color:#0d47a1;">Importar Presupuesto Inicial</div>
+        <button class="close-modal" onclick="closeBudgetImportModal()">&times;</button>
+      </div>
+      <div id="budget-import-summary"></div>
+      <div id="budget-import-rows" style="max-height:220px; overflow-y:auto; margin-bottom:20px; border-top:1px dashed #eee; padding-top:10px;"></div>
+      <div style="display:flex; flex-direction:column; gap:15px;">
+        <button onclick="executeBudgetImport('add')" style="background:var(--success); color:#fff; padding:15px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:15px;">
+          <i class="fas fa-plus-circle" style="font-size:2rem;"></i>
+          <div style="text-align:left;"><div>SUMAR A LAS METAS EXISTENTES</div></div>
+        </button>
+        <button onclick="executeBudgetImport('replace')" style="background:var(--primary); color:#fff; padding:15px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:15px;">
+          <i class="fas fa-sync-alt" style="font-size:2rem;"></i>
+          <div style="text-align:left;"><div>REEMPLAZAR METAS</div></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="indicator-settings-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width:550px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color:#006064;">Indicadores Visibles</div>
+        <button class="close-modal" onclick="closeIndicatorSettingsModal()">&times;</button>
+      </div>
+      <p style="font-size:0.85rem; color:#78909c; margin-bottom:15px;">Elige qué indicadores quieres ver en tu tablero y en el de tus asesores. Los que desmarques se ocultan, pero sus datos no se borran.</p>
+      <div id="indicator-settings-list" style="max-height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:2px;"></div>
+    </div>
+  </div>
+
   <div id="calendar-modal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
@@ -1038,6 +1082,7 @@
   <div class="toast-container" id="toast-container"></div>
   <input type="file" id="backup-file" accept=".json" style="display:none" onchange="loadBackup(this)">
   <input type="file" id="import-excel-file" accept=".xlsx, .csv" style="display:none" onchange="readExcelFile(this)">
+  <input type="file" id="import-budget-file" accept=".xlsx" style="display:none" onchange="readBudgetFile(this)">
 
   <script>
 /* =========================
@@ -1077,16 +1122,51 @@ let sessionRole = null;
 let sessionUserId = null;
 let loginMode = 'asesor';
 
+// subFields (opcional): cuando una categoría se compone de varios sub-indicadores (ej. Pospago = Contrato + Libre + VIP),
+// cada uno se guarda como meta<Key>/sale<Key> dentro de kpis[cat.id], y meta/sale son la suma de todos ellos.
 let CATEGORIES = [
-  { id:'pospago', label:'Pospago', icon:'fa-mobile-screen-button', color:'#002f6c' },
-  { id:'prepago', label:'Prepago', icon:'fa-sim-card', color:'#00c853' },
-  { id:'renovacion', label:'Renovación', icon:'fa-sync-alt', color:'#ffd600' },
+  { id:'pospago', label:'Pospago', icon:'fa-mobile-screen-button', color:'#002f6c', subFields:[
+    { key:'Eq', label:'Contrato Equipo' },
+    { key:'Libre', label:'Libre Sin Equipo', color:'var(--orange)' },
+    { key:'Vip', label:'VIP 40 GB', color:'var(--vip)' }
+  ]},
+  { id:'prepago', label:'Prepago', icon:'fa-sim-card', color:'#00c853', subFields:[
+    { key:'Kit', label:'Amigo Kit' },
+    { key:'Chip', label:'Amigo Chip' }
+  ]},
+  { id:'renovacion', label:'Renovación', icon:'fa-sync-alt', color:'#ffd600', subFields:[
+    { key:'Eq', label:'Renov. Equipo' },
+    { key:'Vip', label:'Renov. VIP', color:'var(--vip)' }
+  ]},
   { id:'renuevate', label:'Renuévate', icon:'fa-exchange-alt', color:'#00aeef' },
-  { id:'telcelup', label:'Telcel UP', icon:'fa-shield-alt', color:'#6200ea' },
+  { id:'telcelup', label:'Telcel UP', icon:'fa-shield-alt', color:'#6200ea', subFields:[
+    { key:'Pospago', label:'Pospago' },
+    { key:'Prepago', label:'Prepago', color:'var(--vip)' }
+  ]},
   { id:'tradein', label:'Trade In', icon:'fa-rotate', color:'#00838f' },
   { id:'telcelps', label:'Telcel Por Siempre', icon:'fa-infinity', color:'#1b5e20' },
   { id:'accesorios', label:'Accesorios', icon:'fa-headphones-alt', color:'#d50000' },
   { id:'paguitos', label:'Paguitos', icon:'fa-hand-holding-usd', color:'#00c853' },
+  { id:'wifitelcel', label:'WiFi Telcel', icon:'fa-wifi', color:'#0277bd', subFields:[
+    { key:'Eq', label:'Con Equipo a Plazos' },
+    { key:'Sin', label:'Sin Equipo', color:'var(--orange)' },
+    { key:'Prepago', label:'Prepago', color:'var(--vip)' }
+  ]},
+  { id:'zeekmiauto', label:'Zeek Mi Auto', icon:'fa-car', color:'#5d4037' },
+  { id:'portabilidad', label:'Portabilidad', icon:'fa-right-left', color:'#c2185b', subFields:[
+    { key:'Eq', label:'Con Equipo a Plazos' },
+    { key:'Libre', label:'Libre Sin Equipo', color:'var(--orange)' },
+    { key:'Prepago', label:'Porta Prepago', color:'var(--vip)' }
+  ]},
+  { id:'infinitum', label:'Infinitum', icon:'fa-globe', color:'#00695c' },
+  { id:'fingerprint', label:'Finger Print', icon:'fa-fingerprint', color:'#4527a0' },
+  { id:'norton', label:'Norton', icon:'fa-lock', color:'#ffab00', subFields:[
+    { key:'Pospago', label:'Pospago' },
+    { key:'Prepago', label:'Prepago', color:'var(--vip)' }
+  ]},
+  { id:'claropay', label:'Claro Pay', icon:'fa-credit-card', color:'#d81b60' },
+  { id:'bundleairpods', label:'Bundle Airpods', icon:'fa-headphones', color:'#37474f' },
+  { id:'upgraderenovacion', label:'Up Grade Renovación', icon:'fa-arrow-up', color:'#f57f17' },
   { id:'encuestas', label:'Encuestas', icon:'fa-clipboard-check', color:'#7b1fa2', isPerc:true, metaLabel:'OBJ %', saleLabel:'REAL %' },
   { id:'retencion', label:'Retención', icon:'fa-user-shield', color:'#00897b' }
 ];
@@ -1132,14 +1212,19 @@ const KEY_DATE = 'telcel_pro_v25_date';
 const KEY_SUP  = 'telcel_pro_v25_sup';
 const KEY_CAT_ORDER = 'telcel_pro_v25_cat_order';
 
+function emptyKpiForCategory(cat){
+  if(cat.id==='retencion') return { renovaciones:0, cancelaciones:0, migraciones:0 };
+  if(cat.id==='encuestas') return { meta:100, sale:0 };
+  const obj = { meta:0, sale:0 };
+  if(cat.subFields){
+    cat.subFields.forEach(sf=>{ obj['meta'+sf.key] = 0; obj['sale'+sf.key] = 0; });
+  }
+  return obj;
+}
+
 function resetSellerKpis(s) {
   s.kpis = CATEGORIES.reduce((acc,cat)=>{
-    if(cat.id==='retencion') acc[cat.id] = { renovaciones:0, cancelaciones:0, migraciones:0 };
-    else if(cat.id==='prepago') acc[cat.id] = { meta:0, sale:0, metaKit:0, saleKit:0, metaChip:0, saleChip:0 };
-    else if(cat.id==='pospago') acc[cat.id] = { meta:0, sale:0, metaEq:0, saleEq:0, metaVip:0, saleVip:0 };
-    else if(cat.id==='renovacion') acc[cat.id] = { meta:0, sale:0, metaEq:0, saleEq:0, metaVip:0, saleVip:0 };
-    else if(cat.id==='encuestas') acc[cat.id] = { meta:100, sale:0 };
-    else acc[cat.id] = { meta:0, sale:0 };
+    acc[cat.id] = emptyKpiForCategory(cat);
     return acc;
   },{});
   s.daily = CATEGORIES.reduce((acc,cat)=>{ acc[cat.id]=0; return acc; },{});
@@ -1150,7 +1235,7 @@ function migrateOrgData(raw) {
   const data = (raw && typeof raw === 'object') ? raw : {};
   if (Array.isArray(data.centros) && Array.isArray(data.supervisors) && Array.isArray(data.gerentes)) {
     data.centros.forEach(c => { if(!c.jefe) c.jefe = { name:"Jefe de Centro", photo: DEFAULT_AVATAR, password:"jefe123" }; if(!c.jefe.photo) c.jefe.photo = DEFAULT_AVATAR; });
-    data.supervisors.forEach(s => { if(!s.dailyGoals) s.dailyGoals = {}; if(!s.globalNotices) s.globalNotices = []; if(!s.photo) s.photo = DEFAULT_AVATAR; if(!s.password) s.password = "1234"; });
+    data.supervisors.forEach(s => { if(!s.dailyGoals) s.dailyGoals = {}; if(!s.globalNotices) s.globalNotices = []; if(!s.photo) s.photo = DEFAULT_AVATAR; if(!s.password) s.password = "1234"; if(!s.hiddenCategories) s.hiddenCategories = []; });
     data.gerentes.forEach(g => { if(!g.centroIds) g.centroIds = []; if(!g.photo) g.photo = DEFAULT_AVATAR; if(!g.password) g.password = "gerente123"; });
     if(!data.adminPassword) data.adminPassword = "admin123";
     if(!data.updatedAt) data.updatedAt = 0;
@@ -1167,7 +1252,8 @@ function migrateOrgData(raw) {
       photo: data.photo || DEFAULT_AVATAR,
       password: data.password || "admin",
       dailyGoals: data.dailyGoals || {},
-      globalNotices: data.globalNotices || []
+      globalNotices: data.globalNotices || [],
+      hiddenCategories: []
     }],
     gerentes: [{ id:0, name:"Gerente General", photo: DEFAULT_AVATAR, password:"gerente123", centroIds:[0] }]
   };
@@ -1222,6 +1308,23 @@ function getScopedSupervisorAccounts(){
       : orgData.supervisors.slice();
   }
   return [];
+}
+
+// Categorías visibles para la sesión actual, respetando qué indicadores decidió ocultar cada Supervisor.
+// Asesor: usa la configuración de su propio supervisor. Jefe/Gerente/Admin (varios supervisores a la vez):
+// una categoría se muestra si al menos uno de los supervisores en el alcance actual la tiene visible.
+function getEffectiveCategories(){
+  let accounts;
+  if(sessionRole === 'asesor'){
+    const me = allSellers[sessionUserId];
+    const acct = me ? orgData.supervisors.find(s => s.centroId === me.centroId && s.id === me.supervisorId) : null;
+    accounts = acct ? [acct] : [];
+  } else {
+    accounts = getScopedSupervisorAccounts();
+  }
+  if(accounts.length === 0) return CATEGORIES.slice();
+  const hiddenSets = accounts.map(a => new Set(a.hiddenCategories || []));
+  return CATEGORIES.filter(c => hiddenSets.some(hs => !hs.has(c.id)));
 }
 
 document.addEventListener('focusin', e => {
@@ -1395,7 +1498,7 @@ function grantAccess(role, idx, ctx) {
 function logout() { location.reload(); }
 
 const TOOL_PERMISSIONS = {
-  supervisor: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore','btn-tool-reset','btn-tool-clone'],
+  supervisor: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-budget','btn-tool-indicators','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore','btn-tool-reset','btn-tool-clone'],
   admin: ['btn-tool-org','btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore'],
   jefe: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf'],
   gerente: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf'],
@@ -1403,7 +1506,7 @@ const TOOL_PERMISSIONS = {
 };
 
 function applyRoleRestrictions() {
-  const tools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-report', 'btn-tool-pdf', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone', 'btn-tool-org'];
+  const tools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-budget', 'btn-tool-indicators', 'btn-tool-report', 'btn-tool-pdf', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone', 'btn-tool-org'];
   const isManagerView = (sessionRole === 'jefe' || sessionRole === 'gerente' || sessionRole === 'admin');
   const allowedTools = TOOL_PERMISSIONS[sessionRole] || [];
 
@@ -1667,26 +1770,29 @@ function validateSellersData() {
     if(!s.loginHistory) s.loginHistory = [];
 
     CATEGORIES.forEach(cat=>{
-      if(!s.kpis[cat.id]) s.kpis[cat.id] = createEmptySeller(idx).kpis[cat.id];
+      if(!s.kpis[cat.id]) {
+        s.kpis[cat.id] = emptyKpiForCategory(cat);
+      } else if(cat.subFields) {
+        // Asegura que existan los sub-campos (categorías/sub-indicadores agregados después de creado el asesor).
+        cat.subFields.forEach(sf=>{
+          if(s.kpis[cat.id]['meta'+sf.key] === undefined) s.kpis[cat.id]['meta'+sf.key] = 0;
+          if(s.kpis[cat.id]['sale'+sf.key] === undefined) s.kpis[cat.id]['sale'+sf.key] = 0;
+        });
+      }
     });
 
     if(!s.kpis.retencion || typeof s.kpis.retencion !== 'object' || Array.isArray(s.kpis.retencion)) {
       s.kpis.retencion = { renovaciones:0, cancelaciones:0, migraciones:0 };
     }
 
-    if(s.kpis.pospago){
-      s.kpis.pospago.sale = (s.kpis.pospago.saleEq||0) + (s.kpis.pospago.saleVip||0);
-      s.kpis.pospago.meta = (s.kpis.pospago.metaEq||0) + (s.kpis.pospago.metaVip||0);
-    }
-    if(s.kpis.prepago){
-      s.kpis.prepago.sale = (s.kpis.prepago.saleKit||0) + (s.kpis.prepago.saleChip||0);
-      s.kpis.prepago.meta = (s.kpis.prepago.metaKit||0) + (s.kpis.prepago.metaChip||0);
-    }
-    if(s.kpis.renovacion){
-      s.kpis.renovacion.sale = (s.kpis.renovacion.saleEq||0) + (s.kpis.renovacion.saleVip||0);
-      s.kpis.renovacion.meta = (s.kpis.renovacion.metaEq||0) + (s.kpis.renovacion.metaVip||0);
-      s.kpis.retencion.renovaciones = s.kpis.renovacion.sale;
-    }
+    CATEGORIES.forEach(cat=>{
+      if(!cat.subFields) return;
+      const k = s.kpis[cat.id];
+      if(!k) return;
+      k.sale = cat.subFields.reduce((sum,sf)=> sum + (k['sale'+sf.key]||0), 0);
+      k.meta = cat.subFields.reduce((sum,sf)=> sum + (k['meta'+sf.key]||0), 0);
+    });
+    if(s.kpis.renovacion) s.kpis.retencion.renovaciones = s.kpis.renovacion.sale;
     if(s.kpis.encuestas && s.kpis.encuestas.meta === undefined) s.kpis.encuestas = { meta:100, sale:0 };
   });
 
@@ -1962,7 +2068,7 @@ function loadSeller(idx){
       document.getElementById('adv-dg-date-display').innerText = dateString;
       document.getElementById('adv-dg-days-left').innerText = daysLeft;
       
-      const targetCats = CATEGORIES.filter(c => c.id !== 'retencion' && c.id !== 'encuestas');
+      const targetCats = getEffectiveCategories().filter(c => c.id !== 'retencion' && c.id !== 'encuestas');
       let dgHtml = targetCats.map(cat => {
           const sk = s.kpis[cat.id] || {};
           let meta = sk.meta || 0;
@@ -2028,7 +2134,7 @@ function loadSeller(idx){
     return `<div class="drag-handle" title="Arrastrar" onmouseenter="this.parentNode.parentNode.parentNode.setAttribute('draggable', true)" onmouseleave="this.parentNode.parentNode.parentNode.setAttribute('draggable', false)"><i class="fas fa-grip-vertical"></i></div>`;
   };
 
-  document.getElementById('kpi-grid-container').innerHTML = CATEGORIES.map(cat=>{
+  document.getElementById('kpi-grid-container').innerHTML = getEffectiveCategories().map(cat=>{
     const k = s.kpis[cat.id] || {};
     let cardContent = '';
 
@@ -2062,55 +2168,27 @@ function loadSeller(idx){
         <div class="calc-result" id="res-${cat.id}">Cumplimiento: <b>${perc}%</b></div>
       `;
     }
-    else if(cat.id === 'prepago'){
-      const metaKit = k.metaKit||0, saleKit = k.saleKit||0, metaChip = k.metaChip||0, saleChip = k.saleChip||0;
-      const meta = (metaKit+metaChip), sale = (saleKit+saleChip); const perc = meta>0 ? Math.round((sale/meta)*100) : 0;
-      const pKit = metaKit>0 ? Math.min(100, Math.round((saleKit/metaKit)*100)) : 0, pChip = metaChip>0 ? Math.min(100, Math.round((saleChip/metaChip)*100)) : 0;
+    else if(cat.subFields){
+      const meta = k.meta||0, sale = k.sale||0, perc = meta>0 ? Math.round((sale/meta)*100) : 0;
+      const subsHtml = cat.subFields.map((sf, i) => {
+        const idx = i+1, metaKey = 'meta'+sf.key, saleKey = 'sale'+sf.key;
+        const metaVal = k[metaKey]||0, saleVal = k[saleKey]||0;
+        const pct = metaVal>0 ? Math.min(100, Math.round((saleVal/metaVal)*100)) : 0;
+        const barColor = sf.color || cat.color;
+        return `
+        <div class="kpi-sub-card">
+          <div class="sub-header"><span>${sf.label}</span><span id="sub-perc-${cat.id}-${idx}">${pct}%</span></div>
+          <div class="sub-bar-bg"><div class="sub-bar-fill" id="sub-bar-${cat.id}-${idx}" style="width:${pct}%; background:${barColor};"></div></div>
+          <div class="data-inputs"><div class="input-group"><label>META</label>${drawInput(metaVal, metaKey, cat.id)}</div><div class="input-group"><label>VENTA</label>${drawInput(saleVal, saleKey, cat.id)}</div></div>
+          <div class="calc-result" id="sub-res-${cat.id}-${idx}">Faltante: <b>${Math.max(0, metaVal - saleVal)}</b></div>
+        </div>`;
+      }).join('');
       cardContent = `
         <div class="kpi-header">
           <div class="kpi-title">${drawDrag(cat.id)}<div class="kpi-icon"><i class="fas ${cat.icon}"></i></div><div class="kpi-title-text">${cat.label}</div></div>
           <div class="mini-chart" id="chart-${cat.id}" style="background: conic-gradient(${cat.color} ${Math.min(100,perc)}%, #eee ${Math.min(100,perc)}% 100%)"><div class="mini-perc" id="perc-${cat.id}">${perc}%</div></div>
         </div>
-        <div class="kpi-sub-card">
-          <div class="sub-header"><span>Amigo Kit</span><span id="sub-perc-${cat.id}-1">${pKit}%</span></div>
-          <div class="sub-bar-bg"><div class="sub-bar-fill" id="sub-bar-${cat.id}-1" style="width:${pKit}%; background:${cat.color};"></div></div>
-          <div class="data-inputs"><div class="input-group"><label>META</label>${drawInput(metaKit, 'metaKit', cat.id)}</div><div class="input-group"><label>VENTA</label>${drawInput(saleKit, 'saleKit', cat.id)}</div></div>
-          <div class="calc-result" id="sub-res-${cat.id}-1">Faltante: <b>${Math.max(0, metaKit - saleKit)}</b></div>
-        </div>
-        <div class="kpi-sub-card">
-          <div class="sub-header"><span>Amigo Chip</span><span id="sub-perc-${cat.id}-2">${pChip}%</span></div>
-          <div class="sub-bar-bg"><div class="sub-bar-fill" id="sub-bar-${cat.id}-2" style="width:${pChip}%; background:${cat.color};"></div></div>
-          <div class="data-inputs"><div class="input-group"><label>META</label>${drawInput(metaChip, 'metaChip', cat.id)}</div><div class="input-group"><label>VENTA</label>${drawInput(saleChip, 'saleChip', cat.id)}</div></div>
-          <div class="calc-result" id="sub-res-${cat.id}-2">Faltante: <b>${Math.max(0, metaChip - saleChip)}</b></div>
-        </div>
-        <div class="calc-result" id="res-${cat.id}">Total: <b>${sale}</b> / <b>${meta}</b> &nbsp; | &nbsp; ${perc}%</div>
-      `;
-    }
-    else if(cat.id === 'pospago' || cat.id === 'renovacion'){
-      const metaEq = k.metaEq||0, saleEq = k.saleEq||0, metaVip = k.metaVip||0, saleVip = k.saleVip||0;
-      const meta = metaEq + metaVip, sale = saleEq + saleVip, perc = meta>0 ? Math.round((sale/meta)*100) : 0;
-      const pEq = metaEq>0 ? Math.min(100, Math.round((saleEq/metaEq)*100)) : 0, pVip = metaVip>0 ? Math.min(100, Math.round((saleVip/metaVip)*100)) : 0;
-      const label1 = cat.id === 'pospago' ? 'Contrato Equipo' : 'Renov. Equipo';
-      const label2 = cat.id === 'pospago' ? 'VIP 40 GB' : 'Renov. VIP';
-      const color1 = cat.id === 'pospago' ? cat.color : 'var(--orange)';
-
-      cardContent = `
-        <div class="kpi-header">
-          <div class="kpi-title">${drawDrag(cat.id)}<div class="kpi-icon"><i class="fas ${cat.icon}"></i></div><div class="kpi-title-text">${cat.label}</div></div>
-          <div class="mini-chart" id="chart-${cat.id}" style="background: conic-gradient(${cat.color} ${Math.min(100,perc)}%, #eee ${Math.min(100,perc)}% 100%)"><div class="mini-perc" id="perc-${cat.id}">${perc}%</div></div>
-        </div>
-        <div class="kpi-sub-card">
-          <div class="sub-header"><span>${label1}</span><span id="sub-perc-${cat.id}-1">${pEq}%</span></div>
-          <div class="sub-bar-bg"><div class="sub-bar-fill" id="sub-bar-${cat.id}-1" style="width:${pEq}%; background:${color1};"></div></div>
-          <div class="data-inputs"><div class="input-group"><label>META</label>${drawInput(metaEq, 'metaEq', cat.id)}</div><div class="input-group"><label>VENTA</label>${drawInput(saleEq, 'saleEq', cat.id)}</div></div>
-          <div class="calc-result" id="sub-res-${cat.id}-1">Faltante: <b>${Math.max(0, metaEq - saleEq)}</b></div>
-        </div>
-        <div class="kpi-sub-card">
-          <div class="sub-header"><span>${label2}</span><span id="sub-perc-${cat.id}-2">${pVip}%</span></div>
-          <div class="sub-bar-bg"><div class="sub-bar-fill" id="sub-bar-${cat.id}-2" style="width:${pVip}%; background:var(--vip);"></div></div>
-          <div class="data-inputs"><div class="input-group"><label>META</label>${drawInput(metaVip, 'metaVip', cat.id)}</div><div class="input-group"><label>VENTA</label>${drawInput(saleVip, 'saleVip', cat.id)}</div></div>
-          <div class="calc-result" id="sub-res-${cat.id}-2">Faltante: <b>${Math.max(0, metaVip - saleVip)}</b></div>
-        </div>
+        ${subsHtml}
         <div class="calc-result" id="res-${cat.id}">Total: <b>${sale}</b> / <b>${meta}</b> &nbsp; | &nbsp; ${perc}%</div>
       `;
     }
@@ -2167,9 +2245,12 @@ function handleKPIInput(catId, field, inputEl){
   const k = sellers[currentIdx].kpis[catId];
   k[field] = v;
 
-  if(catId==='prepago'){ k.sale = (k.saleKit||0) + (k.saleChip||0); k.meta = (k.metaKit||0) + (k.metaChip||0); }
-  if(catId==='pospago'){ k.sale = (k.saleEq||0) + (k.saleVip||0); k.meta = (k.metaEq||0) + (k.metaVip||0); }
-  if(catId==='renovacion'){ k.sale = (k.saleEq||0) + (k.saleVip||0); k.meta = (k.metaEq||0) + (k.metaVip||0); if(sellers[currentIdx].kpis.retencion) sellers[currentIdx].kpis.retencion.renovaciones = k.sale; }
+  const catObj = CATEGORIES.find(c=>c.id===catId);
+  if(catObj && catObj.subFields){
+    k.sale = catObj.subFields.reduce((sum,sf)=> sum + (k['sale'+sf.key]||0), 0);
+    k.meta = catObj.subFields.reduce((sum,sf)=> sum + (k['meta'+sf.key]||0), 0);
+  }
+  if(catId==='renovacion' && sellers[currentIdx].kpis.retencion){ sellers[currentIdx].kpis.retencion.renovaciones = k.sale; }
 
   saveData();
   updateGlobalStats();
@@ -2195,7 +2276,7 @@ function updateGlobalStats(){
   let metaTotal=0, saleTotal=0;
   if(sellers[currentIdx].kpis.retencion && sellers[currentIdx].kpis.renovacion) sellers[currentIdx].kpis.retencion.renovaciones = sellers[currentIdx].kpis.renovacion.sale;
 
-  CATEGORIES.forEach(cat=>{
+  getEffectiveCategories().forEach(cat=>{
     if(cat.id==='encuestas' || cat.id==='retencion') return;
     const kk = sellers[currentIdx].kpis[cat.id];
     metaTotal += (kk.meta||0);
@@ -2243,39 +2324,20 @@ function updateSpecificCardDOM(catId) {
     const cEl = document.getElementById('chart-'+catId); if(cEl) cEl.style.background = `conic-gradient(${cColor} ${Math.min(100,perc)}%, #eee ${Math.min(100,perc)}% 100%)`;
     const rEl = document.getElementById('res-'+catId); if(rEl) rEl.innerHTML = `Cumplimiento: <b>${perc}%</b>`;
   }
-  else if(catId === 'prepago'){
-    const metaKit = k.metaKit||0, saleKit = k.saleKit||0, metaChip = k.metaChip||0, saleChip = k.saleChip||0;
-    const meta = (metaKit+metaChip), sale = (saleKit+saleChip); const perc = meta>0 ? Math.round((sale/meta)*100) : 0;
-    const pKit = metaKit>0 ? Math.min(100, Math.round((saleKit/metaKit)*100)) : 0, pChip = metaChip>0 ? Math.min(100, Math.round((saleChip/metaChip)*100)) : 0;
-    
+  else if(catObj.subFields){
+    const meta = k.meta||0, sale = k.sale||0, perc = meta>0 ? Math.round((sale/meta)*100) : 0;
+
     const pEl = document.getElementById('perc-'+catId); if(pEl) pEl.innerText = perc+'%';
     const cEl = document.getElementById('chart-'+catId); if(cEl) cEl.style.background = `conic-gradient(${cColor} ${Math.min(100,perc)}%, #eee ${Math.min(100,perc)}% 100%)`;
     const rEl = document.getElementById('res-'+catId); if(rEl) rEl.innerHTML = `Total: <b>${sale}</b> / <b>${meta}</b> &nbsp; | &nbsp; ${perc}%`;
 
-    const sp1 = document.getElementById('sub-perc-'+catId+'-1'); if(sp1) sp1.innerText = pKit+'%';
-    const sb1 = document.getElementById('sub-bar-'+catId+'-1'); if(sb1) sb1.style.width = pKit+'%';
-    const sr1 = document.getElementById('sub-res-'+catId+'-1'); if(sr1) sr1.innerHTML = `Faltante: <b>${Math.max(0, metaKit - saleKit)}</b>`;
-
-    const sp2 = document.getElementById('sub-perc-'+catId+'-2'); if(sp2) sp2.innerText = pChip+'%';
-    const sb2 = document.getElementById('sub-bar-'+catId+'-2'); if(sb2) sb2.style.width = pChip+'%';
-    const sr2 = document.getElementById('sub-res-'+catId+'-2'); if(sr2) sr2.innerHTML = `Faltante: <b>${Math.max(0, metaChip - saleChip)}</b>`;
-  }
-  else if(catId === 'pospago' || catId === 'renovacion'){
-    const metaEq = k.metaEq||0, saleEq = k.saleEq||0, metaVip = k.metaVip||0, saleVip = k.saleVip||0;
-    const meta = metaEq + metaVip, sale = saleEq + saleVip, perc = meta>0 ? Math.round((sale/meta)*100) : 0;
-    const pEq = metaEq>0 ? Math.min(100, Math.round((saleEq/metaEq)*100)) : 0, pVip = metaVip>0 ? Math.min(100, Math.round((saleVip/metaVip)*100)) : 0;
-    
-    const pEl = document.getElementById('perc-'+catId); if(pEl) pEl.innerText = perc+'%';
-    const cEl = document.getElementById('chart-'+catId); if(cEl) cEl.style.background = `conic-gradient(${cColor} ${Math.min(100,perc)}%, #eee ${Math.min(100,perc)}% 100%)`;
-    const rEl = document.getElementById('res-'+catId); if(rEl) rEl.innerHTML = `Total: <b>${sale}</b> / <b>${meta}</b> &nbsp; | &nbsp; ${perc}%`;
-
-    const sp1 = document.getElementById('sub-perc-'+catId+'-1'); if(sp1) sp1.innerText = pEq+'%';
-    const sb1 = document.getElementById('sub-bar-'+catId+'-1'); if(sb1) sb1.style.width = pEq+'%';
-    const sr1 = document.getElementById('sub-res-'+catId+'-1'); if(sr1) sr1.innerHTML = `Faltante: <b>${Math.max(0, metaEq - saleEq)}</b>`;
-
-    const sp2 = document.getElementById('sub-perc-'+catId+'-2'); if(sp2) sp2.innerText = pVip+'%';
-    const sb2 = document.getElementById('sub-bar-'+catId+'-2'); if(sb2) sb2.style.width = pVip+'%';
-    const sr2 = document.getElementById('sub-res-'+catId+'-2'); if(sr2) sr2.innerHTML = `Faltante: <b>${Math.max(0, metaVip - saleVip)}</b>`;
+    catObj.subFields.forEach((sf, i) => {
+      const idx = i+1, metaVal = k['meta'+sf.key]||0, saleVal = k['sale'+sf.key]||0;
+      const pct = metaVal>0 ? Math.min(100, Math.round((saleVal/metaVal)*100)) : 0;
+      const spEl = document.getElementById(`sub-perc-${catId}-${idx}`); if(spEl) spEl.innerText = pct+'%';
+      const sbEl = document.getElementById(`sub-bar-${catId}-${idx}`); if(sbEl) sbEl.style.width = pct+'%';
+      const srEl = document.getElementById(`sub-res-${catId}-${idx}`); if(srEl) srEl.innerHTML = `Faltante: <b>${Math.max(0, metaVal - saleVal)}</b>`;
+    });
   }
   else {
     const meta = k.meta||0, sale = k.sale||0, perc = meta>0 ? Math.round((sale/meta)*100) : 0;
@@ -2579,7 +2641,7 @@ function saveSupervisorAccount(){
   }
 
   const id = nextOrgId(orgData.supervisors);
-  orgData.supervisors.push({ id, centroId, name, photo: DEFAULT_AVATAR, password: pass || "1234", dailyGoals:{}, globalNotices:[] });
+  orgData.supervisors.push({ id, centroId, name, photo: DEFAULT_AVATAR, password: pass || "1234", dailyGoals:{}, globalNotices:[], hiddenCategories:[] });
   orgData.updatedAt = Date.now();
   cancelEditSupervisor();
   saveData();
@@ -2864,10 +2926,12 @@ function renderExecutiveSummary(){
 
   if(!sellers || sellers.length === 0){ grid.innerHTML = ''; return; }
 
+  const effCats = getEffectiveCategories();
+
   const perAdvisor = sellers.map(s=>{
     const k = s.kpis || {};
     let meta=0, sale=0;
-    CATEGORIES.forEach(cat=>{
+    effCats.forEach(cat=>{
       if(cat.id==='retencion' || cat.id==='encuestas') return;
       const kk = k[cat.id] || {};
       meta += (kk.meta||0); sale += (kk.sale||0);
@@ -2880,9 +2944,9 @@ function renderExecutiveSummary(){
   const worst = withGoals.length ? withGoals.reduce((a,b)=> b.perc<a.perc?b:a) : null;
 
   const catSums = {};
-  CATEGORIES.forEach(cat=>{ if(cat.id!=='retencion' && cat.id!=='encuestas') catSums[cat.id] = {meta:0, sale:0}; });
+  effCats.forEach(cat=>{ if(cat.id!=='retencion' && cat.id!=='encuestas') catSums[cat.id] = {meta:0, sale:0}; });
   sellers.forEach(s=>{
-    CATEGORIES.forEach(cat=>{
+    effCats.forEach(cat=>{
       if(cat.id==='retencion' || cat.id==='encuestas') return;
       const kk = (s.kpis && s.kpis[cat.id]) || {};
       catSums[cat.id].meta += (kk.meta||0);
@@ -2935,6 +2999,7 @@ async function renderTrendChart(){
     monthKeys.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
   }
 
+  const effCatsForTrend = getEffectiveCategories();
   let results;
   try {
     results = await Promise.all(monthKeys.map(async key=>{
@@ -2948,7 +3013,7 @@ async function renderTrendChart(){
       const scoped = filterByCurrentScope(data || []);
       let meta=0, sale=0;
       scoped.forEach(s=>{
-        CATEGORIES.forEach(cat=>{
+        effCatsForTrend.forEach(cat=>{
           if(cat.id==='retencion'||cat.id==='encuestas') return;
           const k = (s.kpis && s.kpis[cat.id]) || {};
           meta += (k.meta||0); sale += (k.sale||0);
@@ -3046,8 +3111,8 @@ function renderDailyGoalPanel() {
   const daysLeftEl = document.getElementById('dg-days-left');
   if(daysLeftEl) daysLeftEl.innerText = daysLeft;
 
-  const dgCats = CATEGORIES.filter(c => c.id !== 'retencion' && c.id !== 'encuestas');
-  
+  const dgCats = getEffectiveCategories().filter(c => c.id !== 'retencion' && c.id !== 'encuestas');
+
   const grid = document.getElementById('dg-grid-container');
   const canEditGoals = (sessionRole === 'supervisor');
   if(grid) {
@@ -3139,7 +3204,7 @@ function renderAdvisorDailyGoals() {
   const daysInMonth = new Date(dParts[0], dParts[1], 0).getDate();
   const daysLeft = Math.max(1, daysInMonth - parseInt(dParts[2]) + 1);
 
-  const targetCats = CATEGORIES.filter(c => c.id !== 'retencion' && c.id !== 'encuestas');
+  const targetCats = getEffectiveCategories().filter(c => c.id !== 'retencion' && c.id !== 'encuestas');
 
   thead.innerHTML = `<tr>
     <th style="padding:15px; text-align:left; font-size:.75rem; text-transform:uppercase;">Asesor</th>
@@ -3363,31 +3428,30 @@ function deleteNotice(type, index, sellerIdx = null) {
 
 function renderSupervisorKpis(){
   const cont = document.getElementById('sup-kpi-grid');
+  const effCats = getEffectiveCategories();
   const sums = {};
 
-  CATEGORIES.forEach(cat=>{
+  effCats.forEach(cat=>{
     if(cat.id!=='retencion' && cat.id!=='encuestas') {
-      sums[cat.id] = {meta:0, sale:0};
-      if(cat.id === 'prepago') sums[cat.id] = {meta:0, sale:0, metaKit:0, saleKit:0, metaChip:0, saleChip:0};
-      if(cat.id === 'pospago' || cat.id === 'renovacion') sums[cat.id] = {meta:0, sale:0, metaEq:0, saleEq:0, metaVip:0, saleVip:0};
+      const v = {meta:0, sale:0};
+      if(cat.subFields) cat.subFields.forEach(sf=>{ v['meta'+sf.key]=0; v['sale'+sf.key]=0; });
+      sums[cat.id] = v;
     }
   });
 
   let retSumPerc = 0, retValidCount = 0, encSumMeta = 0, encSumSale = 0, encValidCount = 0;
 
   sellers.forEach(s=>{
-    CATEGORIES.forEach(cat=>{
+    effCats.forEach(cat=>{
       if(cat.id!=='retencion' && cat.id!=='encuestas'){
         const sk = s.kpis[cat.id] || {};
         sums[cat.id].meta += (sk.meta||0);
         sums[cat.id].sale += (sk.sale||0);
-        if(cat.id === 'prepago'){
-          sums[cat.id].metaKit += (sk.metaKit||0); sums[cat.id].saleKit += (sk.saleKit||0);
-          sums[cat.id].metaChip += (sk.metaChip||0); sums[cat.id].saleChip += (sk.saleChip||0);
-        }
-        if(cat.id === 'pospago' || cat.id === 'renovacion'){
-          sums[cat.id].metaEq += (sk.metaEq||0); sums[cat.id].saleEq += (sk.saleEq||0);
-          sums[cat.id].metaVip += (sk.metaVip||0); sums[cat.id].saleVip += (sk.saleVip||0);
+        if(cat.subFields){
+          cat.subFields.forEach(sf=>{
+            sums[cat.id]['meta'+sf.key] += (sk['meta'+sf.key]||0);
+            sums[cat.id]['sale'+sf.key] += (sk['sale'+sf.key]||0);
+          });
         }
       }
     });
@@ -3406,12 +3470,12 @@ function renderSupervisorKpis(){
   let mG=0, sG=0;
   Object.values(sums).forEach(v=>{ mG += v.meta; sG += v.sale; });
   const globalPercText = `${mG>0 ? ((sG/mG)*100).toFixed(0) : 0}%`;
-  ['sup-global-perc','jefe-global-perc','gerente-global-perc'].forEach(id=>{
+  ['sup-global-perc','jefe-global-perc','gerente-global-perc','admin-global-perc'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.innerText = globalPercText;
   });
 
-  const html = CATEGORIES.map(cat=>{
+  const html = effCats.map(cat=>{
     const v = sums[cat.id] || {meta:0, sale:0};
     const perc = v.meta>0 ? Math.round((v.sale/v.meta)*100) : 0;
 
@@ -3445,61 +3509,27 @@ function renderSupervisorKpis(){
         </div>
         <div class="calc-result">Cumplimiento Global: <b>${encPerc}%</b></div>`;
     }
-    else if(cat.id === 'prepago'){
-      const pKit = v.metaKit>0 ? Math.min(100, Math.round((v.saleKit/v.metaKit)*100)) : 0;
-      const pChip = v.metaChip>0 ? Math.min(100, Math.round((v.saleChip/v.metaChip)*100)) : 0;
+    else if(cat.subFields){
+      const subsHtml = cat.subFields.map(sf=>{
+        const mVal = v['meta'+sf.key]||0, sVal = v['sale'+sf.key]||0;
+        const pct = mVal>0 ? Math.min(100, Math.round((sVal/mVal)*100)) : 0;
+        const barColor = sf.color || cat.color;
+        return `
+        <div class="kpi-sub-card">
+          <div class="sub-header"><span>${sf.label}</span><span>${pct}%</span></div>
+          <div class="sub-bar-bg"><div class="sub-bar-fill" style="width:${pct}%; background:${barColor};"></div></div>
+          <div class="data-inputs">
+            <div class="input-group"><label>META</label><input type="number" class="input-readonly" value="${mVal}" readonly></div>
+            <div class="input-group"><label>VENTA</label><input type="number" class="input-readonly" value="${sVal}" readonly></div>
+          </div>
+          <div class="calc-result">Faltante: <b>${Math.max(0, mVal - sVal)}</b></div>
+        </div>`;
+      }).join('');
       cardContent = `
         <div class="kpi-header"><div class="kpi-title">${drawDragSuper()}<div class="kpi-icon"><i class="fas ${cat.icon}"></i></div><div class="kpi-title-text">${cat.label}</div></div>
           <div class="mini-chart" style="background: conic-gradient(${cat.color} ${Math.min(100,perc)}%, #eee ${Math.min(100,perc)}% 100%)"><div class="mini-perc">${perc}%</div></div>
         </div>
-        <div class="kpi-sub-card">
-          <div class="sub-header"><span>Amigo Kit</span><span>${pKit}%</span></div>
-          <div class="sub-bar-bg"><div class="sub-bar-fill" style="width:${pKit}%; background:${cat.color};"></div></div>
-          <div class="data-inputs">
-            <div class="input-group"><label>META</label><input type="number" class="input-readonly" value="${v.metaKit}" readonly></div>
-            <div class="input-group"><label>VENTA</label><input type="number" class="input-readonly" value="${v.saleKit}" readonly></div>
-          </div>
-          <div class="calc-result">Faltante: <b>${Math.max(0, v.metaKit - v.saleKit)}</b></div>
-        </div>
-        <div class="kpi-sub-card">
-          <div class="sub-header"><span>Amigo Chip</span><span>${pChip}%</span></div>
-          <div class="sub-bar-bg"><div class="sub-bar-fill" style="width:${pChip}%; background:${cat.color};"></div></div>
-          <div class="data-inputs">
-            <div class="input-group"><label>META</label><input type="number" class="input-readonly" value="${v.metaChip}" readonly></div>
-            <div class="input-group"><label>VENTA</label><input type="number" class="input-readonly" value="${v.saleChip}" readonly></div>
-          </div>
-          <div class="calc-result">Faltante: <b>${Math.max(0, v.metaChip - v.saleChip)}</b></div>
-        </div>
-        <div class="calc-result">Total: <b>${v.sale}</b> / <b>${v.meta}</b> &nbsp; | &nbsp; ${perc}%</div>`;
-    }
-    else if(cat.id === 'pospago' || cat.id === 'renovacion'){
-      const pEq = v.metaEq>0 ? Math.min(100, Math.round((v.saleEq/v.metaEq)*100)) : 0;
-      const pVip = v.metaVip>0 ? Math.min(100, Math.round((v.saleVip/v.metaVip)*100)) : 0;
-      const label1 = cat.id === 'pospago' ? 'Contrato Equipo' : 'Renov. Equipo';
-      const label2 = cat.id === 'pospago' ? 'VIP 40 GB' : 'Renov. VIP';
-      const color1 = cat.id === 'pospago' ? cat.color : 'var(--orange)';
-      cardContent = `
-        <div class="kpi-header"><div class="kpi-title">${drawDragSuper()}<div class="kpi-icon"><i class="fas ${cat.icon}"></i></div><div class="kpi-title-text">${cat.label}</div></div>
-          <div class="mini-chart" style="background: conic-gradient(${cat.color} ${Math.min(100,perc)}%, #eee ${Math.min(100,perc)}% 100%)"><div class="mini-perc">${perc}%</div></div>
-        </div>
-        <div class="kpi-sub-card">
-          <div class="sub-header"><span>${label1}</span><span>${pEq}%</span></div>
-          <div class="sub-bar-bg"><div class="sub-bar-fill" id="sub-bar-${cat.id}-1" style="width:${pEq}%; background:${color1};"></div></div>
-          <div class="data-inputs">
-            <div class="input-group"><label>META</label><input type="number" class="input-readonly" value="${v.metaEq}" readonly></div>
-            <div class="input-group"><label>VENTA</label><input type="number" class="input-readonly" value="${v.saleEq}" readonly></div>
-          </div>
-          <div class="calc-result">Faltante: <b>${Math.max(0, v.metaEq - v.saleEq)}</b></div>
-        </div>
-        <div class="kpi-sub-card">
-          <div class="sub-header"><span>${label2}</span><span>${pVip}%</span></div>
-          <div class="sub-bar-bg"><div class="sub-bar-fill" id="sub-bar-${cat.id}-2" style="width:${pVip}%; background:var(--vip);"></div></div>
-          <div class="data-inputs">
-            <div class="input-group"><label>META</label><input type="number" class="input-readonly" value="${v.metaVip}" readonly></div>
-            <div class="input-group"><label>VENTA</label><input type="number" class="input-readonly" value="${v.saleVip}" readonly></div>
-          </div>
-          <div class="calc-result">Faltante: <b>${Math.max(0, v.metaVip - v.saleVip)}</b></div>
-        </div>
+        ${subsHtml}
         <div class="calc-result">Total: <b>${v.sale}</b> / <b>${v.meta}</b> &nbsp; | &nbsp; ${perc}%</div>`;
     }
     else {
@@ -3539,7 +3569,7 @@ function renderRanking(){
 
 function renderCharts(){
   const cont = document.getElementById('charts-container');
-  cont.innerHTML = '<div class="charts-grid">' + CATEGORIES.map(cat => {
+  cont.innerHTML = '<div class="charts-grid">' + getEffectiveCategories().map(cat => {
     let catData = sellers.map(s => {
       const k = s.kpis[cat.id] || {};
       let val = 0, meta = 0, displayVal = '';
@@ -3631,7 +3661,7 @@ function toggleSidePanel(){
 }
 
 function setFabDisabled(disabled){
-  const ids = ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-report','btn-tool-backup','btn-tool-restore','btn-tool-reset', 'btn-tool-clone'];
+  const ids = ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-budget','btn-tool-indicators','btn-tool-report','btn-tool-backup','btn-tool-restore','btn-tool-reset', 'btn-tool-clone'];
   ids.forEach(id=>{
     const b = document.getElementById(id);
     if(!b) return;
@@ -3699,6 +3729,221 @@ function readExcelFile(input) {
 
 function closeImportModal() { document.getElementById('import-modal').style.display = 'none'; document.getElementById('import-excel-file').value = ''; pendingImportData = []; }
 
+/* =========================
+   IMPORTADOR DE PRESUPUESTO INICIAL (pestaña "PPTO X SUPER")
+   ========================= */
+
+// Columna (0-based: A=0,B=1,...) -> categoría/sub-campo de meta. Coincide 1 a 1 con las columnas
+// K..AL de la pestaña "PPTO X SUPER" del archivo "Presupuesto Inicial".
+const BUDGET_COLUMN_MAP = [
+  { col: 10, catId:'pospago',           field:'metaEq' },       // K  Pospago Con equipo a plazos
+  { col: 11, catId:'pospago',           field:'metaLibre' },    // L  Pospago Libre Sin Equipo
+  { col: 12, catId:'pospago',           field:'metaVip' },      // M  Pospago VIP
+  { col: 13, catId:'wifitelcel',        field:'metaEq' },       // N  WiFi Telcel Con equipo a plazos
+  { col: 14, catId:'wifitelcel',        field:'metaSin' },      // O  WiFi Telcel Sin equipo
+  { col: 15, catId:'wifitelcel',        field:'metaPrepago' },  // P  WiFi Telcel Prepago
+  { col: 16, catId:'zeekmiauto',        field:'meta' },         // Q  Zeek Mi Auto
+  { col: 17, catId:'prepago',           field:'metaKit' },      // R  Prepago Amigo Kit
+  { col: 18, catId:'prepago',           field:'metaChip' },     // S  Prepago Amigo Chip
+  { col: 19, catId:'paguitos',          field:'meta' },         // T  Amigo Paguitos
+  { col: 20, catId:'portabilidad',      field:'metaEq' },       // U  Portabilidad Con equipo a plazos
+  { col: 21, catId:'portabilidad',      field:'metaLibre' },    // V  Portabilidad Libre Sin Equipo
+  { col: 22, catId:'portabilidad',      field:'metaPrepago' },  // W  Portabilidad Porta Prepago
+  { col: 23, catId:'renovacion',        field:'metaEq' },       // X  Renovación Con equipo a plazos
+  { col: 24, catId:'renovacion',        field:'metaVip' },      // Y  Renovación VIP
+  { col: 25, catId:'renuevate',         field:'meta' },         // Z  Renuévate
+  { col: 26, catId:'telcelup',          field:'metaPospago' },  // AA Telcel UP Pospago
+  { col: 27, catId:'telcelup',          field:'metaPrepago' },  // AB Telcel UP Prepago
+  { col: 28, catId:'infinitum',         field:'meta' },         // AC Infinitum
+  { col: 29, catId:'fingerprint',       field:'meta' },         // AD Finger Print
+  { col: 30, catId:'norton',            field:'metaPospago' },  // AE Norton Pospago
+  { col: 31, catId:'norton',            field:'metaPrepago' },  // AF Norton Prepago
+  { col: 32, catId:'accesorios',        field:'meta' },         // AG Accesorios
+  { col: 33, catId:'claropay',          field:'meta' },         // AH Claro Pay
+  { col: 34, catId:'tradein',           field:'meta' },         // AI Trade In
+  { col: 35, catId:'bundleairpods',     field:'meta' },         // AJ Bundle Airpods
+  { col: 36, catId:'upgraderenovacion', field:'meta' },         // AK Up Grade Renovación
+  { col: 37, catId:'telcelps',          field:'meta' }          // AL Telcel Para Siempre pospago
+];
+
+const BUDGET_COL_ASESOR = 6;      // G: nombre asesor
+const BUDGET_COL_SUPERVISOR = 4;  // E: nombre supervisor
+
+let pendingBudgetData = null;
+
+function normName(str){
+  return String(str||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ');
+}
+
+function triggerImportBudget(){ document.getElementById('import-budget-file').click(); }
+
+function readBudgetFile(input){
+  const file = input.files && input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, {type:'array'});
+      const sheetName = workbook.SheetNames.find(n => n.trim().toUpperCase() === 'PPTO X SUPER')
+        || workbook.SheetNames.find(n => n.trim().toUpperCase().includes('PPTO X SUPER'));
+      if(!sheetName) { toast('No se encontró la pestaña "PPTO X SUPER" en el archivo.', 'danger'); return; }
+
+      const sheet = workbook.Sheets[sheetName];
+      const range = XLSX.utils.decode_range(sheet['!ref']);
+      const cellVal = (r,c) => {
+        const cell = sheet[XLSX.utils.encode_cell({r,c})];
+        return cell ? cell.v : undefined;
+      };
+
+      const mySupervisorName = normName(supervisorData.name);
+      const matchedRows = [];
+      let foundBlockSupervisor = null;
+
+      for(let r = range.s.r; r <= range.e.r; r++){
+        const aVal = cellVal(r, 0);
+        if(!(typeof aVal === 'string' && aVal.trim().toUpperCase() === 'NO.')) continue;
+
+        let rr = r + 1;
+        while(rr <= range.e.r){
+          const markerA = cellVal(rr, 0);
+          if(typeof markerA === 'string' && markerA.trim().toUpperCase() === 'TOTAL') break;
+
+          const asesorName = cellVal(rr, BUDGET_COL_ASESOR);
+          const supName = cellVal(rr, BUDGET_COL_SUPERVISOR);
+          if(typeof asesorName === 'string' && asesorName.trim() !== '' && normName(supName) === mySupervisorName){
+            if(!foundBlockSupervisor) foundBlockSupervisor = String(supName).trim();
+            const values = [];
+            BUDGET_COLUMN_MAP.forEach(m => {
+              const raw = cellVal(rr, m.col);
+              const num = (raw === undefined || raw === null || raw === '') ? 0 : (parseFloat(raw) || 0);
+              values.push({ catId:m.catId, field:m.field, value:num });
+            });
+            matchedRows.push({ asesorName: String(asesorName).trim(), values });
+          }
+          rr++;
+          if(rr - r > 40) break; // margen de seguridad por si el layout no trae fila "TOTAL"
+        }
+      }
+
+      if(matchedRows.length === 0){
+        toast(`No se encontró tu nombre ("${supervisorData.name}") en la pestaña PPTO X SUPER. Verifica que coincida con la columna "nombre supervisor" del Excel.`, 'danger');
+        input.value = '';
+        return;
+      }
+
+      pendingBudgetData = { rows: matchedRows, supervisorLabel: foundBlockSupervisor };
+      renderBudgetImportPreview();
+      document.getElementById('budget-import-modal').style.display = 'flex';
+    } catch(err){
+      console.error(err);
+      toast('Error al leer el archivo. Asegúrate de que es el Excel de Presupuesto Inicial (.xlsx).', 'danger');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderBudgetImportPreview(){
+  if(!pendingBudgetData) return;
+  const existingNames = new Set(sellers.map(s => normName(s.name)));
+  const nuevos = pendingBudgetData.rows.filter(r => !existingNames.has(normName(r.asesorName)));
+  const existentes = pendingBudgetData.rows.length - nuevos.length;
+
+  document.getElementById('budget-import-summary').innerHTML = `
+    <p style="margin-bottom:10px;">Encontramos tu equipo (<b>${escapeHtml(pendingBudgetData.supervisorLabel)}</b>) con <b>${pendingBudgetData.rows.length}</b> asesor(es) en el archivo:</p>
+    <ul style="margin:0 0 10px 20px; font-size:0.9rem; color:#455a64;">
+      <li><b>${existentes}</b> ya existen en tu equipo — se les actualizará la meta.</li>
+      <li><b>${nuevos.length}</b> son nuevos — se agregarán automáticamente a tu equipo.</li>
+    </ul>
+  `;
+
+  const list = document.getElementById('budget-import-rows');
+  list.innerHTML = pendingBudgetData.rows.map(r => {
+    const isNew = !existingNames.has(normName(r.asesorName));
+    return `<div class="event-item"><div class="event-info"><span class="event-type">${escapeHtml(r.asesorName)}</span></div>${isNew ? '<span class="adv-stat-badge adv-off">NUEVO</span>' : '<span class="adv-stat-badge adv-on">EXISTE</span>'}</div>`;
+  }).join('');
+}
+
+function closeBudgetImportModal(){
+  document.getElementById('budget-import-modal').style.display = 'none';
+  document.getElementById('import-budget-file').value = '';
+  pendingBudgetData = null;
+}
+
+function executeBudgetImport(mode){
+  if(sessionRole !== 'supervisor' || !pendingBudgetData) return;
+
+  const applyVal = (current, incoming) => mode === 'add' ? (current||0) + incoming : incoming;
+  let createdCount = 0, updatedCount = 0;
+
+  pendingBudgetData.rows.forEach(row => {
+    let seller = sellers.find(s => normName(s.name) === normName(row.asesorName));
+
+    if(!seller){
+      if(sellers.length >= MAX_ADVISORS){ return; }
+      const nextId = allSellers.length;
+      seller = createEmptySeller(nextId, sessionCentroId, sessionSupervisorId);
+      seller.name = row.asesorName;
+      allSellers.push(seller);
+      createdCount++;
+    } else {
+      updatedCount++;
+    }
+
+    row.values.forEach(v => {
+      const k = seller.kpis[v.catId];
+      if(!k) return;
+      if(v.field === 'meta'){
+        k.meta = applyVal(k.meta, v.value);
+      } else {
+        k[v.field] = applyVal(k[v.field], v.value);
+      }
+    });
+  });
+
+  recomputeScope();
+  validateSellersData();
+  saveData();
+  renderTabs();
+  updateAdvisorsCounter();
+  if(isSupervisorMode) renderSupervisorDashboard(); else loadSeller(currentIdx);
+  closeBudgetImportModal();
+
+  toast(`Presupuesto importado: ${updatedCount} asesor(es) actualizados, ${createdCount} nuevo(s) agregados.`, 'success');
+}
+
+/* =========================
+   INDICADORES VISIBLES (por Supervisor)
+   ========================= */
+function openIndicatorSettingsModal(){
+  if(sessionRole !== 'supervisor') return;
+  renderIndicatorSettingsList();
+  document.getElementById('indicator-settings-modal').style.display = 'flex';
+}
+function closeIndicatorSettingsModal(){ document.getElementById('indicator-settings-modal').style.display = 'none'; }
+
+function renderIndicatorSettingsList(){
+  const hidden = new Set(supervisorData.hiddenCategories || []);
+  const list = document.getElementById('indicator-settings-list');
+  list.innerHTML = CATEGORIES.map(cat => `
+    <div class="indicator-row">
+      <input type="checkbox" id="ind-chk-${cat.id}" ${hidden.has(cat.id) ? '' : 'checked'} onchange="toggleIndicatorVisibility('${cat.id}', this.checked)">
+      <span class="indicator-dot" style="background:${cat.color};"></span>
+      <label for="ind-chk-${cat.id}"><i class="fas ${cat.icon}"></i> &nbsp;${escapeHtml(cat.label)}</label>
+    </div>
+  `).join('');
+}
+
+function toggleIndicatorVisibility(catId, visible){
+  if(sessionRole !== 'supervisor') return;
+  if(!supervisorData.hiddenCategories) supervisorData.hiddenCategories = [];
+  const hidden = new Set(supervisorData.hiddenCategories);
+  if(visible) hidden.delete(catId); else hidden.add(catId);
+  supervisorData.hiddenCategories = Array.from(hidden);
+  orgData.updatedAt = Date.now();
+  saveData();
+  if(isSupervisorMode) renderSupervisorDashboard(); else loadSeller(currentIdx);
+}
+
 // ⚡ MOTOR DE IMPORTACIÓN INTELIGENTE (TOLERANTE A FALLOS Y FORMATOS DEL SISTEMA DE TELCEL)
 function executeImport(mode) {
   if(!pendingImportData || pendingImportData.length === 0) return;
@@ -3729,10 +3974,10 @@ function executeImport(mode) {
       const applyVal = (current, incoming) => mode === 'add' ? (current || 0) + incoming : incoming;
 
       // MAPEO EXACTO INDICADO:
-      if(k.pospago) { 
-        k.pospago.saleEq = applyVal(k.pospago.saleEq, getVal("pospagolibreconequipoaplazos")); 
-        k.pospago.saleVip = applyVal(k.pospago.saleVip, getVal("vip")); 
-        k.pospago.sale = k.pospago.saleEq + k.pospago.saleVip; 
+      if(k.pospago) {
+        k.pospago.saleEq = applyVal(k.pospago.saleEq, getVal("pospagolibreconequipoaplazos"));
+        k.pospago.saleVip = applyVal(k.pospago.saleVip, getVal("vip"));
+        k.pospago.sale = k.pospago.saleEq + (k.pospago.saleLibre||0) + k.pospago.saleVip;
       }
       if(k.prepago) { 
         k.prepago.saleKit = applyVal(k.prepago.saleKit, getVal("prepagoakit")); 
