@@ -936,6 +936,9 @@
       <button class="fab-btn" id="btn-tool-indicators" style="background:linear-gradient(135deg,#00838f,#006064);" onclick="toggleSidePanel(); openIndicatorSettingsModal()">
         <i class="fas fa-sliders-h"></i> Indicadores Visibles
       </button>
+      <button class="fab-btn" id="btn-tool-cleanup" style="background:linear-gradient(135deg,#616161,#424242);" onclick="toggleSidePanel(); triggerCleanupEmptyAdvisors()">
+        <i class="fas fa-broom"></i> Eliminar Asesores Vacíos
+      </button>
 
       <div style="border-top:2px dashed #ddd; margin:15px 0;"></div>
 
@@ -1531,7 +1534,7 @@ function grantAccess(role, idx, ctx) {
 function logout() { location.reload(); }
 
 const TOOL_PERMISSIONS = {
-  supervisor: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-budget','btn-tool-indicators','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore','btn-tool-reset','btn-tool-clone'],
+  supervisor: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-budget','btn-tool-indicators','btn-tool-cleanup','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore','btn-tool-reset','btn-tool-clone'],
   admin: ['btn-tool-org','btn-tool-mass-import','btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore'],
   jefe: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf'],
   gerente: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf'],
@@ -1539,7 +1542,7 @@ const TOOL_PERMISSIONS = {
 };
 
 function applyRoleRestrictions() {
-  const tools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-budget', 'btn-tool-indicators', 'btn-tool-report', 'btn-tool-pdf', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone', 'btn-tool-org', 'btn-tool-mass-import'];
+  const tools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-budget', 'btn-tool-indicators', 'btn-tool-cleanup', 'btn-tool-report', 'btn-tool-pdf', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone', 'btn-tool-org', 'btn-tool-mass-import'];
   const isManagerView = (sessionRole === 'jefe' || sessionRole === 'gerente' || sessionRole === 'admin');
   const allowedTools = TOOL_PERMISSIONS[sessionRole] || [];
 
@@ -3694,7 +3697,7 @@ function toggleSidePanel(){
 }
 
 function setFabDisabled(disabled){
-  const ids = ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-budget','btn-tool-indicators','btn-tool-mass-import','btn-tool-report','btn-tool-backup','btn-tool-restore','btn-tool-reset', 'btn-tool-clone'];
+  const ids = ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-budget','btn-tool-indicators','btn-tool-cleanup','btn-tool-mass-import','btn-tool-report','btn-tool-backup','btn-tool-restore','btn-tool-reset', 'btn-tool-clone'];
   ids.forEach(id=>{
     const b = document.getElementById(id);
     if(!b) return;
@@ -3806,6 +3809,62 @@ let pendingBudgetData = null;
 
 function normName(str){
   return String(str||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ');
+}
+
+// Un asesor "de plantilla" es uno que aún trae el nombre por defecto ("Asesor 3") y no tiene
+// absolutamente nada capturado: seguro de eliminar sin perder información real.
+function isEmptyPlaceholderSeller(s){
+  if(!/^Asesor \d+$/.test(String(s.name||'').trim())) return false;
+  if(s.photo && s.photo !== DEFAULT_AVATAR) return false;
+  if((s.notices && s.notices.length>0) || (s.loginHistory && s.loginHistory.length>0) || (s.events && s.events.length>0)) return false;
+
+  const hasAnyData = CATEGORIES.some(cat=>{
+    const k = s.kpis[cat.id];
+    if(!k) return false;
+    if(cat.id==='retencion') return (k.renovaciones||0)>0 || (k.cancelaciones||0)>0 || (k.migraciones||0)>0;
+    if(cat.id==='encuestas') return (k.sale||0)>0;
+    return (k.meta||0)>0 || (k.sale||0)>0;
+  });
+  return !hasAnyData;
+}
+
+function cleanupEmptyPlaceholderSellers(centroId, supervisorId){
+  const teamSize = allSellers.filter(s => s.centroId===centroId && s.supervisorId===supervisorId).length;
+  const candidates = allSellers.filter(s => s.centroId===centroId && s.supervisorId===supervisorId && isEmptyPlaceholderSeller(s));
+  // Nunca dejar el equipo en 0 asesores: si TODOS son de plantilla, conservar el último.
+  const toRemove = candidates.length >= teamSize ? candidates.slice(0, candidates.length - MIN_ADVISORS) : candidates;
+  const removedSet = new Set(toRemove);
+  const removed = toRemove.map(s => s.name);
+  allSellers = allSellers.filter(s => !removedSet.has(s));
+  return removed;
+}
+
+function triggerCleanupEmptyAdvisors(){
+  if(sessionRole !== 'supervisor') return;
+  const candidates = allSellers.filter(s => s.centroId===sessionCentroId && s.supervisorId===sessionSupervisorId && isEmptyPlaceholderSeller(s));
+  if(candidates.length === 0){
+    toast('No se encontraron asesores de plantilla vacíos.', 'info');
+    return;
+  }
+  if(!confirm(`Se eliminarán ${candidates.length} asesor(es) de plantilla sin datos capturados (ej. "Asesor 1"). ¿Continuar?`)) return;
+
+  const removedSnapshots = allSellers.filter(s => candidates.includes(s)).map(s => JSON.parse(JSON.stringify(s)));
+  const removedNames = cleanupEmptyPlaceholderSellers(sessionCentroId, sessionSupervisorId);
+  recomputeScope();
+  saveData();
+  renderTabs();
+  updateAdvisorsCounter();
+  currentIdx = Math.min(currentIdx, sellers.length-1);
+  switchTab(currentIdx);
+
+  toast(`${removedNames.length} asesor(es) de plantilla eliminados.`, 'success', 'Deshacer', () => {
+    removedSnapshots.forEach(snap => allSellers.push(snap));
+    recomputeScope();
+    saveData();
+    renderTabs();
+    updateAdvisorsCounter();
+    toast('Se restauraron los asesores.', 'success');
+  });
 }
 
 function triggerImportBudget(){ document.getElementById('import-budget-file').click(); }
@@ -3987,6 +4046,8 @@ function executeBudgetImport(mode){
     });
   });
 
+  const removedPlaceholders = cleanupEmptyPlaceholderSellers(sessionCentroId, sessionSupervisorId);
+
   recomputeScope();
   validateSellersData();
   saveData();
@@ -3995,7 +4056,8 @@ function executeBudgetImport(mode){
   if(isSupervisorMode) renderSupervisorDashboard(); else loadSeller(currentIdx);
   closeBudgetImportModal();
 
-  toast(`Presupuesto importado: ${updatedCount} asesor(es) actualizados, ${createdCount} nuevo(s) agregados.`, 'success');
+  const cleanupMsg = removedPlaceholders.length ? ` Se eliminaron ${removedPlaceholders.length} asesor(es) de plantilla sin usar.` : '';
+  toast(`Presupuesto importado: ${updatedCount} asesor(es) actualizados, ${createdCount} nuevo(s) agregados.${cleanupMsg}`, 'success');
 }
 
 /* =========================
@@ -4093,7 +4155,7 @@ function executeFullBudgetImport(mode){
   if(sessionRole !== 'admin' || !pendingFullBudgetData) return;
 
   const applyVal = (current, incoming) => mode === 'add' ? (current||0) + incoming : incoming;
-  let centrosCreated = 0, supervisorsCreated = 0, asesoresCreated = 0, asesoresUpdated = 0;
+  let centrosCreated = 0, supervisorsCreated = 0, asesoresCreated = 0, asesoresUpdated = 0, placeholdersRemoved = 0;
 
   pendingFullBudgetData.forEach(block => {
     let centro = orgData.centros.find(c => normName(c.name) === normName(block.cac));
@@ -4133,6 +4195,8 @@ function executeFullBudgetImport(mode){
         else k[v.field] = applyVal(k[v.field], v.value);
       });
     });
+
+    placeholdersRemoved += cleanupEmptyPlaceholderSellers(centro.id, supervisor.id).length;
   });
 
   orgData.updatedAt = Date.now();
@@ -4142,7 +4206,8 @@ function executeFullBudgetImport(mode){
   renderSupervisorDashboard();
   closeFullBudgetImportModal();
 
-  toast(`Alta automática completa: ${centrosCreated} centro(s), ${supervisorsCreated} supervisor(es), ${asesoresCreated} asesor(es) nuevo(s) y ${asesoresUpdated} actualizado(s).`, 'success');
+  const cleanupMsg = placeholdersRemoved ? ` Se eliminaron ${placeholdersRemoved} asesor(es) de plantilla sin usar.` : '';
+  toast(`Alta automática completa: ${centrosCreated} centro(s), ${supervisorsCreated} supervisor(es), ${asesoresCreated} asesor(es) nuevo(s) y ${asesoresUpdated} actualizado(s).${cleanupMsg}`, 'success');
 }
 
 /* =========================
