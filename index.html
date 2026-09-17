@@ -478,6 +478,7 @@
         <div class="login-tab" id="tab-login-super" onclick="switchLoginMode('supervisor')">Supervisor</div>
         <div class="login-tab" id="tab-login-jefe" onclick="switchLoginMode('jefe')">Jefe</div>
         <div class="login-tab" id="tab-login-gerente" onclick="switchLoginMode('gerente')">Gerente</div>
+        <div class="login-tab" id="tab-login-admin" onclick="switchLoginMode('admin')">Admin</div>
       </div>
 
       <div class="login-error" id="login-error-msg">Contraseña incorrecta.</div>
@@ -531,6 +532,13 @@
         <div class="login-field">
           <label>Contraseña</label>
           <input type="password" id="login-gerente-pass" placeholder="Ingresa contraseña">
+        </div>
+      </div>
+
+      <div id="form-admin" style="display:none;">
+        <div class="login-field">
+          <label>Contraseña de Administrador</label>
+          <input type="password" id="login-admin-pass" placeholder="Ingresa contraseña">
         </div>
       </div>
 
@@ -715,6 +723,33 @@
         </div>
         <div class="sup-stat-box">
           <div id="gerente-global-perc">0%</div>
+          <small>Cumplimiento Seleccionado</small>
+        </div>
+      </div>
+
+      <div class="sup-header" id="admin-header-block" style="display:none; background:linear-gradient(135deg,#37474f,#102027);">
+        <div class="sup-profile">
+          <div class="sup-img-box">
+            <img src="" id="admin-photo-img" class="sup-img" style="display:none;">
+            <div style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:1.8rem;"><i class="fas fa-user-shield"></i></div>
+          </div>
+          <div class="sup-info">
+            <h2>Administrador General</h2>
+            <p style="margin-bottom: 8px;">Panel de Administración de Toda la Organización</p>
+            <div style="background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; margin-top: 5px;">
+              <i class="fas fa-key" style="color: #ffca28; font-size: 0.8rem;"></i>
+              <label style="font-size: 0.7rem; color: #ffca28; font-weight: 800; text-transform: uppercase;">Contraseña:</label>
+              <input type="text" id="admin-master-pass" onchange="updateAdminPass(this.value)" style="background: transparent; border: none; color: #fff; font-weight: 900; width: 100px; outline: none; border-bottom: 1px dashed rgba(255,255,255,0.5); font-family: 'Montserrat', sans-serif; font-size: 0.9rem;" title="Escribe aquí para cambiar la contraseña de Administrador">
+            </div>
+            <div style="margin-top:10px;">
+              <label class="lbl-small" style="color:#e1f5fe;">Centro:</label>
+              <select id="admin-centro-filter" class="custom-select" onchange="onAdminFilterChange(this.value)" style="max-width:260px;"></select>
+              <button onclick="openOrgAdminModal()" style="margin-left:8px; background:var(--admin-color); color:#fff; border:none; padding:6px 14px; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.8rem;"><i class="fas fa-sitemap"></i> Administrar Organización</button>
+            </div>
+          </div>
+        </div>
+        <div class="sup-stat-box">
+          <div id="admin-global-perc">0%</div>
           <small>Cumplimiento Seleccionado</small>
         </div>
       </div>
@@ -1071,6 +1106,7 @@ let sellers = [];
 // orgData = estructura organizacional persistente (no depende del mes): Centros, cuentas de Supervisor, cuentas de Gerente.
 let orgData = {
   updatedAt: 0,
+  adminPassword: "admin123",
   centros: [ { id:0, name:"Centro 1", jefe:{ name:"Jefe de Centro 1", photo: DEFAULT_AVATAR, password:"jefe123" } } ],
   supervisors: [ { id:0, centroId:0, name:"Nombre Supervisor", photo: DEFAULT_AVATAR, password:"admin", dailyGoals:{}, globalNotices:[] } ],
   gerentes: [ { id:0, name:"Gerente General", photo: DEFAULT_AVATAR, password:"gerente123", centroIds:[0] } ]
@@ -1116,12 +1152,14 @@ function migrateOrgData(raw) {
     data.centros.forEach(c => { if(!c.jefe) c.jefe = { name:"Jefe de Centro", photo: DEFAULT_AVATAR, password:"jefe123" }; if(!c.jefe.photo) c.jefe.photo = DEFAULT_AVATAR; });
     data.supervisors.forEach(s => { if(!s.dailyGoals) s.dailyGoals = {}; if(!s.globalNotices) s.globalNotices = []; if(!s.photo) s.photo = DEFAULT_AVATAR; if(!s.password) s.password = "1234"; });
     data.gerentes.forEach(g => { if(!g.centroIds) g.centroIds = []; if(!g.photo) g.photo = DEFAULT_AVATAR; if(!g.password) g.password = "gerente123"; });
+    if(!data.adminPassword) data.adminPassword = "admin123";
     if(!data.updatedAt) data.updatedAt = 0;
     return data;
   }
 
   return {
     updatedAt: data.updatedAt || 0,
+    adminPassword: "admin123",
     centros: [{ id:0, name:"Centro 1", jefe:{ name:"Jefe de Centro 1", photo: DEFAULT_AVATAR, password:"jefe123" } }],
     supervisors: [{
       id:0, centroId:0,
@@ -1152,6 +1190,10 @@ function recomputeScope() {
   } else if (sessionRole === 'asesor') {
     const me = allSellers[sessionUserId];
     sellers = me ? allSellers.filter(s => s.centroId === me.centroId && s.supervisorId === me.supervisorId) : allSellers.slice();
+  } else if (sessionRole === 'admin') {
+    sellers = (managerViewCentroId !== null)
+      ? allSellers.filter(s => s.centroId === managerViewCentroId)
+      : allSellers.slice();
   } else {
     sellers = allSellers.slice();
   }
@@ -1173,6 +1215,11 @@ function getScopedSupervisorAccounts(){
     return (managerViewCentroId !== null)
       ? orgData.supervisors.filter(s => s.centroId === managerViewCentroId)
       : orgData.supervisors.filter(s => myCentroIds.includes(s.centroId));
+  }
+  if(sessionRole === 'admin') {
+    return (managerViewCentroId !== null)
+      ? orgData.supervisors.filter(s => s.centroId === managerViewCentroId)
+      : orgData.supervisors.slice();
   }
   return [];
 }
@@ -1216,10 +1263,12 @@ function switchLoginMode(mode) {
   document.getElementById('tab-login-super').classList.toggle('active', mode === 'supervisor');
   document.getElementById('tab-login-jefe').classList.toggle('active', mode === 'jefe');
   document.getElementById('tab-login-gerente').classList.toggle('active', mode === 'gerente');
+  document.getElementById('tab-login-admin').classList.toggle('active', mode === 'admin');
   document.getElementById('form-asesor').style.display = mode === 'asesor' ? 'block' : 'none';
   document.getElementById('form-super').style.display = mode === 'supervisor' ? 'block' : 'none';
   document.getElementById('form-jefe').style.display = mode === 'jefe' ? 'block' : 'none';
   document.getElementById('form-gerente').style.display = mode === 'gerente' ? 'block' : 'none';
+  document.getElementById('form-admin').style.display = mode === 'admin' ? 'block' : 'none';
   document.getElementById('login-error-msg').style.display = 'none';
 }
 
@@ -1266,6 +1315,16 @@ function attemptLogin() {
         const ger = orgData.gerentes.find(g => String(g.id) === String(selIdx));
         if(ger && pass === (ger.password || "gerente123")) {
           grantAccess('gerente', null, { gerenteId: ger.id });
+          setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 1000);
+        } else {
+          document.getElementById('login-error-msg').style.display = 'block';
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }
+      } else if (loginMode === 'admin') {
+        const pass = document.getElementById('login-admin-pass').value;
+        if(pass === (orgData.adminPassword || "admin123")) {
+          grantAccess('admin', null, {});
           setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 1000);
         } else {
           document.getElementById('login-error-msg').style.display = 'block';
@@ -1335,17 +1394,23 @@ function grantAccess(role, idx, ctx) {
 
 function logout() { location.reload(); }
 
+const TOOL_PERMISSIONS = {
+  supervisor: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore','btn-tool-reset','btn-tool-clone'],
+  admin: ['btn-tool-org','btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore'],
+  jefe: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf'],
+  gerente: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf'],
+  asesor: ['btn-tool-daily']
+};
+
 function applyRoleRestrictions() {
   const tools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-report', 'btn-tool-pdf', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone', 'btn-tool-org'];
-  const readOnlyManagerTools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-report', 'btn-tool-pdf'];
-  const isManagerView = (sessionRole === 'jefe' || sessionRole === 'gerente');
+  const isManagerView = (sessionRole === 'jefe' || sessionRole === 'gerente' || sessionRole === 'admin');
+  const allowedTools = TOOL_PERMISSIONS[sessionRole] || [];
 
   tools.forEach(id => {
     const btn = document.getElementById(id);
     if(!btn) return;
-    if(sessionRole === 'supervisor') btn.style.display = 'flex';
-    else if(isManagerView) btn.style.display = readOnlyManagerTools.includes(id) ? 'flex' : 'none';
-    else btn.style.display = (id === 'btn-tool-daily') ? 'flex' : 'none';
+    btn.style.display = allowedTools.includes(id) ? 'flex' : 'none';
   });
 
   const toolboxBtn = document.getElementById('btn-tools-trigger');
@@ -1631,7 +1696,7 @@ function validateSellersData() {
 }
 
 function saveData(){
-  if(sessionRole !== 'supervisor') return;
+  if(sessionRole !== 'supervisor' && sessionRole !== 'admin') return;
 
   try { localStorage.setItem(getKeySellers(), JSON.stringify(allSellers)); } catch(e){}
   try { localStorage.setItem(KEY_SUP, JSON.stringify(orgData)); } catch(e){}
@@ -2339,7 +2404,7 @@ function renderEvents(){
 }
 
 function openOrgAdminModal(){
-  if(sessionRole !== 'supervisor') return;
+  if(sessionRole !== 'admin') return;
   document.getElementById('org-admin-modal').style.display = 'flex';
   renderOrgAdminModal();
 }
@@ -2434,7 +2499,7 @@ function cancelEditCentro(){
 }
 
 function saveCentro(){
-  if(sessionRole !== 'supervisor') return;
+  if(sessionRole !== 'admin') return;
   const name = document.getElementById('org-new-centro-name').value.trim();
   const jefeName = document.getElementById('org-new-centro-jefe-name').value.trim();
   const jefePass = document.getElementById('org-new-centro-jefe-pass').value.trim();
@@ -2462,7 +2527,7 @@ function saveCentro(){
 }
 
 function deleteCentro(id){
-  if(sessionRole !== 'supervisor') return;
+  if(sessionRole !== 'admin') return;
   const hasSupervisors = orgData.supervisors.some(s=>s.centroId===id);
   if(hasSupervisors) return toast("Este centro tiene supervisores asignados. Elimínalos o reasígnalos primero.", 'danger');
   if(!confirm("¿Eliminar este centro?")) return;
@@ -2494,7 +2559,7 @@ function cancelEditSupervisor(){
 }
 
 function saveSupervisorAccount(){
-  if(sessionRole !== 'supervisor') return;
+  if(sessionRole !== 'admin') return;
   const name = document.getElementById('org-new-sup-name').value.trim();
   const pass = document.getElementById('org-new-sup-pass').value.trim();
   const centroId = parseInt(document.getElementById('org-new-sup-centro').value, 10);
@@ -2523,7 +2588,7 @@ function saveSupervisorAccount(){
 }
 
 function deleteSupervisorAccount(id){
-  if(sessionRole !== 'supervisor') return;
+  if(sessionRole !== 'admin') return;
   const acct = orgData.supervisors.find(s=>s.id===id);
   if(!acct) return;
   const teamCount = allSellers.filter(a=>a.centroId===acct.centroId && a.supervisorId===id).length;
@@ -2557,7 +2622,7 @@ function cancelEditGerente(){
 }
 
 function saveGerenteAccount(){
-  if(sessionRole !== 'supervisor') return;
+  if(sessionRole !== 'admin') return;
   const name = document.getElementById('org-new-ger-name').value.trim();
   const pass = document.getElementById('org-new-ger-pass').value.trim();
   const centroIds = Array.from(document.querySelectorAll('.org-ger-centro-chk:checked')).map(el=>parseInt(el.value,10));
@@ -2583,7 +2648,7 @@ function saveGerenteAccount(){
 }
 
 function deleteGerenteAccount(id){
-  if(sessionRole !== 'supervisor') return;
+  if(sessionRole !== 'admin') return;
   if(!confirm("¿Eliminar este gerente?")) return;
   orgData.gerentes = orgData.gerentes.filter(g=>g.id!==id);
   orgData.updatedAt = Date.now();
@@ -2605,7 +2670,7 @@ function renderSupervisorDashboard(){
   renderSupervisorKpis();
   renderRanking();
   renderCharts();
-  if(sessionRole === 'gerente') renderGerenteComparison();
+  if(sessionRole === 'gerente' || sessionRole === 'admin') renderGerenteComparison();
   else {
     const panel = document.getElementById('gerente-comparison-panel');
     if(panel) panel.style.display = 'none';
@@ -2616,9 +2681,11 @@ function updateRoleHeaderVisibility(){
   const supBlock = document.getElementById('sup-header-block');
   const jefeBlock = document.getElementById('jefe-header-block');
   const gerBlock = document.getElementById('gerente-header-block');
+  const adminBlock = document.getElementById('admin-header-block');
   if(supBlock) supBlock.style.display = sessionRole === 'supervisor' ? 'grid' : 'none';
   if(jefeBlock) jefeBlock.style.display = sessionRole === 'jefe' ? 'grid' : 'none';
   if(gerBlock) gerBlock.style.display = sessionRole === 'gerente' ? 'grid' : 'none';
+  if(adminBlock) adminBlock.style.display = sessionRole === 'admin' ? 'grid' : 'none';
 
   if(sessionRole === 'jefe') {
     const centro = orgData.centros.find(c => c.id === sessionCentroId);
@@ -2653,6 +2720,33 @@ function updateRoleHeaderVisibility(){
       sel.value = managerViewCentroId !== null ? String(managerViewCentroId) : "";
     }
   }
+
+  if(sessionRole === 'admin') {
+    const passEl = document.getElementById('admin-master-pass');
+    if(passEl && document.activeElement !== passEl) passEl.value = orgData.adminPassword || "admin123";
+
+    const sel = document.getElementById('admin-centro-filter');
+    if(sel) {
+      sel.innerHTML = `<option value="">Todos los Centros</option>` + orgData.centros.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      sel.value = managerViewCentroId !== null ? String(managerViewCentroId) : "";
+    }
+  }
+}
+
+function onAdminFilterChange(val){
+  managerViewCentroId = (val === "" || val === null || val === undefined) ? null : parseInt(val,10);
+  recomputeScope();
+  renderSupervisorDashboard();
+}
+
+function updateAdminPass(value){
+  if(sessionRole !== 'admin') return;
+  const newVal = value.trim();
+  if(!newVal) return toast("La contraseña no puede estar vacía.", 'danger');
+  orgData.adminPassword = newVal;
+  orgData.updatedAt = Date.now();
+  saveData();
+  toast("¡Contraseña de Administrador actualizada!", 'success');
 }
 
 function onJefeFilterChange(val){
@@ -2672,8 +2766,13 @@ function renderGerenteComparison(){
   if(!panel) return;
   if(managerViewCentroId !== null) { panel.style.display = 'none'; return; }
 
-  const ger = orgData.gerentes.find(g => g.id === sessionGerenteId);
-  const myCentroIds = ger ? (ger.centroIds || []) : [];
+  let myCentroIds;
+  if(sessionRole === 'admin') {
+    myCentroIds = orgData.centros.map(c=>c.id);
+  } else {
+    const ger = orgData.gerentes.find(g => g.id === sessionGerenteId);
+    myCentroIds = ger ? (ger.centroIds || []) : [];
+  }
   if(myCentroIds.length <= 1) { panel.style.display = 'none'; return; }
 
   const rows = myCentroIds.map(cid => {
@@ -3797,7 +3896,7 @@ async function exportCompositeToPNG(nodes, filename){
 function downloadRanking(){ exportElementToPNG(document.getElementById('ranking-export'), `ranking_${currentDateStr}.png`); }
 
 function getVisibleHeaderNode(){
-  return ['sup-header-block','jefe-header-block','gerente-header-block']
+  return ['sup-header-block','jefe-header-block','gerente-header-block','admin-header-block']
     .map(id=>document.getElementById(id))
     .find(el => el && el.style.display !== 'none') || null;
 }
@@ -3925,6 +4024,9 @@ function filterByCurrentScope(arr) {
     const ger = orgData.gerentes.find(g => g.id === sessionGerenteId);
     const myCentroIds = ger ? (ger.centroIds || []) : [];
     return (managerViewCentroId !== null) ? arr.filter(s=>s.centroId===managerViewCentroId) : arr.filter(s=>myCentroIds.includes(s.centroId));
+  }
+  if (sessionRole === 'admin' && managerViewCentroId !== null) {
+    return arr.filter(s=>s.centroId===managerViewCentroId);
   }
   return arr;
 }
