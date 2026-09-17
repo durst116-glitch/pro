@@ -18,6 +18,8 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -42,6 +44,11 @@
       --rest-color:#546e7a;
     }
 
+    body[data-theme="dark"]{
+      --bg-body:#12151c;
+      --shadow:0 10px 30px rgba(0,0,0,.4);
+    }
+
     *{box-sizing:border-box;margin:0;padding:0;outline:none}
     body{
       font-family:'Montserrat',sans-serif;
@@ -51,7 +58,36 @@
       padding:20px;
       padding-bottom:120px;
       position: relative;
+      transition: background-color .3s ease;
     }
+
+    .btn-theme-toggle{
+      background:#eef6fc;color:var(--primary);border:none;width:38px;height:38px;border-radius:50%;
+      cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;
+      transition:transform .2s;
+    }
+    .btn-theme-toggle:hover{transform:scale(1.1)}
+
+    .exec-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-bottom:25px}
+    .exec-tile{background:var(--surface);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow);border-left:5px solid var(--secondary);}
+    .exec-tile-label{font-size:.68rem;font-weight:800;color:#90a4ae;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+    .exec-tile-value{font-size:1.3rem;font-weight:900;color:var(--text-main);line-height:1.3;}
+    .exec-tile-sub{font-size:.72rem;color:#78909c;font-weight:700;margin-top:3px;}
+
+    .trend-panel{background:var(--surface);border-radius:20px;padding:25px;box-shadow:var(--shadow);margin-bottom:30px;}
+
+    .search-box{position:relative;flex:1;min-width:180px;max-width:280px;}
+    .search-box input{width:100%;padding:8px 12px 8px 32px;border-radius:12px;border:2px solid #e0e0e0;font-family:'Montserrat';font-weight:700;font-size:.85rem;}
+    .search-box i{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#90a4ae;font-size:.85rem;}
+
+    .toast-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:100000;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none;}
+    .toast{background:#263238;color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;font-size:.85rem;box-shadow:0 8px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:12px;opacity:0;transform:translateY(-10px);transition:all .25s ease;pointer-events:auto;max-width:90vw;}
+    .toast.show{opacity:1;transform:translateY(0);}
+    .toast.success{background:#1b5e20;}
+    .toast.danger{background:#7f0000;}
+    .toast-undo{background:rgba(255,255,255,0.15);border:none;color:#ffca28;font-weight:900;padding:5px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;}
+
+    .notice-badge{background:var(--danger);color:#fff;font-size:.6rem;font-weight:900;border-radius:50%;min-width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;margin-left:5px;vertical-align:top;}
 
     /* SISTEMA DE LOGIN OVERLAY */
     #login-overlay {
@@ -67,7 +103,7 @@
     .login-logo { font-size: 3rem; color: var(--secondary); margin-bottom: 10px; }
     .login-title { font-weight: 900; color: var(--primary); font-size: 1.5rem; margin-bottom: 30px; }
     .login-tabs { display: flex; background: #f1f3f5; border-radius: 50px; margin-bottom: 25px; padding: 5px; }
-    .login-tab { flex: 1; padding: 10px; border-radius: 50px; cursor: pointer; font-weight: 800; font-size: 0.85rem; color: #90a4ae; transition: all 0.3s; }
+    .login-tab { flex: 1; padding: 10px 4px; border-radius: 50px; cursor: pointer; font-weight: 800; font-size: 0.68rem; color: #90a4ae; transition: all 0.3s; text-align: center; white-space: nowrap; }
     .login-tab.active { background: var(--primary); color: #fff; box-shadow: 0 4px 10px rgba(0,47,108,0.3); }
     .login-field { margin-bottom: 20px; text-align: left; }
     .login-field label { display: block; font-size: 0.75rem; font-weight: 800; color: #546e7a; margin-bottom: 8px; text-transform: uppercase; }
@@ -440,6 +476,8 @@
       <div class="login-tabs">
         <div class="login-tab active" id="tab-login-asesor" onclick="switchLoginMode('asesor')">Asesor</div>
         <div class="login-tab" id="tab-login-super" onclick="switchLoginMode('supervisor')">Supervisor</div>
+        <div class="login-tab" id="tab-login-jefe" onclick="switchLoginMode('jefe')">Jefe</div>
+        <div class="login-tab" id="tab-login-gerente" onclick="switchLoginMode('gerente')">Gerente</div>
       </div>
 
       <div class="login-error" id="login-error-msg">Contraseña incorrecta.</div>
@@ -459,8 +497,40 @@
 
       <div id="form-super" style="display:none;">
         <div class="login-field">
-          <label>Contraseña Maestra</label>
+          <label>Selecciona tu nombre (Supervisor)</label>
+          <select id="login-super-select">
+            <option value="">Cargando supervisores...</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label>Contraseña</label>
           <input type="password" id="login-super-pass" placeholder="Ingresa contraseña">
+        </div>
+      </div>
+
+      <div id="form-jefe" style="display:none;">
+        <div class="login-field">
+          <label>Selecciona tu Centro</label>
+          <select id="login-jefe-select">
+            <option value="">Cargando centros...</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label>Contraseña</label>
+          <input type="password" id="login-jefe-pass" placeholder="Ingresa contraseña">
+        </div>
+      </div>
+
+      <div id="form-gerente" style="display:none;">
+        <div class="login-field">
+          <label>Selecciona tu nombre (Gerente)</label>
+          <select id="login-gerente-select">
+            <option value="">Cargando gerentes...</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label>Contraseña</label>
+          <input type="password" id="login-gerente-pass" placeholder="Ingresa contraseña">
         </div>
       </div>
 
@@ -471,12 +541,15 @@
   <div id="main-app">
     <div class="top-bar" id="top-bar">
       <!-- ⚡ SELLO V82 (Importación Inteligente) ⚡ -->
-      <div class="app-title"><i class="fas fa-cloud"></i> TELCEL PRO CLOUD <span style="font-size:0.6rem; color:var(--secondary); margin-left:8px; font-weight:900;">V82</span></div>
+      <div class="app-title"><i class="fas fa-cloud"></i> TELCEL PRO CLOUD <span style="font-size:0.6rem; color:var(--secondary); margin-left:8px; font-weight:900;">V82</span><span id="notice-count-badge" class="notice-badge" style="display:none;"></span></div>
       <div class="date-control">
         <label><i class="far fa-calendar-alt"></i> Fecha:</label>
         <input type="date" id="global-date" class="date-input" onchange="onDateChanged()">
         <button onclick="setToday()" style="background:var(--secondary);color:#fff;border:none;padding:8px 15px;border-radius:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 10px rgba(0,174,239,0.3);transition:transform 0.3s;display:flex;align-items:center;gap:5px;">
           <i class="fas fa-calendar-day"></i> Hoy
+        </button>
+        <button class="btn-theme-toggle" id="btn-theme-toggle" onclick="toggleDarkMode()" title="Cambiar tema">
+          <i class="fas fa-moon"></i>
         </button>
         <button class="btn-logout" onclick="logout()" title="Cerrar Sesión">
           <i class="fas fa-sign-out-alt"></i> Salir
@@ -583,7 +656,7 @@
 
     <!-- PANEL DEL SUPERVISOR -->
     <div id="supervisor-view" class="view-section">
-      <div class="sup-header">
+      <div class="sup-header" id="sup-header-block">
         <div class="sup-profile">
           <div class="sup-img-box">
             <img src="https://www.w3schools.com/howto/img_avatar.png" id="sup-photo-img" class="sup-img">
@@ -595,7 +668,7 @@
             <p style="margin-bottom: 8px;">Panel de Control & Ranking</p>
             <div style="background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; margin-top: 5px;">
               <i class="fas fa-key" style="color: #ffca28; font-size: 0.8rem;"></i>
-              <label style="font-size: 0.7rem; color: #ffca28; font-weight: 800; text-transform: uppercase;">Clave Master:</label>
+              <label style="font-size: 0.7rem; color: #ffca28; font-weight: 800; text-transform: uppercase;">Contraseña:</label>
               <input type="text" id="sup-master-pass" onchange="updateSupPass(this.value)" style="background: transparent; border: none; color: #fff; font-weight: 900; width: 100px; outline: none; border-bottom: 1px dashed rgba(255,255,255,0.5); font-family: 'Montserrat', sans-serif; font-size: 0.9rem;" title="Escribe aquí para cambiar tu contraseña">
             </div>
           </div>
@@ -604,6 +677,57 @@
           <div id="sup-global-perc">0%</div>
           <small>Cumplimiento Global Supervisor</small>
         </div>
+      </div>
+
+      <div class="sup-header" id="jefe-header-block" style="display:none;">
+        <div class="sup-profile">
+          <div class="sup-img-box">
+            <img src="" id="jefe-photo-img" class="sup-img">
+          </div>
+          <div class="sup-info">
+            <h2 id="jefe-centro-name-txt">Centro</h2>
+            <p style="margin-bottom: 8px;">Jefe de Centro: <b id="jefe-name-txt"></b></p>
+            <div style="margin-top:10px;">
+              <label class="lbl-small" style="color:#e1f5fe;">Ver equipo de:</label>
+              <select id="jefe-supervisor-filter" class="custom-select" onchange="onJefeFilterChange(this.value)" style="max-width:260px;"></select>
+            </div>
+          </div>
+        </div>
+        <div class="sup-stat-box">
+          <div id="jefe-global-perc">0%</div>
+          <small>Cumplimiento del Centro</small>
+        </div>
+      </div>
+
+      <div class="sup-header" id="gerente-header-block" style="display:none;">
+        <div class="sup-profile">
+          <div class="sup-img-box">
+            <img src="" id="gerente-photo-img" class="sup-img">
+          </div>
+          <div class="sup-info">
+            <h2 id="gerente-name-txt">Gerente</h2>
+            <p style="margin-bottom: 8px;">Panel Gerencial</p>
+            <div style="margin-top:10px;">
+              <label class="lbl-small" style="color:#e1f5fe;">Centro:</label>
+              <select id="gerente-centro-filter" class="custom-select" onchange="onGerenteFilterChange(this.value)" style="max-width:260px;"></select>
+            </div>
+          </div>
+        </div>
+        <div class="sup-stat-box">
+          <div id="gerente-global-perc">0%</div>
+          <small>Cumplimiento Seleccionado</small>
+        </div>
+      </div>
+
+      <div id="gerente-comparison-panel" style="display:none; margin-bottom:30px;"></div>
+
+      <div class="exec-summary-grid" id="exec-summary-grid"></div>
+
+      <div class="trend-panel">
+        <div class="section-title" style="justify-content:space-between;">
+          <span><i class="fas fa-chart-line"></i> Tendencia (Últimos 6 Meses)</span>
+        </div>
+        <canvas id="trend-chart" height="90"></canvas>
       </div>
 
       <!-- PANEL: META DEL DÍA EQUIPO -->
@@ -616,7 +740,7 @@
              <div><i class="fas fa-users"></i> Activos en esta Fecha: <b id="dg-active-count" style="color:#fff; font-size:1.1rem;">0</b></div>
              <div><i class="far fa-calendar-times"></i> Días Restantes: <b id="dg-days-left" style="color:#fff; font-size:1.1rem;">0</b></div>
            </div>
-           <button onclick="autoCalculateDailyGoals()" style="margin-top: 15px; background: rgba(0,174,239,0.25); color: #00aeef; border: 1px solid #00aeef; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 900; font-size: 0.85rem; transition: all 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"><i class="fas fa-magic"></i> Auto-Rellenar Metas</button>
+           <button id="btn-auto-fill-daily-goal" onclick="autoCalculateDailyGoals()" style="margin-top: 15px; background: rgba(0,174,239,0.25); color: #00aeef; border: 1px solid #00aeef; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 900; font-size: 0.85rem; transition: all 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"><i class="fas fa-magic"></i> Auto-Rellenar Metas</button>
          </div>
          <div class="dg-grid" id="dg-grid-container"></div>
       </div>
@@ -637,9 +761,15 @@
                 <h3 style="color:var(--primary); font-weight:900; margin:0; display:flex; align-items:center; gap:8px;"><i class="fas fa-crosshairs"></i> METAS DEL DÍA (INDIVIDUAL)</h3>
                 <p style="font-size:0.8rem; color:#90a4ae; margin:5px 0 0 0; font-weight:700; text-transform:uppercase;" id="adv-table-date-display"></p>
             </div>
-            <button class="btn-download-dg" onclick="downloadAdvisorDailyGoals()" style="background:var(--primary); color:#fff; box-shadow:0 4px 10px rgba(0,47,108,0.3);">
-                <i class="fas fa-camera"></i> Capturar
-            </button>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="advisor-search-input" placeholder="Buscar asesor..." oninput="filterAdvisorTable(this.value)">
+              </div>
+              <button class="btn-download-dg" onclick="downloadAdvisorDailyGoals()" style="background:var(--primary); color:#fff; box-shadow:0 4px 10px rgba(0,47,108,0.3);">
+                  <i class="fas fa-camera"></i> Capturar
+              </button>
+            </div>
         </div>
         
         <div style="overflow-x:auto;">
@@ -659,7 +789,7 @@
 
       <div class="section-title"><i class="fas fa-bullhorn"></i> Panel de Avisos y Comunicados</div>
       <div class="staff-panel" style="border-left:6px solid var(--secondary);">
-        <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
+        <div id="notice-input-row" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
             <select id="notice-target" class="custom-select" style="max-width:250px; font-size:0.9rem; padding:10px;">
                 <option value="all">📢 Todos los Asesores (Global)</option>
             </select>
@@ -671,7 +801,7 @@
 
       <div class="section-title" style="justify-content: space-between;">
         <span><i class="fas fa-sign-in-alt"></i> Registro de Accesos (Últimos ingresos)</span>
-        <button onclick="clearAllLoginHistory()" style="background: #ffebee; color: var(--danger); border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: all 0.2s;"><i class="fas fa-trash-alt"></i> Limpiar Todo</button>
+        <button id="btn-clear-login-history" onclick="clearAllLoginHistory()" style="background: #ffebee; color: var(--danger); border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: all 0.2s;"><i class="fas fa-trash-alt"></i> Limpiar Todo</button>
       </div>
       <div class="ranking-container" style="max-height: 350px; overflow-y: auto; padding: 0;">
         <table class="rank-table" style="margin-top:0;">
@@ -733,6 +863,10 @@
         <button class="close-panel-btn" onclick="toggleSidePanel()">&times;</button>
       </div>
 
+      <button class="fab-btn" id="btn-tool-org" style="background:linear-gradient(135deg, var(--admin-color), #3949ab);" onclick="toggleSidePanel(); openOrgAdminModal()">
+        <i class="fas fa-sitemap"></i> Administrar Organización
+      </button>
+
       <button class="fab-btn btn-clone" id="btn-tool-clone" onclick="toggleSidePanel(); clonePreviousMonth()">
         <i class="fas fa-copy"></i> Clonar Mes Anterior
       </button>
@@ -757,6 +891,9 @@
 
       <button class="fab-btn btn-full" id="btn-tool-report" onclick="toggleSidePanel(); downloadFullReport()">
         <i class="fas fa-file-contract"></i> Reporte Completo
+      </button>
+      <button class="fab-btn" id="btn-tool-pdf" style="background:linear-gradient(135deg,#b71c1c,#7f0000);" onclick="toggleSidePanel(); downloadFullReportPDF()">
+        <i class="fas fa-file-pdf"></i> Exportar a PDF
       </button>
       <button class="fab-btn btn-backup" id="btn-tool-backup" onclick="toggleSidePanel(); downloadBackup()">
         <i class="fas fa-download"></i> Respaldo Local
@@ -789,6 +926,51 @@
     </div>
   </div>
 
+  <div id="org-admin-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width:650px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color:var(--admin-color);">Administración de Organización</div>
+        <button class="close-modal" onclick="closeOrgAdminModal()">&times;</button>
+      </div>
+
+      <div class="login-tabs" style="margin-bottom:15px;">
+        <div class="login-tab active" id="org-tab-centros" onclick="switchOrgTab('centros')">Centros</div>
+        <div class="login-tab" id="org-tab-supervisores" onclick="switchOrgTab('supervisores')">Supervisores</div>
+        <div class="login-tab" id="org-tab-gerentes" onclick="switchOrgTab('gerentes')">Gerentes</div>
+      </div>
+
+      <div id="org-panel-centros">
+        <div id="org-list-centros" style="max-height:220px; overflow-y:auto; margin-bottom:15px;"></div>
+        <div class="event-form">
+          <input type="text" id="org-new-centro-name" placeholder="Nombre del nuevo Centro">
+          <input type="text" id="org-new-centro-jefe-name" placeholder="Nombre del Jefe de Centro">
+          <input type="text" id="org-new-centro-jefe-pass" placeholder="Contraseña del Jefe">
+          <button class="btn-add-event" onclick="addCentro()">+ Crear Centro</button>
+        </div>
+      </div>
+
+      <div id="org-panel-supervisores" style="display:none;">
+        <div id="org-list-supervisores" style="max-height:220px; overflow-y:auto; margin-bottom:15px;"></div>
+        <div class="event-form">
+          <input type="text" id="org-new-sup-name" placeholder="Nombre del nuevo Supervisor">
+          <input type="text" id="org-new-sup-pass" placeholder="Contraseña">
+          <select id="org-new-sup-centro"></select>
+          <button class="btn-add-event" onclick="addSupervisorAccount()">+ Crear Supervisor</button>
+        </div>
+      </div>
+
+      <div id="org-panel-gerentes" style="display:none;">
+        <div id="org-list-gerentes" style="max-height:220px; overflow-y:auto; margin-bottom:15px;"></div>
+        <div class="event-form">
+          <input type="text" id="org-new-ger-name" placeholder="Nombre del nuevo Gerente">
+          <input type="text" id="org-new-ger-pass" placeholder="Contraseña">
+          <div id="org-new-ger-centros" style="display:flex; flex-wrap:wrap; gap:8px; font-size:0.8rem; background:#fff; padding:10px; border-radius:8px;"></div>
+          <button class="btn-add-event" onclick="addGerenteAccount()">+ Crear Gerente</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="calendar-modal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
@@ -809,6 +991,7 @@
   </div>
 
   <div id="hidden-export-area"></div>
+  <div class="toast-container" id="toast-container"></div>
   <input type="file" id="backup-file" accept=".json" style="display:none" onchange="loadBackup(this)">
   <input type="file" id="import-excel-file" accept=".xlsx, .csv" style="display:none" onchange="readExcelFile(this)">
 
@@ -846,8 +1029,9 @@ let isTyping = false;
 let pendingFirebaseData = null;
 let pendingSupervisorData = null; 
 
-let sessionRole = null; 
-let sessionUserId = null; 
+let sessionRole = null;
+let sessionUserId = null;
+let loginMode = 'asesor';
 
 let CATEGORIES = [
   { id:'pospago', label:'Pospago', icon:'fa-mobile-screen-button', color:'#002f6c' },
@@ -868,25 +1052,121 @@ const WEEKDAY_ES = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","
 const MAX_ADVISORS = 15;
 const MIN_ADVISORS = 1;
 
+const DEFAULT_AVATAR = 'https://www.w3schools.com/howto/img_avatar.png';
+
+// allSellers = roster completo (todos los centros/supervisores) — es lo que se guarda/sincroniza.
+// sellers = vista filtrada según el rol/alcance de la sesión activa (mismas referencias de objeto que allSellers).
+let allSellers = [];
 let sellers = [];
-let supervisorData = {
-  name:"Nombre Supervisor",
-  photo:"https://www.w3schools.com/howto/img_avatar.png",
-  password:"admin",
+
+// orgData = estructura organizacional persistente (no depende del mes): Centros, cuentas de Supervisor, cuentas de Gerente.
+let orgData = {
   updatedAt: 0,
-  globalNotices: [],
-  dailyGoals: {}
+  centros: [ { id:0, name:"Centro 1", jefe:{ name:"Jefe de Centro 1", photo: DEFAULT_AVATAR, password:"jefe123" } } ],
+  supervisors: [ { id:0, centroId:0, name:"Nombre Supervisor", photo: DEFAULT_AVATAR, password:"admin", dailyGoals:{}, globalNotices:[] } ],
+  gerentes: [ { id:0, name:"Gerente General", photo: DEFAULT_AVATAR, password:"gerente123", centroIds:[0] } ]
 };
+
+// supervisorData = referencia viva al registro del supervisor activo dentro de orgData.supervisors (compatibilidad con el resto del código existente).
+let supervisorData = orgData.supervisors[0];
 
 let currentIdx = 0;
 let isSupervisorMode = false;
 let draggedCatId = null;
 let pendingImportData = [];
 
+// Contexto de sesión para los 4 perfiles
+let sessionCentroId = null;         // supervisor y jefe
+let sessionSupervisorId = null;     // supervisor
+let sessionGerenteId = null;        // gerente
+let managerViewSupervisorId = null; // jefe: filtro para ver un supervisor específico de su centro (null = todo el centro)
+let managerViewCentroId = null;     // gerente: filtro para ver un centro específico (null = todos sus centros)
+
 const BASE_SELLERS = 'telcel_pro_v25_sellers';
 const KEY_DATE = 'telcel_pro_v25_date';
 const KEY_SUP  = 'telcel_pro_v25_sup';
 const KEY_CAT_ORDER = 'telcel_pro_v25_cat_order';
+
+function resetSellerKpis(s) {
+  s.kpis = CATEGORIES.reduce((acc,cat)=>{
+    if(cat.id==='retencion') acc[cat.id] = { renovaciones:0, cancelaciones:0, migraciones:0 };
+    else if(cat.id==='prepago') acc[cat.id] = { meta:0, sale:0, metaKit:0, saleKit:0, metaChip:0, saleChip:0 };
+    else if(cat.id==='pospago') acc[cat.id] = { meta:0, sale:0, metaEq:0, saleEq:0, metaVip:0, saleVip:0 };
+    else if(cat.id==='renovacion') acc[cat.id] = { meta:0, sale:0, metaEq:0, saleEq:0, metaVip:0, saleVip:0 };
+    else if(cat.id==='encuestas') acc[cat.id] = { meta:100, sale:0 };
+    else acc[cat.id] = { meta:0, sale:0 };
+    return acc;
+  },{});
+  s.daily = CATEGORIES.reduce((acc,cat)=>{ acc[cat.id]=0; return acc; },{});
+}
+
+// Convierte datos antiguos (un solo supervisor global) a la nueva estructura con Centros/Supervisores/Gerentes.
+function migrateOrgData(raw) {
+  const data = (raw && typeof raw === 'object') ? raw : {};
+  if (Array.isArray(data.centros) && Array.isArray(data.supervisors) && Array.isArray(data.gerentes)) {
+    data.centros.forEach(c => { if(!c.jefe) c.jefe = { name:"Jefe de Centro", photo: DEFAULT_AVATAR, password:"jefe123" }; if(!c.jefe.photo) c.jefe.photo = DEFAULT_AVATAR; });
+    data.supervisors.forEach(s => { if(!s.dailyGoals) s.dailyGoals = {}; if(!s.globalNotices) s.globalNotices = []; if(!s.photo) s.photo = DEFAULT_AVATAR; if(!s.password) s.password = "1234"; });
+    data.gerentes.forEach(g => { if(!g.centroIds) g.centroIds = []; if(!g.photo) g.photo = DEFAULT_AVATAR; if(!g.password) g.password = "gerente123"; });
+    if(!data.updatedAt) data.updatedAt = 0;
+    return data;
+  }
+
+  return {
+    updatedAt: data.updatedAt || 0,
+    centros: [{ id:0, name:"Centro 1", jefe:{ name:"Jefe de Centro 1", photo: DEFAULT_AVATAR, password:"jefe123" } }],
+    supervisors: [{
+      id:0, centroId:0,
+      name: data.name || "Nombre Supervisor",
+      photo: data.photo || DEFAULT_AVATAR,
+      password: data.password || "admin",
+      dailyGoals: data.dailyGoals || {},
+      globalNotices: data.globalNotices || []
+    }],
+    gerentes: [{ id:0, name:"Gerente General", photo: DEFAULT_AVATAR, password:"gerente123", centroIds:[0] }]
+  };
+}
+
+// Recalcula qué asesores son visibles ("sellers") según el rol y los filtros activos de la sesión.
+function recomputeScope() {
+  if (sessionRole === 'supervisor') {
+    sellers = allSellers.filter(s => s.centroId === sessionCentroId && s.supervisorId === sessionSupervisorId);
+  } else if (sessionRole === 'jefe') {
+    sellers = (managerViewSupervisorId !== null)
+      ? allSellers.filter(s => s.centroId === sessionCentroId && s.supervisorId === managerViewSupervisorId)
+      : allSellers.filter(s => s.centroId === sessionCentroId);
+  } else if (sessionRole === 'gerente') {
+    const ger = orgData.gerentes.find(g => g.id === sessionGerenteId);
+    const myCentroIds = ger ? (ger.centroIds || []) : [];
+    sellers = (managerViewCentroId !== null)
+      ? allSellers.filter(s => s.centroId === managerViewCentroId)
+      : allSellers.filter(s => myCentroIds.includes(s.centroId));
+  } else if (sessionRole === 'asesor') {
+    const me = allSellers[sessionUserId];
+    sellers = me ? allSellers.filter(s => s.centroId === me.centroId && s.supervisorId === me.supervisorId) : allSellers.slice();
+  } else {
+    sellers = allSellers.slice();
+  }
+}
+
+function nextOrgId(arr){ return arr.length ? Math.max(...arr.map(x=>x.id))+1 : 0; }
+
+// Cuentas de supervisor visibles en el alcance actual de la sesión (para leer avisos/metas diarias en vistas de Jefe/Gerente).
+function getScopedSupervisorAccounts(){
+  if(sessionRole === 'supervisor') return supervisorData ? [supervisorData] : [];
+  if(sessionRole === 'jefe') {
+    return (managerViewSupervisorId !== null)
+      ? orgData.supervisors.filter(s => s.id === managerViewSupervisorId && s.centroId === sessionCentroId)
+      : orgData.supervisors.filter(s => s.centroId === sessionCentroId);
+  }
+  if(sessionRole === 'gerente') {
+    const ger = orgData.gerentes.find(g => g.id === sessionGerenteId);
+    const myCentroIds = ger ? (ger.centroIds || []) : [];
+    return (managerViewCentroId !== null)
+      ? orgData.supervisors.filter(s => s.centroId === managerViewCentroId)
+      : orgData.supervisors.filter(s => myCentroIds.includes(s.centroId));
+  }
+  return [];
+}
 
 document.addEventListener('focusin', e => {
   if(e.target.tagName==='INPUT'||e.target.isContentEditable||e.target.tagName==='SELECT') isTyping = true;
@@ -925,8 +1205,12 @@ function switchLoginMode(mode) {
   loginMode = mode;
   document.getElementById('tab-login-asesor').classList.toggle('active', mode === 'asesor');
   document.getElementById('tab-login-super').classList.toggle('active', mode === 'supervisor');
+  document.getElementById('tab-login-jefe').classList.toggle('active', mode === 'jefe');
+  document.getElementById('tab-login-gerente').classList.toggle('active', mode === 'gerente');
   document.getElementById('form-asesor').style.display = mode === 'asesor' ? 'block' : 'none';
   document.getElementById('form-super').style.display = mode === 'supervisor' ? 'block' : 'none';
+  document.getElementById('form-jefe').style.display = mode === 'jefe' ? 'block' : 'none';
+  document.getElementById('form-gerente').style.display = mode === 'gerente' ? 'block' : 'none';
   document.getElementById('login-error-msg').style.display = 'none';
 }
 
@@ -941,10 +1225,38 @@ function attemptLogin() {
   setTimeout(() => {
     try {
       if (loginMode === 'supervisor') {
+        const selIdx = document.getElementById('login-super-select').value;
         const pass = document.getElementById('login-super-pass').value;
-        const masterPass = supervisorData.password || "admin";
-        if(pass === masterPass) {
-          grantAccess('supervisor', null);
+        if(selIdx === "") { toast("Selecciona un supervisor", 'danger'); btn.innerText = originalText; btn.disabled = false; return; }
+        const sv = orgData.supervisors.find(x => String(x.id) === String(selIdx));
+        if(sv && pass === (sv.password || "1234")) {
+          grantAccess('supervisor', null, { supervisorId: sv.id, centroId: sv.centroId });
+          setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 1000);
+        } else {
+          document.getElementById('login-error-msg').style.display = 'block';
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }
+      } else if (loginMode === 'jefe') {
+        const selIdx = document.getElementById('login-jefe-select').value;
+        const pass = document.getElementById('login-jefe-pass').value;
+        if(selIdx === "") { toast("Selecciona un centro", 'danger'); btn.innerText = originalText; btn.disabled = false; return; }
+        const centro = orgData.centros.find(c => String(c.id) === String(selIdx));
+        if(centro && pass === (centro.jefe.password || "jefe123")) {
+          grantAccess('jefe', null, { centroId: centro.id });
+          setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 1000);
+        } else {
+          document.getElementById('login-error-msg').style.display = 'block';
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }
+      } else if (loginMode === 'gerente') {
+        const selIdx = document.getElementById('login-gerente-select').value;
+        const pass = document.getElementById('login-gerente-pass').value;
+        if(selIdx === "") { toast("Selecciona un gerente", 'danger'); btn.innerText = originalText; btn.disabled = false; return; }
+        const ger = orgData.gerentes.find(g => String(g.id) === String(selIdx));
+        if(ger && pass === (ger.password || "gerente123")) {
+          grantAccess('gerente', null, { gerenteId: ger.id });
           setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 1000);
         } else {
           document.getElementById('login-error-msg').style.display = 'block';
@@ -955,28 +1267,28 @@ function attemptLogin() {
         const selIdx = document.getElementById('login-asesor-select').value;
         const pin = document.getElementById('login-asesor-pin').value;
         if(selIdx === "") {
-          alert("Selecciona un asesor");
+          toast("Selecciona un asesor", 'danger');
           btn.innerText = originalText;
           btn.disabled = false;
           return;
         }
-        
+
         const pIdx = parseInt(selIdx, 10);
-        const s = sellers[pIdx];
+        const s = allSellers[pIdx];
         const truePin = s.password || "1234";
-        
+
         if(pin === truePin) {
           const now = new Date();
           s.loginHistory = s.loginHistory || [];
           s.loginHistory.push({ time: now.getTime(), dateStr: now.toLocaleString('es-MX') });
-          if(s.loginHistory.length > 50) s.loginHistory.shift(); 
-          
-          if(useCloud && db) {
-            try { db.ref('data/' + currentDateStr.substring(0,7)).set({ sellers: sellers }); } catch(e){}
-          }
-          try { localStorage.setItem(getKeySellers(), JSON.stringify(sellers)); } catch(e) {}
+          if(s.loginHistory.length > 50) s.loginHistory.shift();
 
-          grantAccess('asesor', pIdx);
+          if(useCloud && db) {
+            try { db.ref('data/' + currentDateStr.substring(0,7)).set({ sellers: allSellers }); } catch(e){}
+          }
+          try { localStorage.setItem(getKeySellers(), JSON.stringify(allSellers)); } catch(e) {}
+
+          grantAccess('asesor', pIdx, {});
           setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 1000);
         } else {
           document.getElementById('login-error-msg').style.display = 'block';
@@ -988,34 +1300,52 @@ function attemptLogin() {
       console.error("Error al loguear:", err);
       btn.innerText = originalText;
       btn.disabled = false;
-      const fallbackIdx = parseInt(document.getElementById('login-asesor-select').value || 0, 10);
-      grantAccess('asesor', fallbackIdx);
     }
   }, 100);
 }
 
-function grantAccess(role, idx) {
+function grantAccess(role, idx, ctx) {
+  ctx = ctx || {};
   sessionRole = role;
   sessionUserId = idx;
+  sessionCentroId = ctx.centroId !== undefined ? ctx.centroId : null;
+  sessionSupervisorId = ctx.supervisorId !== undefined ? ctx.supervisorId : null;
+  sessionGerenteId = ctx.gerenteId !== undefined ? ctx.gerenteId : null;
+  managerViewSupervisorId = null;
+  managerViewCentroId = null;
+
+  if(role === 'supervisor') {
+    supervisorData = orgData.supervisors.find(s => s.id === sessionSupervisorId) || supervisorData;
+  }
+
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('main-app').style.display = 'block';
+  recomputeScope();
   applyRoleRestrictions();
 }
 
 function logout() { location.reload(); }
 
 function applyRoleRestrictions() {
-  const tools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-report', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone'];
+  const tools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-report', 'btn-tool-pdf', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone', 'btn-tool-org'];
+  const readOnlyManagerTools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-report', 'btn-tool-pdf'];
+  const isManagerView = (sessionRole === 'jefe' || sessionRole === 'gerente');
 
   tools.forEach(id => {
     const btn = document.getElementById(id);
-    if(btn) {
-      if(sessionRole === 'supervisor') btn.style.display = 'flex';
-      else btn.style.display = (id === 'btn-tool-daily') ? 'flex' : 'none';
-    }
+    if(!btn) return;
+    if(sessionRole === 'supervisor') btn.style.display = 'flex';
+    else if(isManagerView) btn.style.display = readOnlyManagerTools.includes(id) ? 'flex' : 'none';
+    else btn.style.display = (id === 'btn-tool-daily') ? 'flex' : 'none';
   });
 
   const toolboxBtn = document.getElementById('btn-tools-trigger');
+  const autoFillBtn = document.getElementById('btn-auto-fill-daily-goal');
+  const noticeInputRow = document.getElementById('notice-input-row');
+  const clearHistoryBtn = document.getElementById('btn-clear-login-history');
+  if(autoFillBtn) autoFillBtn.style.display = (sessionRole === 'supervisor') ? 'inline-flex' : 'none';
+  if(noticeInputRow) noticeInputRow.style.display = (sessionRole === 'supervisor') ? 'flex' : 'none';
+  if(clearHistoryBtn) clearHistoryBtn.style.display = (sessionRole === 'supervisor') ? 'inline-flex' : 'none';
 
   if (sessionRole === 'supervisor') {
     if (toolboxBtn) toolboxBtn.style.display = 'flex';
@@ -1034,7 +1364,18 @@ function applyRoleRestrictions() {
     const passEl = document.getElementById('sup-master-pass');
     if(passEl) passEl.value = supervisorData.password || "admin";
 
+    renderTabs();
+    updateAdvisorsCounter();
     switchTab('supervisor');
+  } else if (isManagerView) {
+    if (toolboxBtn) toolboxBtn.style.display = 'flex';
+    document.getElementById('tabs-container').style.display = 'none';
+    document.getElementById('advisors-controls').style.display = 'none';
+
+    isSupervisorMode = true;
+    document.getElementById('individual-view').classList.remove('active-view');
+    document.getElementById('supervisor-view').classList.add('active-view');
+    renderSupervisorDashboard();
   } else {
     if (toolboxBtn) toolboxBtn.style.display = 'none';
     document.getElementById('tabs-container').style.display = 'none';
@@ -1049,7 +1390,11 @@ function applyRoleRestrictions() {
     document.getElementById('current-days-off').disabled = true;
     document.getElementById('current-status').disabled = true;
 
-    switchTab(sessionUserId);
+    isSupervisorMode = false;
+    document.getElementById('supervisor-view').classList.remove('active-view');
+    document.getElementById('individual-view').classList.add('active-view');
+    currentIdx = Math.max(0, sellers.indexOf(allSellers[sessionUserId]));
+    loadSeller(currentIdx);
   }
 }
 
@@ -1071,6 +1416,7 @@ function saveCategoriesOrder() {
 }
 
 function init(){
+  try { applyTheme(localStorage.getItem(KEY_THEME) || 'light'); } catch(e){ applyTheme('light'); }
   loadCategoriesOrder();
 
   const sDate = localStorage.getItem(KEY_DATE);
@@ -1094,14 +1440,14 @@ function loadLocalData(carryOver = null) {
   const sSellers = localStorage.getItem(getKeySellers());
   const sSup = localStorage.getItem(KEY_SUP);
 
-  if (sSup) {
-    try {
-      const localSup = JSON.parse(sSup);
-      supervisorData = { ...supervisorData, ...localSup, updatedAt: localSup.updatedAt || 0 };
-    } catch(e){}
+  try {
+    orgData = migrateOrgData(sSup ? JSON.parse(sSup) : {});
+  } catch(e) {
+    orgData = migrateOrgData({});
   }
-  if (!supervisorData.globalNotices) supervisorData.globalNotices = [];
-  if (!supervisorData.dailyGoals) supervisorData.dailyGoals = {};
+  if(sessionRole === 'supervisor') {
+    supervisorData = orgData.supervisors.find(s => s.id === sessionSupervisorId) || orgData.supervisors[0];
+  }
 
   if (sSellers) {
     let rawSellers = JSON.parse(sSellers);
@@ -1116,18 +1462,9 @@ function loadLocalData(carryOver = null) {
     }
 
     if (carryOver && carryOver.length > 0 && carryOver[0].name !== 'Asesor 1') {
-        let newSellers = JSON.parse(JSON.stringify(carryOver)); 
+        let newSellers = JSON.parse(JSON.stringify(carryOver));
         newSellers.forEach(s => {
-            s.kpis = CATEGORIES.reduce((acc,cat)=>{
-              if(cat.id==='retencion') acc[cat.id] = { renovaciones:0, cancelaciones:0, migraciones:0 };
-              else if(cat.id==='prepago') acc[cat.id] = { meta:0, sale:0, metaKit:0, saleKit:0, metaChip:0, saleChip:0 };
-              else if(cat.id==='pospago') acc[cat.id] = { meta:0, sale:0, metaEq:0, saleEq:0, metaVip:0, saleVip:0 };
-              else if(cat.id==='renovacion') acc[cat.id] = { meta:0, sale:0, metaEq:0, saleEq:0, metaVip:0, saleVip:0 };
-              else if(cat.id==='encuestas') acc[cat.id] = { meta:100, sale:0 };
-              else acc[cat.id] = { meta:0, sale:0 };
-              return acc;
-            },{});
-            s.daily = CATEGORIES.reduce((acc,cat)=>{ acc[cat.id]=0; return acc; },{});
+            resetSellerKpis(s);
             s.notices = [];
         });
         processData(newSellers);
@@ -1167,43 +1504,43 @@ function setupFirebaseListeners() {
   });
 }
 
-function applySupervisorData(cloudSup) {
-    const cloudUpdated = cloudSup.updatedAt || 0;
-    const localUpdated = supervisorData.updatedAt || 0;
+function applySupervisorData(cloudSupRaw) {
+    const migrated = migrateOrgData(cloudSupRaw);
+    const cloudUpdated = migrated.updatedAt || 0;
+    const localUpdated = orgData.updatedAt || 0;
 
     if (localUpdated > cloudUpdated) {
       if (sessionRole === 'supervisor') saveData();
       return;
     }
 
-    supervisorData = { ...supervisorData, ...cloudSup, updatedAt: cloudUpdated };
-    if(!supervisorData.globalNotices) supervisorData.globalNotices = [];
-    if(!supervisorData.dailyGoals) supervisorData.dailyGoals = {};
+    orgData = migrated;
+    if(sessionRole === 'supervisor') {
+      supervisorData = orgData.supervisors.find(s => s.id === sessionSupervisorId) || orgData.supervisors[0];
 
-    const nameEl = document.getElementById('sup-name-txt');
-    const imgEl = document.getElementById('sup-photo-img');
-    const passEl = document.getElementById('sup-master-pass');
-    
-    if(nameEl && document.activeElement !== nameEl) nameEl.innerText = supervisorData.name || "Nombre Supervisor";
-    if(imgEl) imgEl.src = supervisorData.photo || "https://www.w3schools.com/howto/img_avatar.png";
-    if(passEl && document.activeElement !== passEl) passEl.value = supervisorData.password || "admin";
-    
-    if(isSupervisorMode && sessionRole === 'supervisor') {
-      renderNoticeBoard();
-      renderDailyGoalPanel();
-      renderAdvisorDailyGoals(); 
+      const nameEl = document.getElementById('sup-name-txt');
+      const imgEl = document.getElementById('sup-photo-img');
+      const passEl = document.getElementById('sup-master-pass');
+
+      if(nameEl && document.activeElement !== nameEl) nameEl.innerText = supervisorData.name || "Nombre Supervisor";
+      if(imgEl) imgEl.src = supervisorData.photo || DEFAULT_AVATAR;
+      if(passEl && document.activeElement !== passEl) passEl.value = supervisorData.password || "admin";
+    }
+
+    if(!sessionRole) populateLoginSelectors();
+
+    if(isSupervisorMode && (sessionRole === 'supervisor' || sessionRole === 'jefe' || sessionRole === 'gerente')) {
+      recomputeScope();
+      renderSupervisorDashboard();
     }
 }
 
 function processData(newSellers) {
-  if(newSellers) sellers = newSellers;
+  if(newSellers) allSellers = newSellers;
   validateSellersData();
 
   if(!sessionRole) {
-    const sel = document.getElementById('login-asesor-select');
-    sel.innerHTML = sellers.map((s,i) => `<option value="${i}">${escapeHtml(s.name)}</option>`).join('');
-    if(document.getElementById('sup-name-txt')) document.getElementById('sup-name-txt').innerText = supervisorData.name || "Nombre Supervisor";
-    if(document.getElementById('sup-photo-img')) document.getElementById('sup-photo-img').src = supervisorData.photo || "https://www.w3schools.com/howto/img_avatar.png";
+    populateLoginSelectors();
     return;
   }
 
@@ -1212,16 +1549,40 @@ function processData(newSellers) {
     updateAdvisorsCounter();
     if(isSupervisorMode) renderSupervisorDashboard();
     else loadSeller(currentIdx);
+  } else if(sessionRole === 'jefe' || sessionRole === 'gerente') {
+    renderSupervisorDashboard();
   } else {
-    loadSeller(sessionUserId);
+    const me = allSellers[sessionUserId];
+    currentIdx = Math.max(0, sellers.indexOf(me));
+    loadSeller(currentIdx);
   }
 }
 
+function populateLoginSelectors() {
+  const selAsesor = document.getElementById('login-asesor-select');
+  if(selAsesor) selAsesor.innerHTML = allSellers.map((s,i) => `<option value="${i}">${escapeHtml(s.name)}</option>`).join('') || '<option value="">Sin asesores</option>';
+
+  const selSuper = document.getElementById('login-super-select');
+  if(selSuper) selSuper.innerHTML = orgData.supervisors.map(sv => {
+    const centro = orgData.centros.find(c=>c.id===sv.centroId);
+    return `<option value="${sv.id}">${escapeHtml(sv.name)}${centro ? ' ('+escapeHtml(centro.name)+')' : ''}</option>`;
+  }).join('') || '<option value="">Sin supervisores</option>';
+
+  const selJefe = document.getElementById('login-jefe-select');
+  if(selJefe) selJefe.innerHTML = orgData.centros.map(c => `<option value="${c.id}">${escapeHtml(c.name)} — ${escapeHtml(c.jefe.name)}</option>`).join('') || '<option value="">Sin centros</option>';
+
+  const selGer = document.getElementById('login-gerente-select');
+  if(selGer) selGer.innerHTML = orgData.gerentes.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('') || '<option value="">Sin gerentes</option>';
+}
+
 function validateSellersData() {
-  sellers.forEach((s, idx)=>{
+  allSellers.forEach((s, idx)=>{
     if (s.photo && s.photo.length > 500000) {
-       s.photo = 'https://www.w3schools.com/howto/img_avatar.png';
+       s.photo = DEFAULT_AVATAR;
     }
+
+    if(s.centroId === undefined || s.centroId === null) s.centroId = 0;
+    if(s.supervisorId === undefined || s.supervisorId === null) s.supervisorId = 0;
 
     if(!s.daysOff) s.daysOff = "Lunes - Martes";
     if(!s.status) s.status = "normal";
@@ -1255,7 +1616,7 @@ function validateSellersData() {
     if(s.kpis.encuestas && s.kpis.encuestas.meta === undefined) s.kpis.encuestas = { meta:100, sale:0 };
   });
 
-  if (!supervisorData.globalNotices) supervisorData.globalNotices = [];
+  recomputeScope();
 
   if(sessionRole === 'supervisor') currentIdx = Math.min(currentIdx, Math.max(0, sellers.length-1));
 }
@@ -1263,34 +1624,35 @@ function validateSellersData() {
 function saveData(){
   if(sessionRole !== 'supervisor') return;
 
-  try { localStorage.setItem(getKeySellers(), JSON.stringify(sellers)); } catch(e){}
-  try { localStorage.setItem(KEY_SUP, JSON.stringify(supervisorData)); } catch(e){}
+  try { localStorage.setItem(getKeySellers(), JSON.stringify(allSellers)); } catch(e){}
+  try { localStorage.setItem(KEY_SUP, JSON.stringify(orgData)); } catch(e){}
   try { localStorage.setItem(KEY_DATE, document.getElementById('global-date').value); } catch(e){}
 
   if(useCloud && db) {
     const monthKey = currentDateStr.substring(0,7);
     try {
-      db.ref('data/' + monthKey).set({ sellers: sellers });
-      db.ref('supervisor').set(supervisorData);
+      db.ref('data/' + monthKey).set({ sellers: allSellers });
+      db.ref('supervisor').set(orgData);
     } catch(e){}
   }
 }
 
 function onDateChanged(){
-  if(sessionRole !== 'supervisor') return;
+  if(sessionRole === 'asesor') return;
   const newDate = document.getElementById('global-date').value;
   const oldMonth = currentDateStr.substring(0,7);
   const newMonth = newDate.substring(0,7);
-  
-  const currentSellersSnapshot = JSON.parse(JSON.stringify(sellers));
+
+  const currentAllSellersSnapshot = JSON.parse(JSON.stringify(allSellers));
 
   currentDateStr = newDate;
   try { localStorage.setItem(KEY_DATE, newDate); } catch(e){}
 
   if(oldMonth !== newMonth){
-    loadLocalData(currentSellersSnapshot);
+    loadLocalData(currentAllSellersSnapshot);
     if(useCloud) setupFirebaseListeners();
   } else {
+    recomputeScope();
     if(isSupervisorMode) renderSupervisorDashboard();
     else loadSeller(Math.min(currentIdx, sellers.length-1));
   }
@@ -1307,71 +1669,59 @@ function setToday() {
 
 async function clonePreviousMonth() {
   if(sessionRole !== 'supervisor') return;
-  
-  const confirmMsg = "⚠️ ATENCIÓN ⚠️\n\n¿Estás seguro de clonar el equipo del MES ANTERIOR al mes seleccionado?\n\nEsto mantendrá sus nombres, fotos y PINs, pero REINICIARÁ todas las ventas y metas a cero. (Se reemplazará el equipo actual).";
+
+  const confirmMsg = "⚠️ ATENCIÓN ⚠️\n\n¿Estás seguro de clonar TU EQUIPO del MES ANTERIOR al mes seleccionado?\n\nEsto mantendrá sus nombres, fotos y PINs, pero REINICIARÁ todas las ventas y metas a cero. (Se reemplazará solo tu equipo actual; el resto de la organización no se toca).";
   if(!confirm(confirmMsg)) return;
 
   const prevMonthStr = getPreviousMonthStr(currentDateStr.substring(0,7));
-  
+
   try {
-    let prevSellers = [];
+    let prevAllSellers = [];
     if (useCloud && db) {
        const snap = await db.ref('data/' + prevMonthStr + '/sellers').once('value');
-       if(snap.exists()) prevSellers = snap.val();
+       if(snap.exists()) prevAllSellers = snap.val();
     }
-    
-    if (!prevSellers || prevSellers.length === 0) {
+
+    if (!prevAllSellers || prevAllSellers.length === 0) {
        const local = localStorage.getItem(BASE_SELLERS + '_' + prevMonthStr);
-       if (local) prevSellers = JSON.parse(local);
+       if (local) prevAllSellers = JSON.parse(local);
     }
 
-    if (!prevSellers || prevSellers.length === 0) {
-       return alert("❌ No se encontró información del equipo en el mes anterior (" + prevMonthStr + ").");
+    const prevTeam = (prevAllSellers || []).filter(s => s.centroId === sessionCentroId && s.supervisorId === sessionSupervisorId);
+    if (!prevTeam || prevTeam.length === 0) {
+       return toast("No se encontró información de tu equipo en el mes anterior (" + prevMonthStr + ").", 'danger');
     }
 
-    let newSellers = JSON.parse(JSON.stringify(prevSellers));
-    newSellers.forEach(s => {
+    let newTeam = JSON.parse(JSON.stringify(prevTeam));
+    newTeam.forEach(s => {
         s.events = [];
         s.notices = [];
         s.loginHistory = [];
-        s.kpis = CATEGORIES.reduce((acc,cat)=>{
-          if(cat.id==='retencion') acc[cat.id] = { renovaciones:0, cancelaciones:0, migraciones:0 };
-          else if(cat.id==='prepago') acc[cat.id] = { meta:0, sale:0, metaKit:0, saleKit:0, metaChip:0, saleChip:0 };
-          else if(cat.id==='pospago') acc[cat.id] = { meta:0, sale:0, metaEq:0, saleEq:0, metaVip:0, saleVip:0 };
-          else if(cat.id==='renovacion') acc[cat.id] = { meta:0, sale:0, metaEq:0, saleEq:0, metaVip:0, saleVip:0 };
-          else if(cat.id==='encuestas') acc[cat.id] = { meta:100, sale:0 };
-          else acc[cat.id] = { meta:0, sale:0 };
-          return acc;
-        },{});
-        s.daily = CATEGORIES.reduce((acc,cat)=>{ acc[cat.id]=0; return acc; },{});
+        resetSellerKpis(s);
     });
 
-    sellers = newSellers;
+    allSellers = allSellers.filter(s => !(s.centroId === sessionCentroId && s.supervisorId === sessionSupervisorId));
+    allSellers = allSellers.concat(newTeam);
+
+    recomputeScope();
     saveData();
-    alert("✅ ¡Equipo clonado con éxito! Metas y ventas están en cero para este mes.");
+    alert("✅ ¡Tu equipo fue clonado con éxito! Metas y ventas están en cero para este mes.");
     location.reload();
   } catch(err) {
     console.error(err);
-    alert("❌ Hubo un error de conexión al intentar clonar la plantilla.");
+    toast("Hubo un error de conexión al intentar clonar la plantilla.", 'danger');
   }
 }
 
-function createEmptySeller(id){
-  return {
+function createEmptySeller(id, centroId=0, supervisorId=0){
+  const seller = {
     id, name:`Asesor ${id+1}`, role:'Asesor', krea:'Nivel Krea 1', password:"1234",
-    photo:'https://www.w3schools.com/howto/img_avatar.png', daysOff:"Lunes - Martes", status:"normal", events:[],
+    photo: DEFAULT_AVATAR, daysOff:"Lunes - Martes", status:"normal", events:[],
     notices: [], loginHistory: [],
-    kpis: CATEGORIES.reduce((acc,cat)=>{
-      if(cat.id==='retencion') acc[cat.id] = { renovaciones:0, cancelaciones:0, migraciones:0 };
-      else if(cat.id==='prepago') acc[cat.id] = { meta:0, sale:0, metaKit:0, saleKit:0, metaChip:0, saleChip:0 };
-      else if(cat.id==='pospago') acc[cat.id] = { meta:0, sale:0, metaEq:0, saleEq:0, metaVip:0, saleVip:0 };
-      else if(cat.id==='renovacion') acc[cat.id] = { meta:0, sale:0, metaEq:0, saleEq:0, metaVip:0, saleVip:0 };
-      else if(cat.id==='encuestas') acc[cat.id] = { meta:100, sale:0 };
-      else acc[cat.id] = { meta:0, sale:0 };
-      return acc;
-    },{}),
-    daily: CATEGORIES.reduce((acc,cat)=>{ acc[cat.id]=0; return acc; },{})
+    centroId, supervisorId
   };
+  resetSellerKpis(seller);
+  return seller;
 }
 
 function renderTabs(){
@@ -1406,25 +1756,42 @@ function updateAdvisorsCounter(){
 
 function addAdvisor(){
   if(sessionRole !== 'supervisor') return;
-  if(sellers.length >= MAX_ADVISORS) return alert(`Máximo ${MAX_ADVISORS} asesores.`);
-  const nextId = sellers.length;
-  sellers.push(createEmptySeller(nextId));
+  if(sellers.length >= MAX_ADVISORS) return toast(`Máximo ${MAX_ADVISORS} asesores.`, 'danger');
+  const nextId = allSellers.length;
+  allSellers.push(createEmptySeller(nextId, sessionCentroId, sessionSupervisorId));
+  recomputeScope();
   saveData();
   renderTabs();
   updateAdvisorsCounter();
-  switchTab(nextId);
+  switchTab(sellers.length-1);
+  toast('Asesor agregado.', 'success');
 }
 
 function removeAdvisor(){
   if(sessionRole !== 'supervisor') return;
-  if(sellers.length <= MIN_ADVISORS) return alert(`Debe existir al menos ${MIN_ADVISORS} asesor.`);
+  if(sellers.length <= MIN_ADVISORS) return toast(`Debe existir al menos ${MIN_ADVISORS} asesor.`, 'danger');
   if(!confirm("¿Eliminar el último asesor?")) return;
-  sellers.pop();
+  const lastTeamMember = sellers[sellers.length-1];
+  const globalIdx = allSellers.indexOf(lastTeamMember);
+  const removedSnapshot = JSON.parse(JSON.stringify(lastTeamMember));
+  const removedName = lastTeamMember.name || 'Asesor';
+  if(globalIdx >= 0) allSellers.splice(globalIdx, 1);
+  recomputeScope();
   saveData();
   renderTabs();
   updateAdvisorsCounter();
   currentIdx = Math.min(currentIdx, sellers.length-1);
   switchTab(currentIdx);
+
+  toast(`Asesor "${escapeHtml(removedName)}" eliminado.`, 'info', 'Deshacer', () => {
+    allSellers.splice(globalIdx, 0, removedSnapshot);
+    recomputeScope();
+    saveData();
+    renderTabs();
+    updateAdvisorsCounter();
+    switchTab(sellers.length-1);
+    toast('Se restauró el asesor.', 'success');
+  });
 }
 
 function forceRefreshTabs() {
@@ -1495,7 +1862,7 @@ function switchTab(idx){
     document.getElementById('supervisor-view').classList.remove('active-view');
     document.getElementById('individual-view').classList.add('active-view');
 
-    if(sessionRole === 'asesor') currentIdx = sessionUserId;
+    if(sessionRole === 'asesor') currentIdx = Math.max(0, sellers.indexOf(allSellers[sessionUserId]));
     else {
       currentIdx = Math.max(0, Math.min(idx, sellers.length-1));
       btns[currentIdx]?.classList.add('active');
@@ -1562,6 +1929,7 @@ function loadSeller(idx){
       noticesContainer.style.display = 'none';
       noticesContainer.innerHTML = '';
     }
+    if(sessionRole === 'asesor') updateNoticeBadge(s);
   }
 
   document.getElementById('current-name').innerText = s.name || `Asesor ${currentIdx+1}`;
@@ -1888,7 +2256,7 @@ function updateRole(el){ if(sessionRole !== 'supervisor') return; sellers[curren
 function updateKrea(el){ if(sessionRole !== 'supervisor') return; sellers[currentIdx].krea = el.innerText.trim() || 'Nivel Krea 1'; saveData(); }
 function updateDaysOff(value){ if(sessionRole !== 'supervisor') return; sellers[currentIdx].daysOff = value; saveData(); }
 function updateStatus(value){ if(sessionRole !== 'supervisor') return; sellers[currentIdx].status = value; saveData(); }
-function updateAsesorPin(value) { if(sessionRole !== 'supervisor') return; sellers[currentIdx].password = value.trim(); saveData(); alert("PIN actualizado correctamente."); }
+function updateAsesorPin(value) { if(sessionRole !== 'supervisor') return; sellers[currentIdx].password = value.trim(); saveData(); toast("PIN actualizado correctamente.", 'success'); }
 
 function updateSupPhoto(input){
   if(sessionRole !== 'supervisor') return;
@@ -1907,7 +2275,7 @@ function updateSupPhoto(input){
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       
       supervisorData.photo = canvas.toDataURL('image/jpeg', 0.7);
-      supervisorData.updatedAt = Date.now();
+      orgData.updatedAt = Date.now();
       document.getElementById('sup-photo-img').src = supervisorData.photo;
       saveData();
     };
@@ -1919,18 +2287,18 @@ function updateSupPhoto(input){
 function updateSupName(el){
   if(sessionRole !== 'supervisor') return;
   supervisorData.name = el.innerText.trim() || "Nombre Supervisor";
-  supervisorData.updatedAt = Date.now();
+  orgData.updatedAt = Date.now();
   saveData();
 }
 
 function updateSupPass(value){
   if(sessionRole !== 'supervisor') return;
   const newVal = value.trim();
-  if(!newVal) return alert("La contraseña no puede estar vacía.");
+  if(!newVal) return toast("La contraseña no puede estar vacía.", 'danger');
   supervisorData.password = newVal;
-  supervisorData.updatedAt = Date.now();
+  orgData.updatedAt = Date.now();
   saveData();
-  alert("¡Contraseña maestra actualizada exitosamente!");
+  toast("¡Contraseña actualizada exitosamente!", 'success');
 }
 
 function openCalendarModal(){ if(sessionRole !== 'supervisor') return; document.getElementById('calendar-modal').style.display='flex'; renderEvents(); }
@@ -1939,11 +2307,12 @@ function addEvent(){
   const type = document.getElementById('event-type').value,
         start = document.getElementById('event-start').value,
         end = document.getElementById('event-end').value;
-  if(!start || !end) return alert("Selecciona fecha inicio y fin.");
-  if(end < start) return alert("La fecha fin no puede ser menor al inicio.");
+  if(!start || !end) return toast("Selecciona fecha inicio y fin.", 'danger');
+  if(end < start) return toast("La fecha fin no puede ser menor al inicio.", 'danger');
   sellers[currentIdx].events.push({type, start, end});
   saveData();
   renderEvents();
+  toast('Periodo agregado.', 'success');
 }
 function deleteEvent(idx){ sellers[currentIdx].events.splice(idx,1); saveData(); renderEvents(); }
 function renderEvents(){
@@ -1960,7 +2329,160 @@ function renderEvents(){
     </div>`).join('');
 }
 
+function openOrgAdminModal(){
+  if(sessionRole !== 'supervisor') return;
+  document.getElementById('org-admin-modal').style.display = 'flex';
+  renderOrgAdminModal();
+}
+function closeOrgAdminModal(){ document.getElementById('org-admin-modal').style.display = 'none'; }
+
+function switchOrgTab(tab){
+  ['centros','supervisores','gerentes'].forEach(t=>{
+    document.getElementById('org-tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('org-panel-'+t).style.display = t===tab ? 'block' : 'none';
+  });
+}
+
+function renderOrgAdminModal(){
+  const listCentros = document.getElementById('org-list-centros');
+  listCentros.innerHTML = orgData.centros.map(c => {
+    const supCount = orgData.supervisors.filter(s=>s.centroId===c.id).length;
+    return `<div class="event-item">
+      <div class="event-info">
+        <span class="event-type">${escapeHtml(c.name)}</span>
+        <span class="event-dates">Jefe: ${escapeHtml(c.jefe.name)} · ${supCount} supervisor(es)</span>
+      </div>
+      <button class="btn-del-event" onclick="deleteCentro(${c.id})"><i class="fas fa-trash"></i></button>
+    </div>`;
+  }).join('') || '<div style="font-size:.85rem;color:#78909c;">Sin centros.</div>';
+
+  const listSup = document.getElementById('org-list-supervisores');
+  listSup.innerHTML = orgData.supervisors.map(s => {
+    const centro = orgData.centros.find(c=>c.id===s.centroId);
+    const teamCount = allSellers.filter(a=>a.centroId===s.centroId && a.supervisorId===s.id).length;
+    return `<div class="event-item">
+      <div class="event-info">
+        <span class="event-type">${escapeHtml(s.name)}</span>
+        <span class="event-dates">${centro?escapeHtml(centro.name):'Sin centro'} · ${teamCount} asesor(es)</span>
+      </div>
+      <button class="btn-del-event" onclick="deleteSupervisorAccount(${s.id})"><i class="fas fa-trash"></i></button>
+    </div>`;
+  }).join('') || '<div style="font-size:.85rem;color:#78909c;">Sin supervisores.</div>';
+
+  const centroSelect = document.getElementById('org-new-sup-centro');
+  centroSelect.innerHTML = orgData.centros.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('') || '<option value="">Crea un centro primero</option>';
+
+  const listGer = document.getElementById('org-list-gerentes');
+  listGer.innerHTML = orgData.gerentes.map(g => {
+    const centroNames = (g.centroIds||[]).map(id=>{ const c=orgData.centros.find(x=>x.id===id); return c?c.name:null; }).filter(Boolean).join(', ') || 'Ninguno';
+    return `<div class="event-item">
+      <div class="event-info">
+        <span class="event-type">${escapeHtml(g.name)}</span>
+        <span class="event-dates">Centros: ${escapeHtml(centroNames)}</span>
+      </div>
+      <button class="btn-del-event" onclick="deleteGerenteAccount(${g.id})"><i class="fas fa-trash"></i></button>
+    </div>`;
+  }).join('') || '<div style="font-size:.85rem;color:#78909c;">Sin gerentes.</div>';
+
+  const centrosCheckboxes = document.getElementById('org-new-ger-centros');
+  centrosCheckboxes.innerHTML = orgData.centros.map(c=>`
+    <label style="display:flex; align-items:center; gap:4px;">
+      <input type="checkbox" class="org-ger-centro-chk" value="${c.id}"> ${escapeHtml(c.name)}
+    </label>
+  `).join('') || '<span style="color:#90a4ae;">Crea un centro primero</span>';
+}
+
+function addCentro(){
+  if(sessionRole !== 'supervisor') return;
+  const name = document.getElementById('org-new-centro-name').value.trim();
+  const jefeName = document.getElementById('org-new-centro-jefe-name').value.trim();
+  const jefePass = document.getElementById('org-new-centro-jefe-pass').value.trim();
+  if(!name) return toast("Escribe el nombre del centro.", 'danger');
+  const id = nextOrgId(orgData.centros);
+  orgData.centros.push({ id, name, jefe: { name: jefeName || `Jefe de ${name}`, photo: DEFAULT_AVATAR, password: jefePass || "jefe123" } });
+  orgData.updatedAt = Date.now();
+  document.getElementById('org-new-centro-name').value = '';
+  document.getElementById('org-new-centro-jefe-name').value = '';
+  document.getElementById('org-new-centro-jefe-pass').value = '';
+  saveData();
+  renderOrgAdminModal();
+  toast(`Centro "${escapeHtml(name)}" creado.`, 'success');
+}
+
+function deleteCentro(id){
+  if(sessionRole !== 'supervisor') return;
+  const hasSupervisors = orgData.supervisors.some(s=>s.centroId===id);
+  if(hasSupervisors) return toast("Este centro tiene supervisores asignados. Elimínalos o reasígnalos primero.", 'danger');
+  if(!confirm("¿Eliminar este centro?")) return;
+  orgData.centros = orgData.centros.filter(c=>c.id!==id);
+  orgData.gerentes.forEach(g => { g.centroIds = (g.centroIds||[]).filter(cid=>cid!==id); });
+  orgData.updatedAt = Date.now();
+  saveData();
+  renderOrgAdminModal();
+  toast('Centro eliminado.', 'info');
+}
+
+function addSupervisorAccount(){
+  if(sessionRole !== 'supervisor') return;
+  const name = document.getElementById('org-new-sup-name').value.trim();
+  const pass = document.getElementById('org-new-sup-pass').value.trim();
+  const centroId = parseInt(document.getElementById('org-new-sup-centro').value, 10);
+  if(!name) return toast("Escribe el nombre del supervisor.", 'danger');
+  if(isNaN(centroId)) return toast("Crea un centro primero.", 'danger');
+  const id = nextOrgId(orgData.supervisors);
+  orgData.supervisors.push({ id, centroId, name, photo: DEFAULT_AVATAR, password: pass || "1234", dailyGoals:{}, globalNotices:[] });
+  orgData.updatedAt = Date.now();
+  document.getElementById('org-new-sup-name').value = '';
+  document.getElementById('org-new-sup-pass').value = '';
+  saveData();
+  renderOrgAdminModal();
+  toast(`Supervisor "${escapeHtml(name)}" creado.`, 'success');
+}
+
+function deleteSupervisorAccount(id){
+  if(sessionRole !== 'supervisor') return;
+  const acct = orgData.supervisors.find(s=>s.id===id);
+  if(!acct) return;
+  const teamCount = allSellers.filter(a=>a.centroId===acct.centroId && a.supervisorId===id).length;
+  if(teamCount > 0) return toast("Este supervisor tiene asesores asignados. Reasígnalos o elimínalos primero.", 'danger');
+  if(!confirm("¿Eliminar este supervisor?")) return;
+  orgData.supervisors = orgData.supervisors.filter(s=>s.id!==id);
+  orgData.updatedAt = Date.now();
+  saveData();
+  renderOrgAdminModal();
+  toast('Supervisor eliminado.', 'info');
+}
+
+function addGerenteAccount(){
+  if(sessionRole !== 'supervisor') return;
+  const name = document.getElementById('org-new-ger-name').value.trim();
+  const pass = document.getElementById('org-new-ger-pass').value.trim();
+  const centroIds = Array.from(document.querySelectorAll('.org-ger-centro-chk:checked')).map(el=>parseInt(el.value,10));
+  if(!name) return toast("Escribe el nombre del gerente.", 'danger');
+  const id = nextOrgId(orgData.gerentes);
+  orgData.gerentes.push({ id, name, photo: DEFAULT_AVATAR, password: pass || "gerente123", centroIds });
+  orgData.updatedAt = Date.now();
+  document.getElementById('org-new-ger-name').value = '';
+  document.getElementById('org-new-ger-pass').value = '';
+  saveData();
+  renderOrgAdminModal();
+  toast(`Gerente "${escapeHtml(name)}" creado.`, 'success');
+}
+
+function deleteGerenteAccount(id){
+  if(sessionRole !== 'supervisor') return;
+  if(!confirm("¿Eliminar este gerente?")) return;
+  orgData.gerentes = orgData.gerentes.filter(g=>g.id!==id);
+  orgData.updatedAt = Date.now();
+  saveData();
+  renderOrgAdminModal();
+  toast('Gerente eliminado.', 'info');
+}
+
 function renderSupervisorDashboard(){
+  updateRoleHeaderVisibility();
+  renderExecutiveSummary();
+  renderTrendChart();
   renderDailyGoalPanel(); // Meta Equipo
   renderAdvisorDailyGoals(); // Meta Individual
   renderStaffAvailability();
@@ -1969,11 +2491,316 @@ function renderSupervisorDashboard(){
   renderSupervisorKpis();
   renderRanking();
   renderCharts();
+  if(sessionRole === 'gerente') renderGerenteComparison();
+  else {
+    const panel = document.getElementById('gerente-comparison-panel');
+    if(panel) panel.style.display = 'none';
+  }
+}
+
+function updateRoleHeaderVisibility(){
+  const supBlock = document.getElementById('sup-header-block');
+  const jefeBlock = document.getElementById('jefe-header-block');
+  const gerBlock = document.getElementById('gerente-header-block');
+  if(supBlock) supBlock.style.display = sessionRole === 'supervisor' ? 'grid' : 'none';
+  if(jefeBlock) jefeBlock.style.display = sessionRole === 'jefe' ? 'grid' : 'none';
+  if(gerBlock) gerBlock.style.display = sessionRole === 'gerente' ? 'grid' : 'none';
+
+  if(sessionRole === 'jefe') {
+    const centro = orgData.centros.find(c => c.id === sessionCentroId);
+    if(centro) {
+      const nameEl = document.getElementById('jefe-centro-name-txt');
+      const jefeNameEl = document.getElementById('jefe-name-txt');
+      const photoEl = document.getElementById('jefe-photo-img');
+      if(nameEl) nameEl.innerText = centro.name;
+      if(jefeNameEl) jefeNameEl.innerText = centro.jefe.name;
+      if(photoEl) photoEl.src = centro.jefe.photo || DEFAULT_AVATAR;
+    }
+    const sel = document.getElementById('jefe-supervisor-filter');
+    if(sel) {
+      const mySupervisors = orgData.supervisors.filter(s => s.centroId === sessionCentroId);
+      sel.innerHTML = `<option value="">Todo el Centro</option>` + mySupervisors.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+      sel.value = managerViewSupervisorId !== null ? String(managerViewSupervisorId) : "";
+    }
+  }
+
+  if(sessionRole === 'gerente') {
+    const ger = orgData.gerentes.find(g => g.id === sessionGerenteId);
+    if(ger) {
+      const nameEl = document.getElementById('gerente-name-txt');
+      const photoEl = document.getElementById('gerente-photo-img');
+      if(nameEl) nameEl.innerText = ger.name;
+      if(photoEl) photoEl.src = ger.photo || DEFAULT_AVATAR;
+    }
+    const sel = document.getElementById('gerente-centro-filter');
+    if(sel && ger) {
+      const myCentros = orgData.centros.filter(c => (ger.centroIds||[]).includes(c.id));
+      sel.innerHTML = `<option value="">Todos mis Centros</option>` + myCentros.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      sel.value = managerViewCentroId !== null ? String(managerViewCentroId) : "";
+    }
+  }
+}
+
+function onJefeFilterChange(val){
+  managerViewSupervisorId = (val === "" || val === null || val === undefined) ? null : parseInt(val,10);
+  recomputeScope();
+  renderSupervisorDashboard();
+}
+
+function onGerenteFilterChange(val){
+  managerViewCentroId = (val === "" || val === null || val === undefined) ? null : parseInt(val,10);
+  recomputeScope();
+  renderSupervisorDashboard();
+}
+
+function renderGerenteComparison(){
+  const panel = document.getElementById('gerente-comparison-panel');
+  if(!panel) return;
+  if(managerViewCentroId !== null) { panel.style.display = 'none'; return; }
+
+  const ger = orgData.gerentes.find(g => g.id === sessionGerenteId);
+  const myCentroIds = ger ? (ger.centroIds || []) : [];
+  if(myCentroIds.length <= 1) { panel.style.display = 'none'; return; }
+
+  const rows = myCentroIds.map(cid => {
+    const centro = orgData.centros.find(c=>c.id===cid);
+    const teamSellers = allSellers.filter(s=>s.centroId===cid);
+    let meta=0, sale=0;
+    teamSellers.forEach(s=>{
+      CATEGORIES.forEach(cat=>{
+        if(cat.id==='retencion' || cat.id==='encuestas') return;
+        const k = s.kpis[cat.id] || {};
+        meta += (k.meta||0); sale += (k.sale||0);
+      });
+    });
+    const perc = meta>0 ? Math.round((sale/meta)*100) : 0;
+    return { name: centro ? centro.name : `Centro ${cid}`, meta, sale, perc, count: teamSellers.length };
+  }).sort((a,b)=>b.sale-a.sale);
+
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div class="section-title"><i class="fas fa-city"></i> Comparativa entre Centros</div>
+    <div class="charts-grid">
+      ${rows.map(r=>`
+        <div class="ind-card">
+          <div class="ind-header" style="color:var(--primary);"><i class="fas fa-store"></i> ${escapeHtml(r.name)}</div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.85rem; font-weight:700; color:#546e7a;">
+            <span>${r.count} Asesores</span><span>${r.sale} / ${r.meta}</span>
+          </div>
+          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${Math.min(100,r.perc)}%"></div></div>
+          <div style="text-align:right; font-weight:900; color:var(--primary); margin-top:5px;">${r.perc}%</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* =========================
+   NOTIFICACIONES (TOASTS)
+   ========================= */
+function toast(message, type='info', actionLabel=null, actionFn=null){
+  const container = document.getElementById('toast-container');
+  if(!container) return;
+  const el = document.createElement('div');
+  el.className = 'toast' + (type==='success' ? ' success' : (type==='danger' ? ' danger' : ''));
+  const msgSpan = document.createElement('span');
+  msgSpan.textContent = message;
+  el.appendChild(msgSpan);
+  if(actionLabel && actionFn){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'toast-undo';
+    btn.textContent = actionLabel;
+    btn.onclick = () => { actionFn(); dismiss(); };
+    el.appendChild(btn);
+  }
+  container.appendChild(el);
+  requestAnimationFrame(()=> el.classList.add('show'));
+  let dismissed = false;
+  function dismiss(){
+    if(dismissed) return;
+    dismissed = true;
+    el.classList.remove('show');
+    setTimeout(()=> el.remove(), 300);
+  }
+  setTimeout(dismiss, actionLabel ? 6000 : 3200);
+}
+
+/* =========================
+   TEMA (CLARO / OSCURO)
+   ========================= */
+const KEY_THEME = 'telcel_pro_theme';
+function applyTheme(theme){
+  document.body.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+  const btn = document.getElementById('btn-theme-toggle');
+  if(btn) btn.innerHTML = theme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+}
+function toggleDarkMode(){
+  const current = document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try { localStorage.setItem(KEY_THEME, next); } catch(e){}
+}
+
+/* =========================
+   RESUMEN EJECUTIVO
+   ========================= */
+function renderExecutiveSummary(){
+  const grid = document.getElementById('exec-summary-grid');
+  if(!grid) return;
+
+  if(!sellers || sellers.length === 0){ grid.innerHTML = ''; return; }
+
+  const perAdvisor = sellers.map(s=>{
+    const k = s.kpis || {};
+    let meta=0, sale=0;
+    CATEGORIES.forEach(cat=>{
+      if(cat.id==='retencion' || cat.id==='encuestas') return;
+      const kk = k[cat.id] || {};
+      meta += (kk.meta||0); sale += (kk.sale||0);
+    });
+    return { name: s.name || 'Asesor', perc: meta>0 ? (sale/meta)*100 : 0, meta, sale };
+  });
+
+  const withGoals = perAdvisor.filter(a=>a.meta>0);
+  const best = withGoals.length ? withGoals.reduce((a,b)=> b.perc>a.perc?b:a) : null;
+  const worst = withGoals.length ? withGoals.reduce((a,b)=> b.perc<a.perc?b:a) : null;
+
+  const catSums = {};
+  CATEGORIES.forEach(cat=>{ if(cat.id!=='retencion' && cat.id!=='encuestas') catSums[cat.id] = {meta:0, sale:0}; });
+  sellers.forEach(s=>{
+    CATEGORIES.forEach(cat=>{
+      if(cat.id==='retencion' || cat.id==='encuestas') return;
+      const kk = (s.kpis && s.kpis[cat.id]) || {};
+      catSums[cat.id].meta += (kk.meta||0);
+      catSums[cat.id].sale += (kk.sale||0);
+    });
+  });
+  let worstCatId = null, worstCatPerc = 101;
+  Object.keys(catSums).forEach(id=>{
+    const v = catSums[id];
+    if(v.meta <= 0) return;
+    const perc = (v.sale/v.meta)*100;
+    if(perc < worstCatPerc){ worstCatPerc = perc; worstCatId = id; }
+  });
+  const worstCatObj = worstCatId ? CATEGORIES.find(c=>c.id===worstCatId) : null;
+
+  const activeToday = sellers.filter(s=>getFinalWorkStatusForDate(s)==='piso').length;
+
+  const tiles = [
+    { label:'Asesores Activos Hoy', value:`${activeToday} / ${sellers.length}`, sub:'En piso de ventas' },
+    { label:'Mejor Asesor', value: best ? escapeHtml(best.name) : '—', sub: best ? `${best.perc.toFixed(0)}% de cumplimiento` : 'Sin metas capturadas' },
+    { label:'Necesita Apoyo', value: worst ? escapeHtml(worst.name) : '—', sub: worst ? `${worst.perc.toFixed(0)}% de cumplimiento` : 'Sin metas capturadas' },
+    { label:'Categoría Más Atrasada', value: worstCatObj ? worstCatObj.label : '—', sub: worstCatId ? `${worstCatPerc.toFixed(0)}% cumplido` : 'Sin metas capturadas' }
+  ];
+
+  grid.innerHTML = tiles.map(t=>`
+    <div class="exec-tile">
+      <div class="exec-tile-label">${t.label}</div>
+      <div class="exec-tile-value">${t.value}</div>
+      <div class="exec-tile-sub">${t.sub}</div>
+    </div>
+  `).join('');
+}
+
+/* =========================
+   GRÁFICA DE TENDENCIA (CHART.JS)
+   ========================= */
+let trendChartInstance = null;
+
+async function renderTrendChart(){
+  const canvas = document.getElementById('trend-chart');
+  if(!canvas || typeof Chart === 'undefined') return;
+
+  const monthsBack = 6;
+  const baseParts = currentDateStr.split('-');
+  const baseDate = new Date(parseInt(baseParts[0],10), parseInt(baseParts[1],10)-1, 1);
+
+  const monthKeys = [];
+  for(let i=monthsBack-1;i>=0;i--){
+    const d = new Date(baseDate.getFullYear(), baseDate.getMonth()-i, 1);
+    monthKeys.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+
+  let results;
+  try {
+    results = await Promise.all(monthKeys.map(async key=>{
+      let data = null;
+      if(useCloud && db){
+        try { const snap = await db.ref('data/'+key+'/sellers').once('value'); if(snap.exists()) data = snap.val(); } catch(e){}
+      }
+      if(!data){
+        try { const local = localStorage.getItem(BASE_SELLERS + '_' + key); if(local) data = JSON.parse(local); } catch(e){}
+      }
+      const scoped = filterByCurrentScope(data || []);
+      let meta=0, sale=0;
+      scoped.forEach(s=>{
+        CATEGORIES.forEach(cat=>{
+          if(cat.id==='retencion'||cat.id==='encuestas') return;
+          const k = (s.kpis && s.kpis[cat.id]) || {};
+          meta += (k.meta||0); sale += (k.sale||0);
+        });
+      });
+      return { key, meta, sale };
+    }));
+  } catch(e) { return; }
+
+  if(trendChartInstance){ trendChartInstance.destroy(); trendChartInstance = null; }
+
+  trendChartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: results.map(r=>r.key),
+      datasets: [
+        { label:'Meta', data: results.map(r=>r.meta), borderColor:'#90a4ae', backgroundColor:'rgba(144,164,174,0.15)', borderDash:[5,5], tension:0.3, fill:false },
+        { label:'Venta', data: results.map(r=>r.sale), borderColor:'#00aeef', backgroundColor:'rgba(0,174,239,0.18)', tension:0.3, fill:true }
+      ]
+    },
+    options: {
+      responsive:true,
+      plugins:{ legend:{ position:'bottom' } },
+      scales:{ y:{ beginAtZero:true } }
+    }
+  });
+}
+
+/* =========================
+   BUSCADOR DE ASESORES
+   ========================= */
+function filterAdvisorTable(query){
+  const q = (query||'').trim().toLowerCase();
+  const rows = document.querySelectorAll('#advisor-daily-tbody tr');
+  rows.forEach(row=>{
+    const nameCell = row.querySelector('.adv-name-cell');
+    const text = nameCell ? nameCell.textContent.toLowerCase() : '';
+    row.style.display = (!q || text.includes(q)) ? '' : 'none';
+  });
+}
+
+/* =========================
+   INDICADOR DE AVISOS (BADGE)
+   ========================= */
+function updateNoticeBadge(seller){
+  const badge = document.getElementById('notice-count-badge');
+  if(!badge) return;
+  const count = (supervisorDataGlobalNoticesFor(seller)) + ((seller && seller.notices) ? seller.notices.length : 0);
+  if(count > 0){
+    badge.style.display = 'inline-flex';
+    badge.textContent = count > 9 ? '9+' : String(count);
+  } else {
+    badge.style.display = 'none';
+  }
+}
+function supervisorDataGlobalNoticesFor(seller){
+  if(!seller) return 0;
+  const acct = orgData.supervisors.find(s => s.centroId === seller.centroId && s.id === seller.supervisorId);
+  return (acct && acct.globalNotices) ? acct.globalNotices.length : 0;
 }
 
 function renderDailyGoalPanel() {
-  if (!supervisorData.dailyGoals) supervisorData.dailyGoals = {};
-  const todayGoal = supervisorData.dailyGoals[currentDateStr] || {};
+  if (sessionRole === 'supervisor' && !supervisorData.dailyGoals) supervisorData.dailyGoals = {};
+  const scopedAccounts = getScopedSupervisorAccounts();
+  const todayGoal = (scopedAccounts.length === 1 && scopedAccounts[0].dailyGoals) ? (scopedAccounts[0].dailyGoals[currentDateStr] || {}) : {};
   
   const dParts = currentDateStr.split('-');
   const dateObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
@@ -2009,18 +2836,22 @@ function renderDailyGoalPanel() {
   const dgCats = CATEGORIES.filter(c => c.id !== 'retencion' && c.id !== 'encuestas');
   
   const grid = document.getElementById('dg-grid-container');
+  const canEditGoals = (sessionRole === 'supervisor');
   if(grid) {
       grid.innerHTML = dgCats.map(cat => {
           const val = todayGoal[cat.id] !== undefined ? todayGoal[cat.id] : '';
           let faltante = Math.max(0, sums[cat.id].meta - sums[cat.id].sale);
           let sugTeam = Math.ceil(faltante / daysLeft);
           let sugAdv = Math.ceil(sugTeam / effectiveAdvisors);
+          const inputAttrs = canEditGoals
+            ? `onfocus="isTyping=true" onblur="isTyping=false" oninput="saveDailyGoal('${cat.id}', this.value)"`
+            : `readonly`;
 
           return `
             <div class="dg-item">
                <i class="fas ${cat.icon}"></i>
                <span title="${cat.label}">${cat.label}</span>
-               <input type="text" id="dg-inp-${cat.id}" value="${val}" inputmode="numeric" onfocus="isTyping=true" onblur="isTyping=false" oninput="saveDailyGoal('${cat.id}', this.value)" placeholder="${sugTeam}">
+               <input type="text" id="dg-inp-${cat.id}" value="${val}" inputmode="numeric" ${inputAttrs} placeholder="${sugTeam}">
                <div style="font-size:0.65rem; color:#9fa8da; margin-top:5px; font-weight:700;">Prom. Asesor: <b style="color:#ffca28;">${sugAdv}</b></div>
             </div>
           `;
@@ -2029,15 +2860,17 @@ function renderDailyGoalPanel() {
 }
 
 function saveDailyGoal(catId, val) {
+  if(sessionRole !== 'supervisor') return;
   if (!supervisorData.dailyGoals) supervisorData.dailyGoals = {};
   if (!supervisorData.dailyGoals[currentDateStr]) supervisorData.dailyGoals[currentDateStr] = {};
-  
+
   supervisorData.dailyGoals[currentDateStr][catId] = val;
-  supervisorData.updatedAt = Date.now();
+  orgData.updatedAt = Date.now();
   saveData();
 }
 
 function autoCalculateDailyGoals() {
+  if(sessionRole !== 'supervisor') return;
   if(!confirm("¿Deseas auto-rellenar la Meta Diaria del Equipo basándote en lo que falta vender y los días restantes del mes?")) return;
 
   const dParts = currentDateStr.split('-');
@@ -2067,7 +2900,7 @@ function autoCalculateDailyGoals() {
       }
   });
 
-  supervisorData.updatedAt = Date.now();
+  orgData.updatedAt = Date.now();
   saveData();
   renderDailyGoalPanel();
 }
@@ -2132,6 +2965,9 @@ function renderAdvisorDailyGoals() {
   });
 
   tbody.innerHTML = html;
+
+  const searchInput = document.getElementById('advisor-search-input');
+  if(searchInput && searchInput.value) filterAdvisorTable(searchInput.value);
 }
 
 function downloadAdvisorDailyGoals() {
@@ -2195,20 +3031,22 @@ function renderLoginHistory() {
 
   allLogins = allLogins.slice(0, 50);
 
+  const canManage = (sessionRole === 'supervisor');
   tbody.innerHTML = allLogins.map(log => `
     <tr>
       <td style="padding-left: 20px; font-weight:800; color:var(--primary);"><i class="fas fa-user-check" style="color:var(--success); margin-right:8px;"></i> ${escapeHtml(log.name)}</td>
       <td style="color:#546e7a;">${log.dateStr}</td>
       <td style="text-align: right; padding-right: 20px;">
-        <button onclick="deleteLoginRecord(${log.sIdx}, ${log.time})" style="background:#ffebee; border:none; color:var(--danger); cursor:pointer; padding:6px 10px; border-radius:8px; transition:all 0.2s;" title="Eliminar registro">
+        ${canManage ? `<button onclick="deleteLoginRecord(${log.sIdx}, ${log.time})" style="background:#ffebee; border:none; color:var(--danger); cursor:pointer; padding:6px 10px; border-radius:8px; transition:all 0.2s;" title="Eliminar registro">
           <i class="fas fa-trash"></i>
-        </button>
+        </button>` : ''}
       </td>
     </tr>
   `).join('');
 }
 
 function deleteLoginRecord(sIdx, timestamp) {
+  if(sessionRole !== 'supervisor') return;
   if(!confirm("¿Eliminar este registro de acceso individual?")) return;
   if(sellers[sIdx] && sellers[sIdx].loginHistory) {
     sellers[sIdx].loginHistory = sellers[sIdx].loginHistory.filter(l => l.time !== timestamp);
@@ -2218,6 +3056,7 @@ function deleteLoginRecord(sIdx, timestamp) {
 }
 
 function clearAllLoginHistory() {
+  if(sessionRole !== 'supervisor') return;
   if(!confirm("⚠️ ¿Estás totalmente seguro de que deseas vaciar TODOS los registros de acceso? Esta acción no se puede deshacer.")) return;
   
   sellers.forEach(s => {
@@ -2240,17 +3079,21 @@ function renderNoticeBoard() {
   const list = document.getElementById('active-notices-list');
   if(!list) return;
 
+  const canManage = (sessionRole === 'supervisor');
   let html = '';
-  if(supervisorData.globalNotices && supervisorData.globalNotices.length > 0) {
-    supervisorData.globalNotices.forEach((n, i) => {
+  const scopedAccountsForNotices = getScopedSupervisorAccounts();
+  scopedAccountsForNotices.forEach(acct => {
+    if(!acct.globalNotices || acct.globalNotices.length === 0) return;
+    const label = scopedAccountsForNotices.length > 1 ? `Global (Equipo de ${escapeHtml(acct.name)})` : 'Global (Todos)';
+    acct.globalNotices.forEach((n, i) => {
       html += `
         <div style="background:#fff3cd; padding:12px; margin-bottom:8px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; border-left:5px solid #ffeeba; box-shadow:0 2px 5px rgba(0,0,0,0.03);">
-          <div><span style="font-size:0.7rem; font-weight:900; color:#856404; display:block; text-transform:uppercase; margin-bottom:3px;">Global (Todos)</span> ${escapeHtml(n.text)}</div>
-          <button onclick="deleteNotice('global', ${i})" style="background:#ffeeba; border:none; color:#856404; cursor:pointer; padding:8px 12px; border-radius:8px; transition:all 0.2s;"><i class="fas fa-trash"></i></button>
+          <div><span style="font-size:0.7rem; font-weight:900; color:#856404; display:block; text-transform:uppercase; margin-bottom:3px;">${label}</span> ${escapeHtml(n.text)}</div>
+          ${canManage ? `<button onclick="deleteNotice('global', ${i})" style="background:#ffeeba; border:none; color:#856404; cursor:pointer; padding:8px 12px; border-radius:8px; transition:all 0.2s;"><i class="fas fa-trash"></i></button>` : ''}
         </div>
       `;
     });
-  }
+  });
 
   sellers.forEach((s, idx) => {
     if(s.notices && s.notices.length > 0) {
@@ -2258,7 +3101,7 @@ function renderNoticeBoard() {
         html += `
           <div style="background:#d1ecf1; padding:12px; margin-bottom:8px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; border-left:5px solid #bee5eb; box-shadow:0 2px 5px rgba(0,0,0,0.03);">
             <div><span style="font-size:0.7rem; font-weight:900; color:#0c5460; display:block; text-transform:uppercase; margin-bottom:3px;">Para: ${escapeHtml(s.name)}</span> ${escapeHtml(n.text)}</div>
-            <button onclick="deleteNotice('personal', ${i}, ${idx})" style="background:#bee5eb; border:none; color:#0c5460; cursor:pointer; padding:8px 12px; border-radius:8px; transition:all 0.2s;"><i class="fas fa-trash"></i></button>
+            ${canManage ? `<button onclick="deleteNotice('personal', ${i}, ${idx})" style="background:#bee5eb; border:none; color:#0c5460; cursor:pointer; padding:8px 12px; border-radius:8px; transition:all 0.2s;"><i class="fas fa-trash"></i></button>` : ''}
           </div>
         `;
       });
@@ -2270,15 +3113,16 @@ function renderNoticeBoard() {
 }
 
 function sendNotice() {
+  if(sessionRole !== 'supervisor') return;
   const target = document.getElementById('notice-target').value;
   const input = document.getElementById('notice-text');
   const text = input.value.trim();
-  if(!text) return alert("Por favor, escribe un aviso.");
+  if(!text) return toast("Por favor, escribe un aviso.", 'danger');
 
   if(target === 'all') {
     if(!supervisorData.globalNotices) supervisorData.globalNotices = [];
     supervisorData.globalNotices.push({ text, time: Date.now() });
-    supervisorData.updatedAt = Date.now();
+    orgData.updatedAt = Date.now();
   } else {
     const idx = parseInt(target);
     if(!sellers[idx].notices) sellers[idx].notices = [];
@@ -2288,13 +3132,15 @@ function sendNotice() {
   input.value = '';
   saveData();
   renderNoticeBoard();
+  toast('Aviso enviado.', 'success');
 }
 
 function deleteNotice(type, index, sellerIdx = null) {
+  if(sessionRole !== 'supervisor') return;
   if(!confirm("¿Deseas eliminar este aviso permanentemente?")) return;
   if(type === 'global') {
     supervisorData.globalNotices.splice(index, 1);
-    supervisorData.updatedAt = Date.now();
+    orgData.updatedAt = Date.now();
   } else {
     sellers[sellerIdx].notices.splice(index, 1);
   }
@@ -2346,7 +3192,11 @@ function renderSupervisorKpis(){
 
   let mG=0, sG=0;
   Object.values(sums).forEach(v=>{ mG += v.meta; sG += v.sale; });
-  document.getElementById('sup-global-perc').innerText = `${mG>0 ? ((sG/mG)*100).toFixed(0) : 0}%`;
+  const globalPercText = `${mG>0 ? ((sG/mG)*100).toFixed(0) : 0}%`;
+  ['sup-global-perc','jefe-global-perc','gerente-global-perc'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerText = globalPercText;
+  });
 
   const html = CATEGORIES.map(cat=>{
     const v = sums[cat.id] || {meta:0, sale:0};
@@ -2579,7 +3429,7 @@ function setFabDisabled(disabled){
 }
 
 function downloadExcelTemplate() {
-  if(!sellers || sellers.length === 0) return alert("Agrega al menos un asesor.");
+  if(!sellers || sellers.length === 0) return toast("Agrega al menos un asesor.", 'danger');
   const templateData = sellers.map(s => {
     return {
       "Asesor": s.name || "Asesor",
@@ -2623,12 +3473,12 @@ function readExcelFile(input) {
       }
       
       pendingImportData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: 0 });
-      if(pendingImportData.length === 0) return alert("El archivo está vacío o no tiene el formato correcto.");
-      
+      if(pendingImportData.length === 0) return toast("El archivo está vacío o no tiene el formato correcto.", 'danger');
+
       document.getElementById('import-modal').style.display = 'flex';
-    } catch (err) { 
+    } catch (err) {
       console.error(err);
-      alert("Error al leer el archivo. Asegúrate de que es un .xlsx o .csv válido."); 
+      toast("Error al leer el archivo. Asegúrate de que es un .xlsx o .csv válido.", 'danger');
     }
   };
   reader.readAsArrayBuffer(file);
@@ -2696,12 +3546,12 @@ function executeImport(mode) {
   renderSupervisorDashboard();
   closeImportModal();
 
-  if(updatedCount > 0) alert(`¡Éxito! Se inyectaron los datos de ${updatedCount} asesor(es) extrayendo únicamente las columnas solicitadas.`);
-  else alert(`No se encontró coincidencia de nombres en el sistema.`);
+  if(updatedCount > 0) toast(`¡Éxito! Se inyectaron los datos de ${updatedCount} asesor(es) extrayendo únicamente las columnas solicitadas.`, 'success');
+  else toast(`No se encontró coincidencia de nombres en el sistema.`, 'danger');
 }
 
 function downloadExcel(){
-  if(!sellers || sellers.length === 0) return alert("No hay datos para exportar.");
+  if(!sellers || sellers.length === 0) return toast("No hay datos para exportar.", 'danger');
   const dataExport = sellers.map(s => {
     const k = s.kpis || {};
     const r = k.retencion || {};
@@ -2772,7 +3622,7 @@ function replaceInputsForExport(element) {
 function restoreInputsAfterExport(replacements) { replacements.forEach(rep => { rep.inp.style.display = rep.originalDisplay; rep.div.remove(); }); }
 
 async function exportElementToPNG(element, filename, isComposite = false){
-  if(!element) return alert("No se encontró el elemento a exportar.");
+  if(!element) return toast("No se encontró el elemento a exportar.", 'danger');
   if (document.activeElement) document.activeElement.blur();
   setFabDisabled(true);
   const prevScrollY = window.scrollY;
@@ -2793,7 +3643,7 @@ async function exportElementToPNG(element, filename, isComposite = false){
     link.href = canvas.toDataURL('image/png');
     link.click();
   } catch(err){
-    alert("Error al generar imagen.");
+    toast("Error al generar imagen.", 'danger');
   } finally{
     if(isTableExport) {
        element.style.width = '';
@@ -2831,16 +3681,71 @@ async function exportCompositeToPNG(nodes, filename){
 }
 
 function downloadRanking(){ exportElementToPNG(document.getElementById('ranking-export'), `ranking_${currentDateStr}.png`); }
-function downloadFullReport(){
-  const nodes = isSupervisorMode
-    ? [document.querySelector('.sup-header'), document.querySelector('.staff-panel'), document.getElementById('ranking-export')]
+
+function getVisibleHeaderNode(){
+  return ['sup-header-block','jefe-header-block','gerente-header-block']
+    .map(id=>document.getElementById(id))
+    .find(el => el && el.style.display !== 'none') || null;
+}
+
+function getReportNodes(){
+  return isSupervisorMode
+    ? [getVisibleHeaderNode(), document.querySelector('.staff-panel'), document.getElementById('ranking-export')]
     : [document.querySelector('.top-section'), document.getElementById('kpi-grid-container')];
-  exportCompositeToPNG(nodes, `reporte_${currentDateStr}.png`);
+}
+
+function downloadFullReport(){
+  exportCompositeToPNG(getReportNodes(), `reporte_${currentDateStr}.png`);
 }
 function downloadDailyCard(){ exportElementToPNG(document.querySelector('.top-section'), `tarjeta_dia_${currentDateStr}.png`); }
 
+async function downloadFullReportPDF(){
+  if(typeof window.jspdf === 'undefined'){ return toast("No se pudo cargar el generador de PDF.", 'danger'); }
+  if (document.activeElement) document.activeElement.blur();
+  setFabDisabled(true);
+
+  try {
+    const nodes = getReportNodes().filter(Boolean);
+    const area = document.getElementById('hidden-export-area');
+    area.innerHTML = '';
+    const wrapper = document.createElement('div');
+    wrapper.style.width = '1250px';
+    wrapper.style.background = '#ffffff';
+    wrapper.style.padding = '35px';
+    wrapper.style.boxSizing = 'border-box';
+    nodes.forEach(n=>{
+      const clone = n.cloneNode(true);
+      const origInputs = n.querySelectorAll('input');
+      const cloneInputs = clone.querySelectorAll('input');
+      origInputs.forEach((orig, i) => { if(cloneInputs[i]) cloneInputs[i].value = orig.value; });
+      clone.style.marginBottom = '25px';
+      wrapper.appendChild(clone);
+    });
+    area.appendChild(wrapper);
+    const replacements = replaceInputsForExport(wrapper);
+    await new Promise(r=>setTimeout(r, 300));
+
+    const canvas = await html2canvas(wrapper, { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false });
+    restoreInputsAfterExport(replacements);
+    area.innerHTML = '';
+
+    const { jsPDF } = window.jspdf;
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const pageWidth = 210;
+    const imgHeight = (canvas.height * pageWidth) / canvas.width;
+    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: [pageWidth, Math.max(imgHeight, 297)] });
+    pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, imgHeight);
+    pdf.save(`reporte_${currentDateStr}.pdf`);
+  } catch(err) {
+    console.error(err);
+    toast("Error al generar el PDF.", 'danger');
+  } finally {
+    setFabDisabled(false);
+  }
+}
+
 function downloadBackup(){
-  const data = { sellers, supervisorData, month: currentDateStr.substring(0,7) };
+  const data = { sellers: allSellers, supervisorData: orgData, month: currentDateStr.substring(0,7) };
   const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -2857,18 +3762,19 @@ function loadBackup(input){
     try{
       const data = JSON.parse(e.target.result);
       if(!data || !data.sellers) throw new Error();
-      sellers = data.sellers;
-      supervisorData = data.supervisorData || supervisorData;
-      if(!supervisorData.updatedAt) supervisorData.updatedAt = Date.now();
+      allSellers = data.sellers;
+      orgData = migrateOrgData(data.supervisorData || {});
+      if(!orgData.updatedAt) orgData.updatedAt = Date.now();
+      recomputeScope();
       saveData();
       alert("Respaldo cargado correctamente. " + (useCloud ? "Se sincronizará en la nube." : "Modo local actualizado."));
       if(useCloud && db) {
-        db.ref('data/' + currentDateStr.substring(0,7) + '/sellers').set(sellers);
-        db.ref('supervisor').set(supervisorData);
+        db.ref('data/' + currentDateStr.substring(0,7) + '/sellers').set(allSellers);
+        db.ref('supervisor').set(orgData);
       }
       location.reload();
     }catch(err){
-      alert("No se pudo cargar el respaldo.");
+      toast("No se pudo cargar el respaldo.", 'danger');
     }
   };
   reader.readAsText(file);
@@ -2877,55 +3783,86 @@ function loadBackup(input){
 
 function resetCurrentMonth(){
   if(sessionRole !== 'supervisor') return;
-  if(!confirm("¿Reiniciar MES? Se borrarán metas/ventas del mes, pero NO se borran datos del asesor.")) return;
+  if(!confirm("¿Reiniciar MES? Se borrarán metas/ventas del mes de TU equipo, pero NO se borran datos del asesor ni de otros equipos.")) return;
 
-  sellers.forEach((s)=>{
-    CATEGORIES.forEach(cat=>{
-      if(cat.id==='retencion') s.kpis.retencion = { renovaciones:0, cancelaciones:0, migraciones:0 };
-      else if(cat.id==='prepago'){ s.kpis.prepago.meta=0; s.kpis.prepago.sale=0; s.kpis.prepago.metaKit=0; s.kpis.prepago.saleKit=0; s.kpis.prepago.metaChip=0; s.kpis.prepago.saleChip=0; }
-      else if(cat.id==='pospago'){ s.kpis.pospago.meta=0; s.kpis.pospago.sale=0; s.kpis.pospago.metaEq=0; s.kpis.pospago.saleEq=0; s.kpis.pospago.metaVip=0; s.kpis.pospago.saleVip=0; }
-      else if(cat.id==='renovacion'){ s.kpis.renovacion.meta=0; s.kpis.renovacion.sale=0; s.kpis.renovacion.metaEq=0; s.kpis.renovacion.saleEq=0; s.kpis.renovacion.metaVip=0; s.kpis.renovacion.saleVip=0; }
-      else if(cat.id==='encuestas'){ s.kpis.encuestas.meta=100; s.kpis.encuestas.sale=0; }
-      else { s.kpis[cat.id].meta=0; s.kpis[cat.id].sale=0; }
-    });
-  });
-
+  const snapshot = JSON.parse(JSON.stringify(sellers));
+  sellers.forEach((s)=> resetSellerKpis(s));
   saveData();
-  location.reload();
+  renderSupervisorDashboard();
+
+  toast('Metas y ventas del mes reiniciadas para tu equipo.', 'info', 'Deshacer', () => {
+    snapshot.forEach((snap, i) => { if(sellers[i]) Object.assign(sellers[i], snap); });
+    saveData();
+    renderSupervisorDashboard();
+    toast('Cambios revertidos.', 'success');
+  });
 }
 
-async function generateComparison(){
-  if(!useCloud) {
-    const m1 = document.getElementById('comp-month-1').value, m2 = document.getElementById('comp-month-2').value;
-    if(!m1 || !m2) return alert("Selecciona ambos meses.");
-    const d1 = JSON.parse(localStorage.getItem(BASE_SELLERS + '_' + m1) || '[]');
-    const d2 = JSON.parse(localStorage.getItem(BASE_SELLERS + '_' + m2) || '[]');
-    if(d1.length===0 || d2.length===0){
-      document.getElementById('comparison-results').innerHTML = `<div style="margin-top:10px;color:#c62828;font-weight:800;">No hay datos suficientes en uno o ambos meses.</div>`;
-      return;
-    }
+// Filtra un roster (de cualquier mes) al mismo alcance que ve la sesión activa (equipo / centro / centros asignados).
+function filterByCurrentScope(arr) {
+  if(!arr) return [];
+  if (sessionRole === 'supervisor') return arr.filter(s => s.centroId === sessionCentroId && s.supervisorId === sessionSupervisorId);
+  if (sessionRole === 'jefe') {
+    return (managerViewSupervisorId !== null)
+      ? arr.filter(s => s.centroId === sessionCentroId && s.supervisorId === managerViewSupervisorId)
+      : arr.filter(s => s.centroId === sessionCentroId);
+  }
+  if (sessionRole === 'gerente') {
+    const ger = orgData.gerentes.find(g => g.id === sessionGerenteId);
+    const myCentroIds = ger ? (ger.centroIds || []) : [];
+    return (managerViewCentroId !== null) ? arr.filter(s=>s.centroId===managerViewCentroId) : arr.filter(s=>myCentroIds.includes(s.centroId));
+  }
+  return arr;
+}
 
-    const getMix = (s)=> {
-      const k = s.kpis || {};
-      return ((k.pospago && k.pospago.sale) || 0) + ((k.prepago && k.prepago.sale) || 0) + ((k.renovacion && k.renovacion.sale) || 0);
-    };
-
-    const rows = [];
-    for(let i=0;i<Math.max(d1.length, d2.length);i++){
-      const a1 = d1[i], a2 = d2[i]; if(!a1 && !a2) continue;
-      const v1 = a1 ? getMix(a1) : 0, v2 = a2 ? getMix(a2) : 0, diff = v2 - v1;
-      rows.push({name: (a2?.name || a1?.name || `Asesor ${i+1}`), v1, v2, diff, trendCls: diff>0?'trend-up':(diff<0?'trend-down':'trend-neutral'), icon: diff>0?'fa-arrow-up':(diff<0?'fa-arrow-down':'fa-minus')});
-    }
-
-    document.getElementById('comparison-results').innerHTML =
-      `<table class="comp-table"><thead><tr><th>Asesor</th><th>${m1}</th><th>${m2}</th><th>Diferencia</th></tr></thead><tbody>${
-        rows.map(r=>`<tr><td>${escapeHtml(r.name)}</td><td>${r.v1}</td><td>${r.v2}</td><td class="${r.trendCls}"><i class="fas ${r.icon}"></i> ${r.diff}</td></tr>`).join('')
-      }</tbody></table>`;
+function renderComparisonRows(rawD1, rawD2, m1, m2){
+  const d1 = filterByCurrentScope(rawD1), d2 = filterByCurrentScope(rawD2);
+  if(d1.length===0 || d2.length===0){
+    document.getElementById('comparison-results').innerHTML = `<div style="margin-top:10px;color:#c62828;font-weight:800;">No hay datos suficientes en uno o ambos meses para tu alcance actual.</div>`;
     return;
   }
 
+  const getMix = (s)=> {
+    const k = s.kpis || {};
+    return ((k.pospago && k.pospago.sale) || 0) + ((k.prepago && k.prepago.sale) || 0) + ((k.renovacion && k.renovacion.sale) || 0);
+  };
+
+  const namesByKey = (s)=> `${s.centroId||0}_${s.supervisorId||0}_${(s.name||'').trim().toLowerCase()}`;
+  const map2 = new Map(d2.map(s=>[namesByKey(s), s]));
+  const seen = new Set();
+  const rows = [];
+
+  d1.forEach(a1 => {
+    const key = namesByKey(a1);
+    const a2 = map2.get(key);
+    seen.add(key);
+    const v1 = getMix(a1), v2 = a2 ? getMix(a2) : 0, diff = v2 - v1;
+    rows.push({name: a1.name || 'Asesor', v1, v2, diff, trendCls: diff>0?'trend-up':(diff<0?'trend-down':'trend-neutral'), icon: diff>0?'fa-arrow-up':(diff<0?'fa-arrow-down':'fa-minus')});
+  });
+  d2.forEach(a2 => {
+    const key = namesByKey(a2);
+    if(seen.has(key)) return;
+    const v2 = getMix(a2), diff = v2;
+    rows.push({name: a2.name || 'Asesor', v1:0, v2, diff, trendCls: diff>0?'trend-up':(diff<0?'trend-down':'trend-neutral'), icon: diff>0?'fa-arrow-up':(diff<0?'fa-arrow-down':'fa-minus')});
+  });
+
+  document.getElementById('comparison-results').innerHTML =
+    `<table class="comp-table"><thead><tr><th>Asesor</th><th>${m1}</th><th>${m2}</th><th>Diferencia</th></tr></thead><tbody>${
+      rows.map(r=>`<tr><td>${escapeHtml(r.name)}</td><td>${r.v1}</td><td>${r.v2}</td><td class="${r.trendCls}"><i class="fas ${r.icon}"></i> ${r.diff}</td></tr>`).join('')
+    }</tbody></table>`;
+}
+
+async function generateComparison(){
   const m1 = document.getElementById('comp-month-1').value, m2 = document.getElementById('comp-month-2').value;
-  if(!m1 || !m2) return alert("Selecciona ambos meses.");
+  if(!m1 || !m2) return toast("Selecciona ambos meses.", 'danger');
+
+  if(!useCloud) {
+    const d1 = JSON.parse(localStorage.getItem(BASE_SELLERS + '_' + m1) || '[]');
+    const d2 = JSON.parse(localStorage.getItem(BASE_SELLERS + '_' + m2) || '[]');
+    renderComparisonRows(d1, d2, m1, m2);
+    return;
+  }
+
   document.getElementById('comparison-results').innerHTML =
     `<div style="margin-top:10px;color:var(--primary);font-weight:800;"><i class="fas fa-spinner fa-spin"></i> Calculando datos...</div>`;
 
@@ -2934,27 +3871,7 @@ async function generateComparison(){
     const snap2 = await db.ref('data/' + m2 + '/sellers').once('value');
     const d1 = snap1.val() || [];
     const d2 = snap2.val() || [];
-    if(d1.length===0 || d2.length===0){
-      document.getElementById('comparison-results').innerHTML = `<div style="margin-top:10px;color:#c62828;font-weight:800;">No hay datos suficientes en uno o ambos meses.</div>`;
-      return;
-    }
-
-    const getMix = (s)=> {
-      const k = s.kpis || {};
-      return ((k.pospago && k.pospago.sale) || 0) + ((k.prepago && k.prepago.sale) || 0) + ((k.renovacion && k.renovacion.sale) || 0);
-    };
-
-    const rows = [];
-    for(let i=0;i<Math.max(d1.length, d2.length);i++){
-      const a1 = d1[i], a2 = d2[i]; if(!a1 && !a2) continue;
-      const v1 = a1 ? getMix(a1) : 0, v2 = a2 ? getMix(a2) : 0, diff = v2 - v1;
-      rows.push({name: (a2?.name || a1?.name || `Asesor ${i+1}`), v1, v2, diff, trendCls: diff>0?'trend-up':(diff<0?'trend-down':'trend-neutral'), icon: diff>0?'fa-arrow-up':(diff<0?'fa-arrow-down':'fa-minus')});
-    }
-
-    document.getElementById('comparison-results').innerHTML =
-      `<table class="comp-table"><thead><tr><th>Asesor</th><th>${m1}</th><th>${m2}</th><th>Diferencia</th></tr></thead><tbody>${
-        rows.map(r=>`<tr><td>${escapeHtml(r.name)}</td><td>${r.v1}</td><td>${r.v2}</td><td class="${r.trendCls}"><i class="fas ${r.icon}"></i> ${r.diff}</td></tr>`).join('')
-      }</tbody></table>`;
+    renderComparisonRows(d1, d2, m1, m2);
   } catch (error) {
     document.getElementById('comparison-results').innerHTML =
       `<div style="margin-top:10px;color:#c62828;font-weight:800;">Error al generar comparativa.</div>`;
