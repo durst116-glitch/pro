@@ -1036,17 +1036,25 @@
         <div class="modal-title" style="color:#0d47a1;">Importar Presupuesto Inicial</div>
         <button class="close-modal" onclick="closeBudgetImportModal()">&times;</button>
       </div>
-      <div id="budget-import-summary"></div>
-      <div id="budget-import-rows" style="max-height:220px; overflow-y:auto; margin-bottom:20px; border-top:1px dashed #eee; padding-top:10px;"></div>
-      <div style="display:flex; flex-direction:column; gap:15px;">
-        <button onclick="executeBudgetImport('add')" style="background:var(--success); color:#fff; padding:15px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:15px;">
-          <i class="fas fa-plus-circle" style="font-size:2rem;"></i>
-          <div style="text-align:left;"><div>SUMAR A LAS METAS EXISTENTES</div></div>
-        </button>
-        <button onclick="executeBudgetImport('replace')" style="background:var(--primary); color:#fff; padding:15px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:15px;">
-          <i class="fas fa-sync-alt" style="font-size:2rem;"></i>
-          <div style="text-align:left;"><div>REEMPLAZAR METAS</div></div>
-        </button>
+
+      <div id="budget-import-picker" style="display:none;">
+        <p style="font-size:0.85rem; color:#78909c; margin-bottom:12px;">No encontramos tu nombre exacto en el archivo. Selecciona cuál de estos supervisores detectados eres tú:</p>
+        <div id="budget-import-picker-list" style="max-height:280px; overflow-y:auto;"></div>
+      </div>
+
+      <div id="budget-import-confirm">
+        <div id="budget-import-summary"></div>
+        <div id="budget-import-rows" style="max-height:220px; overflow-y:auto; margin-bottom:20px; border-top:1px dashed #eee; padding-top:10px;"></div>
+        <div style="display:flex; flex-direction:column; gap:15px;">
+          <button onclick="executeBudgetImport('add')" style="background:var(--success); color:#fff; padding:15px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:15px;">
+            <i class="fas fa-plus-circle" style="font-size:2rem;"></i>
+            <div style="text-align:left;"><div>SUMAR A LAS METAS EXISTENTES</div></div>
+          </button>
+          <button onclick="executeBudgetImport('replace')" style="background:var(--primary); color:#fff; padding:15px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:15px;">
+            <i class="fas fa-sync-alt" style="font-size:2rem;"></i>
+            <div style="text-align:left;"><div>REEMPLAZAR METAS</div></div>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -3851,6 +3859,8 @@ function parseBudgetWorkbook(workbook){
   return { sheetName, blocks };
 }
 
+let pendingBudgetBlocks = null;
+
 function readBudgetFile(input){
   const file = input.files && input.files[0]; if(!file) return;
   const reader = new FileReader();
@@ -3860,6 +3870,7 @@ function readBudgetFile(input){
       const workbook = XLSX.read(data, {type:'array'});
       const parsed = parseBudgetWorkbook(workbook);
       if(!parsed) { toast('No se encontró la pestaña "PPTO X SUPER" en el archivo.', 'danger'); return; }
+      if(parsed.blocks.length === 0){ toast('No se encontraron bloques de supervisores en el archivo.', 'danger'); return; }
 
       const mySupervisorName = normName(supervisorData.name);
       const matchedRows = [];
@@ -3871,21 +3882,48 @@ function readBudgetFile(input){
         }
       });
 
-      if(matchedRows.length === 0){
-        toast(`No se encontró tu nombre ("${supervisorData.name}") en la pestaña PPTO X SUPER. Verifica que coincida con la columna "nombre supervisor" del Excel.`, 'danger');
-        input.value = '';
-        return;
-      }
-
-      pendingBudgetData = { rows: matchedRows, supervisorLabel: foundBlockSupervisor };
-      renderBudgetImportPreview();
       document.getElementById('budget-import-modal').style.display = 'flex';
+
+      if(matchedRows.length === 0){
+        // Sin coincidencia exacta: deja que el propio supervisor elija su bloque de la lista detectada.
+        pendingBudgetBlocks = parsed.blocks;
+        renderBudgetBlockPicker();
+      } else {
+        pendingBudgetData = { rows: matchedRows, supervisorLabel: foundBlockSupervisor };
+        renderBudgetImportPreview();
+      }
     } catch(err){
       console.error(err);
       toast('Error al leer el archivo. Asegúrate de que es el Excel de Presupuesto Inicial (.xlsx).', 'danger');
     }
   };
   reader.readAsArrayBuffer(file);
+}
+
+function renderBudgetBlockPicker(){
+  document.getElementById('budget-import-picker').style.display = 'block';
+  document.getElementById('budget-import-confirm').style.display = 'none';
+
+  const list = document.getElementById('budget-import-picker-list');
+  list.innerHTML = pendingBudgetBlocks.map((b, i) => `
+    <div class="event-item">
+      <div class="event-info">
+        <span class="event-type">${escapeHtml(b.supervisorName)}</span>
+        <span class="event-dates">${escapeHtml(b.cac)} · ${b.rows.length} asesor(es)</span>
+      </div>
+      <button class="btn-add-event" style="padding:8px 14px; width:auto;" onclick="selectBudgetBlock(${i})">Soy yo</button>
+    </div>
+  `).join('') || '<div style="font-size:.85rem;color:#78909c;">No se detectaron supervisores en el archivo.</div>';
+}
+
+function selectBudgetBlock(index){
+  if(!pendingBudgetBlocks || !pendingBudgetBlocks[index]) return;
+  const block = pendingBudgetBlocks[index];
+  pendingBudgetData = { rows: block.rows, supervisorLabel: block.supervisorName };
+  pendingBudgetBlocks = null;
+  document.getElementById('budget-import-picker').style.display = 'none';
+  document.getElementById('budget-import-confirm').style.display = 'block';
+  renderBudgetImportPreview();
 }
 
 function renderBudgetImportPreview(){
@@ -3911,8 +3949,11 @@ function renderBudgetImportPreview(){
 
 function closeBudgetImportModal(){
   document.getElementById('budget-import-modal').style.display = 'none';
+  document.getElementById('budget-import-picker').style.display = 'none';
+  document.getElementById('budget-import-confirm').style.display = 'block';
   document.getElementById('import-budget-file').value = '';
   pendingBudgetData = null;
+  pendingBudgetBlocks = null;
 }
 
 function executeBudgetImport(mode){
