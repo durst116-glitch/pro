@@ -907,6 +907,9 @@
       <button class="fab-btn" id="btn-tool-org" style="background:linear-gradient(135deg, var(--admin-color), #3949ab);" onclick="toggleSidePanel(); openOrgAdminModal()">
         <i class="fas fa-sitemap"></i> Administrar Organización
       </button>
+      <button class="fab-btn" id="btn-tool-mass-import" style="background:linear-gradient(135deg,#1a237e,#0d47a1);" onclick="toggleSidePanel(); triggerImportBudgetFull()">
+        <i class="fas fa-cloud-upload-alt"></i> Alta Automática (Presupuesto)
+      </button>
 
       <button class="fab-btn btn-clone" id="btn-tool-clone" onclick="toggleSidePanel(); clonePreviousMonth()">
         <i class="fas fa-copy"></i> Clonar Mes Anterior
@@ -1048,6 +1051,27 @@
     </div>
   </div>
 
+  <div id="budget-full-import-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width:600px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color:#0d47a1;">Alta Automática desde Presupuesto</div>
+        <button class="close-modal" onclick="closeFullBudgetImportModal()">&times;</button>
+      </div>
+      <div id="budget-full-import-summary"></div>
+      <div id="budget-full-import-rows" style="max-height:260px; overflow-y:auto; margin-bottom:20px; border-top:1px dashed #eee; padding-top:10px;"></div>
+      <div style="display:flex; flex-direction:column; gap:15px;">
+        <button onclick="executeFullBudgetImport('add')" style="background:var(--success); color:#fff; padding:15px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:15px;">
+          <i class="fas fa-plus-circle" style="font-size:2rem;"></i>
+          <div style="text-align:left;"><div>SUMAR A LAS METAS EXISTENTES</div><div style="font-size:0.7rem; font-weight:600; opacity:0.9;">Crea lo que falte y suma metas donde ya haya datos</div></div>
+        </button>
+        <button onclick="executeFullBudgetImport('replace')" style="background:var(--primary); color:#fff; padding:15px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:15px;">
+          <i class="fas fa-sync-alt" style="font-size:2rem;"></i>
+          <div style="text-align:left;"><div>REEMPLAZAR METAS</div><div style="font-size:0.7rem; font-weight:600; opacity:0.9;">Crea lo que falte y deja la meta del Excel como valor final</div></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="indicator-settings-modal" class="modal-overlay">
     <div class="modal-content" style="max-width:550px;">
       <div class="modal-header">
@@ -1083,6 +1107,7 @@
   <input type="file" id="backup-file" accept=".json" style="display:none" onchange="loadBackup(this)">
   <input type="file" id="import-excel-file" accept=".xlsx, .csv" style="display:none" onchange="readExcelFile(this)">
   <input type="file" id="import-budget-file" accept=".xlsx" style="display:none" onchange="readBudgetFile(this)">
+  <input type="file" id="import-budget-full-file" accept=".xlsx" style="display:none" onchange="readBudgetFullFile(this)">
 
   <script>
 /* =========================
@@ -1499,14 +1524,14 @@ function logout() { location.reload(); }
 
 const TOOL_PERMISSIONS = {
   supervisor: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-budget','btn-tool-indicators','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore','btn-tool-reset','btn-tool-clone'],
-  admin: ['btn-tool-org','btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore'],
+  admin: ['btn-tool-org','btn-tool-mass-import','btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore'],
   jefe: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf'],
   gerente: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf'],
   asesor: ['btn-tool-daily']
 };
 
 function applyRoleRestrictions() {
-  const tools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-budget', 'btn-tool-indicators', 'btn-tool-report', 'btn-tool-pdf', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone', 'btn-tool-org'];
+  const tools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-budget', 'btn-tool-indicators', 'btn-tool-report', 'btn-tool-pdf', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone', 'btn-tool-org', 'btn-tool-mass-import'];
   const isManagerView = (sessionRole === 'jefe' || sessionRole === 'gerente' || sessionRole === 'admin');
   const allowedTools = TOOL_PERMISSIONS[sessionRole] || [];
 
@@ -3661,7 +3686,7 @@ function toggleSidePanel(){
 }
 
 function setFabDisabled(disabled){
-  const ids = ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-budget','btn-tool-indicators','btn-tool-report','btn-tool-backup','btn-tool-restore','btn-tool-reset', 'btn-tool-clone'];
+  const ids = ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-budget','btn-tool-indicators','btn-tool-mass-import','btn-tool-report','btn-tool-backup','btn-tool-restore','btn-tool-reset', 'btn-tool-clone'];
   ids.forEach(id=>{
     const b = document.getElementById(id);
     if(!b) return;
@@ -3777,6 +3802,55 @@ function normName(str){
 
 function triggerImportBudget(){ document.getElementById('import-budget-file').click(); }
 
+// Lee la pestaña "PPTO X SUPER" y devuelve TODOS los bloques encontrados (uno por supervisor),
+// cada uno con el Centro/Plaza (columna CAC), el nombre del supervisor y sus filas de asesores con metas.
+function parseBudgetWorkbook(workbook){
+  const sheetName = workbook.SheetNames.find(n => n.trim().toUpperCase() === 'PPTO X SUPER')
+    || workbook.SheetNames.find(n => n.trim().toUpperCase().includes('PPTO X SUPER'));
+  if(!sheetName) return null;
+
+  const sheet = workbook.Sheets[sheetName];
+  const range = XLSX.utils.decode_range(sheet['!ref']);
+  const cellVal = (r,c) => {
+    const cell = sheet[XLSX.utils.encode_cell({r,c})];
+    return cell ? cell.v : undefined;
+  };
+
+  const blocks = [];
+  for(let r = range.s.r; r <= range.e.r; r++){
+    const aVal = cellVal(r, 0);
+    if(!(typeof aVal === 'string' && aVal.trim().toUpperCase() === 'NO.')) continue;
+
+    let rr = r + 1;
+    const rows = [];
+    let cac = null, supName = null;
+    while(rr <= range.e.r){
+      const markerA = cellVal(rr, 0);
+      if(typeof markerA === 'string' && markerA.trim().toUpperCase() === 'TOTAL') break;
+
+      const asesorName = cellVal(rr, BUDGET_COL_ASESOR);
+      const supN = cellVal(rr, BUDGET_COL_SUPERVISOR);
+      const cacVal = cellVal(rr, 1); // columna B
+      if(typeof asesorName === 'string' && asesorName.trim() !== ''){
+        if(!cac && cacVal) cac = String(cacVal).trim();
+        if(!supName && supN) supName = String(supN).trim();
+        const values = BUDGET_COLUMN_MAP.map(m => {
+          const raw = cellVal(rr, m.col);
+          const num = (raw === undefined || raw === null || raw === '') ? 0 : (parseFloat(raw) || 0);
+          return { catId:m.catId, field:m.field, value:num };
+        });
+        rows.push({ asesorName: String(asesorName).trim(), values });
+      }
+      rr++;
+      if(rr - r > 40) break; // margen de seguridad por si el layout no trae fila "TOTAL"
+    }
+    if(rows.length > 0 && supName){
+      blocks.push({ cac: cac || 'Centro 1', supervisorName: supName, rows });
+    }
+  }
+  return { sheetName, blocks };
+}
+
 function readBudgetFile(input){
   const file = input.files && input.files[0]; if(!file) return;
   const reader = new FileReader();
@@ -3784,46 +3858,18 @@ function readBudgetFile(input){
     try {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, {type:'array'});
-      const sheetName = workbook.SheetNames.find(n => n.trim().toUpperCase() === 'PPTO X SUPER')
-        || workbook.SheetNames.find(n => n.trim().toUpperCase().includes('PPTO X SUPER'));
-      if(!sheetName) { toast('No se encontró la pestaña "PPTO X SUPER" en el archivo.', 'danger'); return; }
-
-      const sheet = workbook.Sheets[sheetName];
-      const range = XLSX.utils.decode_range(sheet['!ref']);
-      const cellVal = (r,c) => {
-        const cell = sheet[XLSX.utils.encode_cell({r,c})];
-        return cell ? cell.v : undefined;
-      };
+      const parsed = parseBudgetWorkbook(workbook);
+      if(!parsed) { toast('No se encontró la pestaña "PPTO X SUPER" en el archivo.', 'danger'); return; }
 
       const mySupervisorName = normName(supervisorData.name);
       const matchedRows = [];
       let foundBlockSupervisor = null;
-
-      for(let r = range.s.r; r <= range.e.r; r++){
-        const aVal = cellVal(r, 0);
-        if(!(typeof aVal === 'string' && aVal.trim().toUpperCase() === 'NO.')) continue;
-
-        let rr = r + 1;
-        while(rr <= range.e.r){
-          const markerA = cellVal(rr, 0);
-          if(typeof markerA === 'string' && markerA.trim().toUpperCase() === 'TOTAL') break;
-
-          const asesorName = cellVal(rr, BUDGET_COL_ASESOR);
-          const supName = cellVal(rr, BUDGET_COL_SUPERVISOR);
-          if(typeof asesorName === 'string' && asesorName.trim() !== '' && normName(supName) === mySupervisorName){
-            if(!foundBlockSupervisor) foundBlockSupervisor = String(supName).trim();
-            const values = [];
-            BUDGET_COLUMN_MAP.forEach(m => {
-              const raw = cellVal(rr, m.col);
-              const num = (raw === undefined || raw === null || raw === '') ? 0 : (parseFloat(raw) || 0);
-              values.push({ catId:m.catId, field:m.field, value:num });
-            });
-            matchedRows.push({ asesorName: String(asesorName).trim(), values });
-          }
-          rr++;
-          if(rr - r > 40) break; // margen de seguridad por si el layout no trae fila "TOTAL"
+      parsed.blocks.forEach(b => {
+        if(normName(b.supervisorName) === mySupervisorName){
+          if(!foundBlockSupervisor) foundBlockSupervisor = b.supervisorName;
+          matchedRows.push(...b.rows);
         }
-      }
+      });
 
       if(matchedRows.length === 0){
         toast(`No se encontró tu nombre ("${supervisorData.name}") en la pestaña PPTO X SUPER. Verifica que coincida con la columna "nombre supervisor" del Excel.`, 'danger');
@@ -3909,6 +3955,153 @@ function executeBudgetImport(mode){
   closeBudgetImportModal();
 
   toast(`Presupuesto importado: ${updatedCount} asesor(es) actualizados, ${createdCount} nuevo(s) agregados.`, 'success');
+}
+
+/* =========================
+   ALTA AUTOMÁTICA MASIVA DESDE PRESUPUESTO (Administrador)
+   Crea Centros + Supervisores + Asesores que falten, a partir de TODOS los
+   bloques de la pestaña "PPTO X SUPER" (no solo el del supervisor en sesión).
+   ========================= */
+let pendingFullBudgetData = null;
+
+function triggerImportBudgetFull(){ document.getElementById('import-budget-full-file').click(); }
+
+function readBudgetFullFile(input){
+  if(sessionRole !== 'admin') return;
+  const file = input.files && input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, {type:'array'});
+      const parsed = parseBudgetWorkbook(workbook);
+      if(!parsed || parsed.blocks.length === 0){
+        toast('No se encontraron bloques de supervisores en la pestaña "PPTO X SUPER".', 'danger');
+        input.value = '';
+        return;
+      }
+
+      pendingFullBudgetData = parsed.blocks;
+      renderFullBudgetImportPreview();
+      document.getElementById('budget-full-import-modal').style.display = 'flex';
+    } catch(err){
+      console.error(err);
+      toast('Error al leer el archivo. Asegúrate de que es el Excel de Presupuesto Inicial (.xlsx).', 'danger');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderFullBudgetImportPreview(){
+  if(!pendingFullBudgetData) return;
+
+  const existingCentroNames = new Set(orgData.centros.map(c => normName(c.name)));
+  const existingSupKey = new Set(orgData.supervisors.map(s => normName(s.name) + '|' + s.centroId));
+
+  const cacGroups = {};
+  pendingFullBudgetData.forEach(b => {
+    if(!cacGroups[b.cac]) cacGroups[b.cac] = [];
+    cacGroups[b.cac].push(b);
+  });
+
+  const totalAsesores = pendingFullBudgetData.reduce((sum,b) => sum + b.rows.length, 0);
+  const centroNames = Object.keys(cacGroups);
+  const newCentros = centroNames.filter(cac => !existingCentroNames.has(normName(cac))).length;
+  const newSupervisors = pendingFullBudgetData.filter(b => {
+    const centro = orgData.centros.find(c => normName(c.name) === normName(b.cac));
+    const key = normName(b.supervisorName) + '|' + (centro ? centro.id : '?');
+    return !existingSupKey.has(key);
+  }).length;
+
+  document.getElementById('budget-full-import-summary').innerHTML = `
+    <p style="margin-bottom:10px;">Se encontraron <b>${centroNames.length}</b> centro(s), <b>${pendingFullBudgetData.length}</b> supervisor(es) y <b>${totalAsesores}</b> asesor(es) en el archivo.</p>
+    <ul style="margin:0 0 10px 20px; font-size:0.9rem; color:#455a64;">
+      <li><b>${newCentros}</b> centro(s) nuevo(s) se crearán (Jefe con contraseña por defecto <b>jefe123</b>).</li>
+      <li><b>${newSupervisors}</b> supervisor(es) nuevo(s) se crearán (contraseña por defecto <b>1234</b>).</li>
+      <li>Los asesores nuevos usarán PIN por defecto <b>1234</b>. Todas las contraseñas se pueden cambiar después.</li>
+    </ul>
+  `;
+
+  const list = document.getElementById('budget-full-import-rows');
+  list.innerHTML = centroNames.map(cac => {
+    const isNewCentro = !existingCentroNames.has(normName(cac));
+    return `
+    <div style="margin-bottom:12px;">
+      <div style="font-weight:900; color:var(--primary); font-size:0.85rem; display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-store"></i> ${escapeHtml(cac)} ${isNewCentro ? '<span class="adv-stat-badge adv-off">NUEVO CENTRO</span>' : ''}
+      </div>
+      ${cacGroups[cac].map(b => {
+        const centro = orgData.centros.find(c => normName(c.name) === normName(b.cac));
+        const key = normName(b.supervisorName) + '|' + (centro ? centro.id : '?');
+        const isNewSup = !existingSupKey.has(key);
+        return `<div style="font-size:0.8rem; padding:5px 0 5px 25px; color:#546e7a; display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-user-tie"></i> ${escapeHtml(b.supervisorName)} — ${b.rows.length} asesor(es) ${isNewSup ? '<span class="adv-stat-badge adv-off">NUEVO</span>' : '<span class="adv-stat-badge adv-on">EXISTE</span>'}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function closeFullBudgetImportModal(){
+  document.getElementById('budget-full-import-modal').style.display = 'none';
+  document.getElementById('import-budget-full-file').value = '';
+  pendingFullBudgetData = null;
+}
+
+function executeFullBudgetImport(mode){
+  if(sessionRole !== 'admin' || !pendingFullBudgetData) return;
+
+  const applyVal = (current, incoming) => mode === 'add' ? (current||0) + incoming : incoming;
+  let centrosCreated = 0, supervisorsCreated = 0, asesoresCreated = 0, asesoresUpdated = 0;
+
+  pendingFullBudgetData.forEach(block => {
+    let centro = orgData.centros.find(c => normName(c.name) === normName(block.cac));
+    if(!centro){
+      const id = nextOrgId(orgData.centros);
+      centro = { id, name: block.cac, jefe: { name: `Jefe de ${block.cac}`, photo: DEFAULT_AVATAR, password: 'jefe123' } };
+      orgData.centros.push(centro);
+      centrosCreated++;
+    }
+
+    let supervisor = orgData.supervisors.find(s => s.centroId === centro.id && normName(s.name) === normName(block.supervisorName));
+    if(!supervisor){
+      const id = nextOrgId(orgData.supervisors);
+      supervisor = { id, centroId: centro.id, name: block.supervisorName, photo: DEFAULT_AVATAR, password: '1234', dailyGoals:{}, globalNotices:[], hiddenCategories:[] };
+      orgData.supervisors.push(supervisor);
+      supervisorsCreated++;
+    }
+
+    block.rows.forEach(row => {
+      let seller = allSellers.find(s => s.centroId === centro.id && s.supervisorId === supervisor.id && normName(s.name) === normName(row.asesorName));
+      if(!seller){
+        const teamCount = allSellers.filter(s => s.centroId === centro.id && s.supervisorId === supervisor.id).length;
+        if(teamCount >= MAX_ADVISORS) return;
+        const nextId = allSellers.length;
+        seller = createEmptySeller(nextId, centro.id, supervisor.id);
+        seller.name = row.asesorName;
+        allSellers.push(seller);
+        asesoresCreated++;
+      } else {
+        asesoresUpdated++;
+      }
+
+      row.values.forEach(v => {
+        const k = seller.kpis[v.catId];
+        if(!k) return;
+        if(v.field === 'meta') k.meta = applyVal(k.meta, v.value);
+        else k[v.field] = applyVal(k[v.field], v.value);
+      });
+    });
+  });
+
+  orgData.updatedAt = Date.now();
+  recomputeScope();
+  validateSellersData();
+  saveData();
+  renderSupervisorDashboard();
+  closeFullBudgetImportModal();
+
+  toast(`Alta automática completa: ${centrosCreated} centro(s), ${supervisorsCreated} supervisor(es), ${asesoresCreated} asesor(es) nuevo(s) y ${asesoresUpdated} actualizado(s).`, 'success');
 }
 
 /* =========================
