@@ -910,6 +910,9 @@
       <button class="fab-btn" id="btn-tool-mass-import" style="background:linear-gradient(135deg,#1a237e,#0d47a1);" onclick="toggleSidePanel(); triggerImportBudgetFull()">
         <i class="fas fa-cloud-upload-alt"></i> Alta Automática (Presupuesto)
       </button>
+      <button class="fab-btn" id="btn-tool-budget-jefe" style="background:linear-gradient(135deg,#1a237e,#0d47a1);" onclick="toggleSidePanel(); triggerImportBudgetJefe()">
+        <i class="fas fa-file-invoice-dollar"></i> Cargar Presupuesto de mi Centro
+      </button>
 
       <button class="fab-btn btn-clone" id="btn-tool-clone" onclick="toggleSidePanel(); clonePreviousMonth()">
         <i class="fas fa-copy"></i> Clonar Mes Anterior
@@ -929,9 +932,6 @@
       </button>
       <button class="fab-btn btn-import" id="btn-tool-import" onclick="toggleSidePanel(); triggerImportExcel()">
         <i class="fas fa-file-import"></i> Cargar Ventas (Excel)
-      </button>
-      <button class="fab-btn" id="btn-tool-budget" style="background:linear-gradient(135deg,#1a237e,#0d47a1);" onclick="toggleSidePanel(); triggerImportBudget()">
-        <i class="fas fa-file-invoice-dollar"></i> Cargar Presupuesto Inicial
       </button>
       <button class="fab-btn" id="btn-tool-indicators" style="background:linear-gradient(135deg,#00838f,#006064);" onclick="toggleSidePanel(); openIndicatorSettingsModal()">
         <i class="fas fa-sliders-h"></i> Indicadores Visibles
@@ -1033,29 +1033,29 @@
     </div>
   </div>
 
-  <div id="budget-import-modal" class="modal-overlay">
-    <div class="modal-content" style="max-width:550px;">
+  <div id="budget-jefe-import-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width:600px;">
       <div class="modal-header">
-        <div class="modal-title" style="color:#0d47a1;">Importar Presupuesto Inicial</div>
-        <button class="close-modal" onclick="closeBudgetImportModal()">&times;</button>
+        <div class="modal-title" style="color:#0d47a1;">Importar Presupuesto de mi Centro</div>
+        <button class="close-modal" onclick="closeBudgetJefeImportModal()">&times;</button>
       </div>
 
-      <div id="budget-import-picker" style="display:none;">
-        <p style="font-size:0.85rem; color:#78909c; margin-bottom:12px;">No encontramos tu nombre exacto en el archivo. Selecciona cuál de estos supervisores detectados eres tú:</p>
-        <div id="budget-import-picker-list" style="max-height:280px; overflow-y:auto;"></div>
+      <div id="budget-jefe-import-picker" style="display:none;">
+        <p style="font-size:0.85rem; color:#78909c; margin-bottom:12px;">No encontramos un CAC que coincida exactamente con el nombre de tu centro. Selecciona cuál de estos es tu centro:</p>
+        <div id="budget-jefe-import-picker-list" style="max-height:280px; overflow-y:auto;"></div>
       </div>
 
-      <div id="budget-import-confirm">
-        <div id="budget-import-summary"></div>
-        <div id="budget-import-rows" style="max-height:220px; overflow-y:auto; margin-bottom:20px; border-top:1px dashed #eee; padding-top:10px;"></div>
+      <div id="budget-jefe-import-confirm">
+        <div id="budget-jefe-import-summary"></div>
+        <div id="budget-jefe-import-rows" style="max-height:260px; overflow-y:auto; margin-bottom:20px; border-top:1px dashed #eee; padding-top:10px;"></div>
         <div style="display:flex; flex-direction:column; gap:15px;">
-          <button onclick="executeBudgetImport('add')" style="background:var(--success); color:#fff; padding:15px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:15px;">
+          <button onclick="executeBudgetJefeImport('add')" style="background:var(--success); color:#fff; padding:15px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:15px;">
             <i class="fas fa-plus-circle" style="font-size:2rem;"></i>
-            <div style="text-align:left;"><div>SUMAR A LAS METAS EXISTENTES</div></div>
+            <div style="text-align:left;"><div>SUMAR A LAS METAS EXISTENTES</div><div style="font-size:0.7rem; font-weight:600; opacity:0.9;">Crea lo que falte y suma metas donde ya haya datos</div></div>
           </button>
-          <button onclick="executeBudgetImport('replace')" style="background:var(--primary); color:#fff; padding:15px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:15px;">
+          <button onclick="executeBudgetJefeImport('replace')" style="background:var(--primary); color:#fff; padding:15px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:15px;">
             <i class="fas fa-sync-alt" style="font-size:2rem;"></i>
-            <div style="text-align:left;"><div>REEMPLAZAR METAS</div></div>
+            <div style="text-align:left;"><div>REEMPLAZAR METAS</div><div style="font-size:0.7rem; font-weight:600; opacity:0.9;">Crea lo que falte y deja la meta del Excel como valor final</div></div>
           </button>
         </div>
       </div>
@@ -1117,8 +1117,8 @@
   <div class="toast-container" id="toast-container"></div>
   <input type="file" id="backup-file" accept=".json" style="display:none" onchange="loadBackup(this)">
   <input type="file" id="import-excel-file" accept=".xlsx, .csv" style="display:none" onchange="readExcelFile(this)">
-  <input type="file" id="import-budget-file" accept=".xlsx" style="display:none" onchange="readBudgetFile(this)">
   <input type="file" id="import-budget-full-file" accept=".xlsx" style="display:none" onchange="readBudgetFullFile(this)">
+  <input type="file" id="import-budget-jefe-file" accept=".xlsx" style="display:none" onchange="readBudgetJefeFile(this)">
 
   <script>
 /* =========================
@@ -1534,15 +1534,15 @@ function grantAccess(role, idx, ctx) {
 function logout() { location.reload(); }
 
 const TOOL_PERMISSIONS = {
-  supervisor: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-budget','btn-tool-indicators','btn-tool-cleanup','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore','btn-tool-reset','btn-tool-clone'],
+  supervisor: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-indicators','btn-tool-cleanup','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore','btn-tool-reset','btn-tool-clone'],
   admin: ['btn-tool-org','btn-tool-mass-import','btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore'],
-  jefe: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf'],
+  jefe: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf','btn-tool-budget-jefe'],
   gerente: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf'],
   asesor: ['btn-tool-daily']
 };
 
 function applyRoleRestrictions() {
-  const tools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-budget', 'btn-tool-indicators', 'btn-tool-cleanup', 'btn-tool-report', 'btn-tool-pdf', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone', 'btn-tool-org', 'btn-tool-mass-import'];
+  const tools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-indicators', 'btn-tool-cleanup', 'btn-tool-report', 'btn-tool-pdf', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone', 'btn-tool-org', 'btn-tool-mass-import', 'btn-tool-budget-jefe'];
   const isManagerView = (sessionRole === 'jefe' || sessionRole === 'gerente' || sessionRole === 'admin');
   const allowedTools = TOOL_PERMISSIONS[sessionRole] || [];
 
@@ -3697,7 +3697,7 @@ function toggleSidePanel(){
 }
 
 function setFabDisabled(disabled){
-  const ids = ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-budget','btn-tool-indicators','btn-tool-cleanup','btn-tool-mass-import','btn-tool-report','btn-tool-backup','btn-tool-restore','btn-tool-reset', 'btn-tool-clone'];
+  const ids = ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-indicators','btn-tool-cleanup','btn-tool-mass-import','btn-tool-budget-jefe','btn-tool-report','btn-tool-backup','btn-tool-restore','btn-tool-reset', 'btn-tool-clone'];
   ids.forEach(id=>{
     const b = document.getElementById(id);
     if(!b) return;
@@ -3805,8 +3805,6 @@ const BUDGET_COLUMN_MAP = [
 const BUDGET_COL_ASESOR = 6;      // G: nombre asesor
 const BUDGET_COL_SUPERVISOR = 4;  // E: nombre supervisor
 
-let pendingBudgetData = null;
-
 function normName(str){
   return String(str||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ');
 }
@@ -3867,8 +3865,6 @@ function triggerCleanupEmptyAdvisors(){
   });
 }
 
-function triggerImportBudget(){ document.getElementById('import-budget-file').click(); }
-
 // Lee la pestaña "PPTO X SUPER" y devuelve TODOS los bloques encontrados (uno por supervisor),
 // cada uno con el Centro/Plaza (columna CAC), el nombre del supervisor y sus filas de asesores con metas.
 function parseBudgetWorkbook(workbook){
@@ -3916,148 +3912,6 @@ function parseBudgetWorkbook(workbook){
     }
   }
   return { sheetName, blocks };
-}
-
-let pendingBudgetBlocks = null;
-
-function readBudgetFile(input){
-  const file = input.files && input.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e){
-    try {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, {type:'array'});
-      const parsed = parseBudgetWorkbook(workbook);
-      if(!parsed) { toast('No se encontró la pestaña "PPTO X SUPER" en el archivo.', 'danger'); return; }
-      if(parsed.blocks.length === 0){ toast('No se encontraron bloques de supervisores en el archivo.', 'danger'); return; }
-
-      const mySupervisorName = normName(supervisorData.name);
-      const matchedRows = [];
-      let foundBlockSupervisor = null;
-      parsed.blocks.forEach(b => {
-        if(normName(b.supervisorName) === mySupervisorName){
-          if(!foundBlockSupervisor) foundBlockSupervisor = b.supervisorName;
-          matchedRows.push(...b.rows);
-        }
-      });
-
-      document.getElementById('budget-import-modal').style.display = 'flex';
-
-      if(matchedRows.length === 0){
-        // Sin coincidencia exacta: deja que el propio supervisor elija su bloque de la lista detectada.
-        pendingBudgetBlocks = parsed.blocks;
-        renderBudgetBlockPicker();
-      } else {
-        pendingBudgetData = { rows: matchedRows, supervisorLabel: foundBlockSupervisor };
-        renderBudgetImportPreview();
-      }
-    } catch(err){
-      console.error(err);
-      toast('Error al leer el archivo. Asegúrate de que es el Excel de Presupuesto Inicial (.xlsx).', 'danger');
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function renderBudgetBlockPicker(){
-  document.getElementById('budget-import-picker').style.display = 'block';
-  document.getElementById('budget-import-confirm').style.display = 'none';
-
-  const list = document.getElementById('budget-import-picker-list');
-  list.innerHTML = pendingBudgetBlocks.map((b, i) => `
-    <div class="event-item">
-      <div class="event-info">
-        <span class="event-type">${escapeHtml(b.supervisorName)}</span>
-        <span class="event-dates">${escapeHtml(b.cac)} · ${b.rows.length} asesor(es)</span>
-      </div>
-      <button class="btn-add-event" style="padding:8px 14px; width:auto;" onclick="selectBudgetBlock(${i})">Soy yo</button>
-    </div>
-  `).join('') || '<div style="font-size:.85rem;color:#78909c;">No se detectaron supervisores en el archivo.</div>';
-}
-
-function selectBudgetBlock(index){
-  if(!pendingBudgetBlocks || !pendingBudgetBlocks[index]) return;
-  const block = pendingBudgetBlocks[index];
-  pendingBudgetData = { rows: block.rows, supervisorLabel: block.supervisorName };
-  pendingBudgetBlocks = null;
-  document.getElementById('budget-import-picker').style.display = 'none';
-  document.getElementById('budget-import-confirm').style.display = 'block';
-  renderBudgetImportPreview();
-}
-
-function renderBudgetImportPreview(){
-  if(!pendingBudgetData) return;
-  const existingNames = new Set(sellers.map(s => normName(s.name)));
-  const nuevos = pendingBudgetData.rows.filter(r => !existingNames.has(normName(r.asesorName)));
-  const existentes = pendingBudgetData.rows.length - nuevos.length;
-
-  document.getElementById('budget-import-summary').innerHTML = `
-    <p style="margin-bottom:10px;">Encontramos tu equipo (<b>${escapeHtml(pendingBudgetData.supervisorLabel)}</b>) con <b>${pendingBudgetData.rows.length}</b> asesor(es) en el archivo:</p>
-    <ul style="margin:0 0 10px 20px; font-size:0.9rem; color:#455a64;">
-      <li><b>${existentes}</b> ya existen en tu equipo — se les actualizará la meta.</li>
-      <li><b>${nuevos.length}</b> son nuevos — se agregarán automáticamente a tu equipo.</li>
-    </ul>
-  `;
-
-  const list = document.getElementById('budget-import-rows');
-  list.innerHTML = pendingBudgetData.rows.map(r => {
-    const isNew = !existingNames.has(normName(r.asesorName));
-    return `<div class="event-item"><div class="event-info"><span class="event-type">${escapeHtml(r.asesorName)}</span></div>${isNew ? '<span class="adv-stat-badge adv-off">NUEVO</span>' : '<span class="adv-stat-badge adv-on">EXISTE</span>'}</div>`;
-  }).join('');
-}
-
-function closeBudgetImportModal(){
-  document.getElementById('budget-import-modal').style.display = 'none';
-  document.getElementById('budget-import-picker').style.display = 'none';
-  document.getElementById('budget-import-confirm').style.display = 'block';
-  document.getElementById('import-budget-file').value = '';
-  pendingBudgetData = null;
-  pendingBudgetBlocks = null;
-}
-
-function executeBudgetImport(mode){
-  if(sessionRole !== 'supervisor' || !pendingBudgetData) return;
-
-  const applyVal = (current, incoming) => mode === 'add' ? (current||0) + incoming : incoming;
-  let createdCount = 0, updatedCount = 0;
-
-  pendingBudgetData.rows.forEach(row => {
-    let seller = sellers.find(s => normName(s.name) === normName(row.asesorName));
-
-    if(!seller){
-      if(sellers.length >= MAX_ADVISORS){ return; }
-      const nextId = allSellers.length;
-      seller = createEmptySeller(nextId, sessionCentroId, sessionSupervisorId);
-      seller.name = row.asesorName;
-      allSellers.push(seller);
-      createdCount++;
-    } else {
-      updatedCount++;
-    }
-
-    row.values.forEach(v => {
-      const k = seller.kpis[v.catId];
-      if(!k) return;
-      if(v.field === 'meta'){
-        k.meta = applyVal(k.meta, v.value);
-      } else {
-        k[v.field] = applyVal(k[v.field], v.value);
-      }
-    });
-  });
-
-  const removedPlaceholders = cleanupEmptyPlaceholderSellers(sessionCentroId, sessionSupervisorId);
-
-  recomputeScope();
-  validateSellersData();
-  saveData();
-  renderTabs();
-  updateAdvisorsCounter();
-  if(isSupervisorMode) renderSupervisorDashboard(); else loadSeller(currentIdx);
-  closeBudgetImportModal();
-
-  const cleanupMsg = removedPlaceholders.length ? ` Se eliminaron ${removedPlaceholders.length} asesor(es) de plantilla sin usar.` : '';
-  toast(`Presupuesto importado: ${updatedCount} asesor(es) actualizados, ${createdCount} nuevo(s) agregados.${cleanupMsg}`, 'success');
 }
 
 /* =========================
@@ -4208,6 +4062,177 @@ function executeFullBudgetImport(mode){
 
   const cleanupMsg = placeholdersRemoved ? ` Se eliminaron ${placeholdersRemoved} asesor(es) de plantilla sin usar.` : '';
   toast(`Alta automática completa: ${centrosCreated} centro(s), ${supervisorsCreated} supervisor(es), ${asesoresCreated} asesor(es) nuevo(s) y ${asesoresUpdated} actualizado(s).${cleanupMsg}`, 'success');
+}
+
+/* =========================
+   IMPORTACIÓN DE PRESUPUESTO POR CENTRO (Jefe de Centro)
+   El Jefe sube el archivo UNA vez y el sistema filtra por CAC == su centro,
+   dando de alta/actualizando a TODOS los supervisores y asesores de ese centro.
+   Nunca crea centros nuevos (el Jefe ya pertenece a uno existente).
+   ========================= */
+let pendingJefeBudgetBlocks = null;
+let pendingJefeAllBlocks = null;
+let pendingJefeCacOptions = null;
+
+function triggerImportBudgetJefe(){ document.getElementById('import-budget-jefe-file').click(); }
+
+function readBudgetJefeFile(input){
+  if(sessionRole !== 'jefe') return;
+  const file = input.files && input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, {type:'array'});
+      const parsed = parseBudgetWorkbook(workbook);
+      if(!parsed) { toast('No se encontró la pestaña "PPTO X SUPER" en el archivo.', 'danger'); input.value=''; return; }
+      if(parsed.blocks.length === 0){ toast('No se encontraron bloques de supervisores en el archivo.', 'danger'); input.value=''; return; }
+
+      const centro = orgData.centros.find(c => c.id === sessionCentroId);
+      const myCentroName = normName(centro ? centro.name : '');
+      const exactMatches = parsed.blocks.filter(b => normName(b.cac) === myCentroName);
+
+      document.getElementById('budget-jefe-import-modal').style.display = 'flex';
+
+      if(exactMatches.length === 0){
+        // Sin CAC exacto: deja que el Jefe elija cuál grupo de bloques es su centro.
+        pendingJefeAllBlocks = parsed.blocks;
+        const seen = new Set();
+        pendingJefeCacOptions = [];
+        parsed.blocks.forEach(b => {
+          const key = normName(b.cac);
+          if(seen.has(key)) return;
+          seen.add(key);
+          pendingJefeCacOptions.push(b.cac);
+        });
+        renderBudgetJefeCacPicker();
+      } else {
+        pendingJefeBudgetBlocks = exactMatches;
+        document.getElementById('budget-jefe-import-picker').style.display = 'none';
+        document.getElementById('budget-jefe-import-confirm').style.display = 'block';
+        renderBudgetJefeImportPreview();
+      }
+    } catch(err){
+      console.error(err);
+      toast('Error al leer el archivo. Asegúrate de que es el Excel de Presupuesto Inicial (.xlsx).', 'danger');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderBudgetJefeCacPicker(){
+  document.getElementById('budget-jefe-import-picker').style.display = 'block';
+  document.getElementById('budget-jefe-import-confirm').style.display = 'none';
+
+  const list = document.getElementById('budget-jefe-import-picker-list');
+  list.innerHTML = pendingJefeCacOptions.map((cac, i) => {
+    const blocksForCac = pendingJefeAllBlocks.filter(b => normName(b.cac) === normName(cac));
+    const totalAsesores = blocksForCac.reduce((sum,b) => sum + b.rows.length, 0);
+    return `
+    <div class="event-item">
+      <div class="event-info">
+        <span class="event-type">${escapeHtml(cac)}</span>
+        <span class="event-dates">${blocksForCac.length} supervisor(es) · ${totalAsesores} asesor(es)</span>
+      </div>
+      <button class="btn-add-event" style="padding:8px 14px; width:auto;" onclick="selectJefeBudgetCac(${i})">Es mi centro</button>
+    </div>
+  `;}).join('') || '<div style="font-size:.85rem;color:#78909c;">No se detectaron centros en el archivo.</div>';
+}
+
+function selectJefeBudgetCac(index){
+  if(!pendingJefeCacOptions || !pendingJefeCacOptions[index]) return;
+  const cac = pendingJefeCacOptions[index];
+  pendingJefeBudgetBlocks = pendingJefeAllBlocks.filter(b => normName(b.cac) === normName(cac));
+  pendingJefeAllBlocks = null;
+  pendingJefeCacOptions = null;
+  document.getElementById('budget-jefe-import-picker').style.display = 'none';
+  document.getElementById('budget-jefe-import-confirm').style.display = 'block';
+  renderBudgetJefeImportPreview();
+}
+
+function renderBudgetJefeImportPreview(){
+  if(!pendingJefeBudgetBlocks) return;
+  const existingSupKey = new Set(orgData.supervisors.filter(s => s.centroId === sessionCentroId).map(s => normName(s.name)));
+  const totalAsesores = pendingJefeBudgetBlocks.reduce((sum,b) => sum + b.rows.length, 0);
+  const newSupervisors = pendingJefeBudgetBlocks.filter(b => !existingSupKey.has(normName(b.supervisorName))).length;
+
+  document.getElementById('budget-jefe-import-summary').innerHTML = `
+    <p style="margin-bottom:10px;">Se encontraron <b>${pendingJefeBudgetBlocks.length}</b> supervisor(es) y <b>${totalAsesores}</b> asesor(es) para tu centro en el archivo.</p>
+    <ul style="margin:0 0 10px 20px; font-size:0.9rem; color:#455a64;">
+      <li><b>${newSupervisors}</b> supervisor(es) nuevo(s) se crearán (contraseña por defecto <b>1234</b>).</li>
+      <li>Los asesores nuevos usarán PIN por defecto <b>1234</b>. Todas las contraseñas se pueden cambiar después.</li>
+    </ul>
+  `;
+
+  const list = document.getElementById('budget-jefe-import-rows');
+  list.innerHTML = pendingJefeBudgetBlocks.map(b => {
+    const isNewSup = !existingSupKey.has(normName(b.supervisorName));
+    return `<div style="font-size:0.8rem; padding:5px 0; color:#546e7a; display:flex; align-items:center; gap:8px;">
+      <i class="fas fa-user-tie"></i> ${escapeHtml(b.supervisorName)} — ${b.rows.length} asesor(es) ${isNewSup ? '<span class="adv-stat-badge adv-off">NUEVO</span>' : '<span class="adv-stat-badge adv-on">EXISTE</span>'}
+    </div>`;
+  }).join('');
+}
+
+function closeBudgetJefeImportModal(){
+  document.getElementById('budget-jefe-import-modal').style.display = 'none';
+  document.getElementById('budget-jefe-import-picker').style.display = 'none';
+  document.getElementById('budget-jefe-import-confirm').style.display = 'block';
+  document.getElementById('import-budget-jefe-file').value = '';
+  pendingJefeBudgetBlocks = null;
+  pendingJefeAllBlocks = null;
+  pendingJefeCacOptions = null;
+}
+
+function executeBudgetJefeImport(mode){
+  if(sessionRole !== 'jefe' || !pendingJefeBudgetBlocks || pendingJefeBudgetBlocks.length === 0) return;
+
+  const applyVal = (current, incoming) => mode === 'add' ? (current||0) + incoming : incoming;
+  let supervisorsCreated = 0, asesoresCreated = 0, asesoresUpdated = 0, placeholdersRemoved = 0;
+
+  pendingJefeBudgetBlocks.forEach(block => {
+    let supervisor = orgData.supervisors.find(s => s.centroId === sessionCentroId && normName(s.name) === normName(block.supervisorName));
+    if(!supervisor){
+      const id = nextOrgId(orgData.supervisors);
+      supervisor = { id, centroId: sessionCentroId, name: block.supervisorName, photo: DEFAULT_AVATAR, password: '1234', dailyGoals:{}, globalNotices:[], hiddenCategories:[] };
+      orgData.supervisors.push(supervisor);
+      supervisorsCreated++;
+    }
+
+    block.rows.forEach(row => {
+      let seller = allSellers.find(s => s.centroId === sessionCentroId && s.supervisorId === supervisor.id && normName(s.name) === normName(row.asesorName));
+      if(!seller){
+        const teamCount = allSellers.filter(s => s.centroId === sessionCentroId && s.supervisorId === supervisor.id).length;
+        if(teamCount >= MAX_ADVISORS) return;
+        const nextId = allSellers.length;
+        seller = createEmptySeller(nextId, sessionCentroId, supervisor.id);
+        seller.name = row.asesorName;
+        allSellers.push(seller);
+        asesoresCreated++;
+      } else {
+        asesoresUpdated++;
+      }
+
+      row.values.forEach(v => {
+        const k = seller.kpis[v.catId];
+        if(!k) return;
+        if(v.field === 'meta') k.meta = applyVal(k.meta, v.value);
+        else k[v.field] = applyVal(k[v.field], v.value);
+      });
+    });
+
+    placeholdersRemoved += cleanupEmptyPlaceholderSellers(sessionCentroId, supervisor.id).length;
+  });
+
+  orgData.updatedAt = Date.now();
+  recomputeScope();
+  validateSellersData();
+  saveData();
+  updateRoleHeaderVisibility();
+  renderSupervisorDashboard();
+  closeBudgetJefeImportModal();
+
+  const cleanupMsg = placeholdersRemoved ? ` Se eliminaron ${placeholdersRemoved} asesor(es) de plantilla sin usar.` : '';
+  toast(`Presupuesto de tu centro importado: ${supervisorsCreated} supervisor(es) nuevo(s), ${asesoresCreated} asesor(es) nuevo(s), ${asesoresUpdated} actualizado(s).${cleanupMsg}`, 'success');
 }
 
 /* =========================
