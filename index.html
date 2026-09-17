@@ -241,7 +241,7 @@
     .event-info{display:flex;flex-direction:column}
     .event-type{font-weight:800;text-transform:uppercase;font-size:.7rem}
     .event-dates{color:#555}
-    .btn-del-event{color:var(--danger);background:none;border:none;cursor:pointer}
+    .btn-del-event{color:var(--danger);background:none;border:none;cursor:pointer;min-width:28px;min-height:28px;padding:4px 8px;}
 
     /* DRAG AND DROP & KPIs */
     .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:30px;margin-bottom:40px}
@@ -945,7 +945,10 @@
           <input type="text" id="org-new-centro-name" placeholder="Nombre del nuevo Centro">
           <input type="text" id="org-new-centro-jefe-name" placeholder="Nombre del Jefe de Centro">
           <input type="text" id="org-new-centro-jefe-pass" placeholder="Contraseña del Jefe">
-          <button class="btn-add-event" onclick="addCentro()">+ Crear Centro</button>
+          <div style="display:flex; gap:10px;">
+            <button class="btn-add-event" id="btn-save-centro" style="flex:1;" onclick="saveCentro()">+ Crear Centro</button>
+            <button type="button" id="btn-cancel-centro" style="display:none; background:#eceff1; border:none; border-radius:8px; padding:0 15px; font-weight:800; color:#546e7a; cursor:pointer;" onclick="cancelEditCentro()">Cancelar</button>
+          </div>
         </div>
       </div>
 
@@ -955,7 +958,10 @@
           <input type="text" id="org-new-sup-name" placeholder="Nombre del nuevo Supervisor">
           <input type="text" id="org-new-sup-pass" placeholder="Contraseña">
           <select id="org-new-sup-centro"></select>
-          <button class="btn-add-event" onclick="addSupervisorAccount()">+ Crear Supervisor</button>
+          <div style="display:flex; gap:10px;">
+            <button class="btn-add-event" id="btn-save-sup" style="flex:1;" onclick="saveSupervisorAccount()">+ Crear Supervisor</button>
+            <button type="button" id="btn-cancel-sup" style="display:none; background:#eceff1; border:none; border-radius:8px; padding:0 15px; font-weight:800; color:#546e7a; cursor:pointer;" onclick="cancelEditSupervisor()">Cancelar</button>
+          </div>
         </div>
       </div>
 
@@ -964,8 +970,11 @@
         <div class="event-form">
           <input type="text" id="org-new-ger-name" placeholder="Nombre del nuevo Gerente">
           <input type="text" id="org-new-ger-pass" placeholder="Contraseña">
-          <div id="org-new-ger-centros" style="display:flex; flex-wrap:wrap; gap:8px; font-size:0.8rem; background:#fff; padding:10px; border-radius:8px;"></div>
-          <button class="btn-add-event" onclick="addGerenteAccount()">+ Crear Gerente</button>
+          <div id="org-new-ger-centros" style="display:flex; flex-wrap:wrap; gap:8px; font-size:0.8rem; background:#fff; padding:10px; border-radius:8px; max-height:180px; overflow-y:auto;"></div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn-add-event" id="btn-save-ger" style="flex:1;" onclick="saveGerenteAccount()">+ Crear Gerente</button>
+            <button type="button" id="btn-cancel-ger" style="display:none; background:#eceff1; border:none; border-radius:8px; padding:0 15px; font-weight:800; color:#546e7a; cursor:pointer;" onclick="cancelEditGerente()">Cancelar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2343,6 +2352,8 @@ function switchOrgTab(tab){
   });
 }
 
+let orgEditState = { centro: null, supervisor: null, gerente: null };
+
 function renderOrgAdminModal(){
   const listCentros = document.getElementById('org-list-centros');
   listCentros.innerHTML = orgData.centros.map(c => {
@@ -2352,7 +2363,10 @@ function renderOrgAdminModal(){
         <span class="event-type">${escapeHtml(c.name)}</span>
         <span class="event-dates">Jefe: ${escapeHtml(c.jefe.name)} · ${supCount} supervisor(es)</span>
       </div>
-      <button class="btn-del-event" onclick="deleteCentro(${c.id})"><i class="fas fa-trash"></i></button>
+      <div style="display:flex; gap:5px;">
+        <button class="btn-del-event" style="color:var(--secondary);" onclick="startEditCentro(${c.id})" title="Editar"><i class="fas fa-pen"></i></button>
+        <button class="btn-del-event" onclick="deleteCentro(${c.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
+      </div>
     </div>`;
   }).join('') || '<div style="font-size:.85rem;color:#78909c;">Sin centros.</div>';
 
@@ -2365,12 +2379,16 @@ function renderOrgAdminModal(){
         <span class="event-type">${escapeHtml(s.name)}</span>
         <span class="event-dates">${centro?escapeHtml(centro.name):'Sin centro'} · ${teamCount} asesor(es)</span>
       </div>
-      <button class="btn-del-event" onclick="deleteSupervisorAccount(${s.id})"><i class="fas fa-trash"></i></button>
+      <div style="display:flex; gap:5px;">
+        <button class="btn-del-event" style="color:var(--secondary);" onclick="startEditSupervisor(${s.id})" title="Editar"><i class="fas fa-pen"></i></button>
+        <button class="btn-del-event" onclick="deleteSupervisorAccount(${s.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
+      </div>
     </div>`;
   }).join('') || '<div style="font-size:.85rem;color:#78909c;">Sin supervisores.</div>';
 
   const centroSelect = document.getElementById('org-new-sup-centro');
   centroSelect.innerHTML = orgData.centros.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('') || '<option value="">Crea un centro primero</option>';
+  if(orgEditState.supervisor !== null) centroSelect.value = String(orgEditState.supervisor.centroId);
 
   const listGer = document.getElementById('org-list-gerentes');
   listGer.innerHTML = orgData.gerentes.map(g => {
@@ -2378,32 +2396,66 @@ function renderOrgAdminModal(){
     return `<div class="event-item">
       <div class="event-info">
         <span class="event-type">${escapeHtml(g.name)}</span>
-        <span class="event-dates">Centros: ${escapeHtml(centroNames)}</span>
+        <span class="event-dates">Centros (${(g.centroIds||[]).length}): ${escapeHtml(centroNames)}</span>
       </div>
-      <button class="btn-del-event" onclick="deleteGerenteAccount(${g.id})"><i class="fas fa-trash"></i></button>
+      <div style="display:flex; gap:5px;">
+        <button class="btn-del-event" style="color:var(--secondary);" onclick="startEditGerente(${g.id})" title="Editar"><i class="fas fa-pen"></i></button>
+        <button class="btn-del-event" onclick="deleteGerenteAccount(${g.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
+      </div>
     </div>`;
   }).join('') || '<div style="font-size:.85rem;color:#78909c;">Sin gerentes.</div>';
 
+  const editingCentroIds = orgEditState.gerente ? (orgEditState.gerente.centroIds||[]) : [];
   const centrosCheckboxes = document.getElementById('org-new-ger-centros');
   centrosCheckboxes.innerHTML = orgData.centros.map(c=>`
     <label style="display:flex; align-items:center; gap:4px;">
-      <input type="checkbox" class="org-ger-centro-chk" value="${c.id}"> ${escapeHtml(c.name)}
+      <input type="checkbox" class="org-ger-centro-chk" value="${c.id}" ${editingCentroIds.includes(c.id)?'checked':''}> ${escapeHtml(c.name)}
     </label>
   `).join('') || '<span style="color:#90a4ae;">Crea un centro primero</span>';
 }
 
-function addCentro(){
+function startEditCentro(id){
+  const c = orgData.centros.find(x=>x.id===id);
+  if(!c) return;
+  orgEditState.centro = c;
+  document.getElementById('org-new-centro-name').value = c.name;
+  document.getElementById('org-new-centro-jefe-name').value = c.jefe.name;
+  document.getElementById('org-new-centro-jefe-pass').value = c.jefe.password || '';
+  document.getElementById('btn-save-centro').innerText = 'Guardar Cambios';
+  document.getElementById('btn-cancel-centro').style.display = 'block';
+}
+function cancelEditCentro(){
+  orgEditState.centro = null;
+  document.getElementById('org-new-centro-name').value = '';
+  document.getElementById('org-new-centro-jefe-name').value = '';
+  document.getElementById('org-new-centro-jefe-pass').value = '';
+  document.getElementById('btn-save-centro').innerText = '+ Crear Centro';
+  document.getElementById('btn-cancel-centro').style.display = 'none';
+}
+
+function saveCentro(){
   if(sessionRole !== 'supervisor') return;
   const name = document.getElementById('org-new-centro-name').value.trim();
   const jefeName = document.getElementById('org-new-centro-jefe-name').value.trim();
   const jefePass = document.getElementById('org-new-centro-jefe-pass').value.trim();
   if(!name) return toast("Escribe el nombre del centro.", 'danger');
+
+  if(orgEditState.centro){
+    orgEditState.centro.name = name;
+    orgEditState.centro.jefe.name = jefeName || `Jefe de ${name}`;
+    orgEditState.centro.jefe.password = jefePass || orgEditState.centro.jefe.password || "jefe123";
+    orgData.updatedAt = Date.now();
+    saveData();
+    cancelEditCentro();
+    renderOrgAdminModal();
+    toast(`Centro "${escapeHtml(name)}" actualizado.`, 'success');
+    return;
+  }
+
   const id = nextOrgId(orgData.centros);
   orgData.centros.push({ id, name, jefe: { name: jefeName || `Jefe de ${name}`, photo: DEFAULT_AVATAR, password: jefePass || "jefe123" } });
   orgData.updatedAt = Date.now();
-  document.getElementById('org-new-centro-name').value = '';
-  document.getElementById('org-new-centro-jefe-name').value = '';
-  document.getElementById('org-new-centro-jefe-pass').value = '';
+  cancelEditCentro();
   saveData();
   renderOrgAdminModal();
   toast(`Centro "${escapeHtml(name)}" creado.`, 'success');
@@ -2417,23 +2469,54 @@ function deleteCentro(id){
   orgData.centros = orgData.centros.filter(c=>c.id!==id);
   orgData.gerentes.forEach(g => { g.centroIds = (g.centroIds||[]).filter(cid=>cid!==id); });
   orgData.updatedAt = Date.now();
+  if(orgEditState.centro && orgEditState.centro.id===id) cancelEditCentro();
   saveData();
   renderOrgAdminModal();
   toast('Centro eliminado.', 'info');
 }
 
-function addSupervisorAccount(){
+function startEditSupervisor(id){
+  const s = orgData.supervisors.find(x=>x.id===id);
+  if(!s) return;
+  orgEditState.supervisor = s;
+  document.getElementById('org-new-sup-name').value = s.name;
+  document.getElementById('org-new-sup-pass').value = s.password || '';
+  document.getElementById('btn-save-sup').innerText = 'Guardar Cambios';
+  document.getElementById('btn-cancel-sup').style.display = 'block';
+  renderOrgAdminModal();
+}
+function cancelEditSupervisor(){
+  orgEditState.supervisor = null;
+  document.getElementById('org-new-sup-name').value = '';
+  document.getElementById('org-new-sup-pass').value = '';
+  document.getElementById('btn-save-sup').innerText = '+ Crear Supervisor';
+  document.getElementById('btn-cancel-sup').style.display = 'none';
+}
+
+function saveSupervisorAccount(){
   if(sessionRole !== 'supervisor') return;
   const name = document.getElementById('org-new-sup-name').value.trim();
   const pass = document.getElementById('org-new-sup-pass').value.trim();
   const centroId = parseInt(document.getElementById('org-new-sup-centro').value, 10);
   if(!name) return toast("Escribe el nombre del supervisor.", 'danger');
   if(isNaN(centroId)) return toast("Crea un centro primero.", 'danger');
+
+  if(orgEditState.supervisor){
+    orgEditState.supervisor.name = name;
+    orgEditState.supervisor.centroId = centroId;
+    if(pass) orgEditState.supervisor.password = pass;
+    orgData.updatedAt = Date.now();
+    saveData();
+    cancelEditSupervisor();
+    renderOrgAdminModal();
+    toast(`Supervisor "${escapeHtml(name)}" actualizado.`, 'success');
+    return;
+  }
+
   const id = nextOrgId(orgData.supervisors);
   orgData.supervisors.push({ id, centroId, name, photo: DEFAULT_AVATAR, password: pass || "1234", dailyGoals:{}, globalNotices:[] });
   orgData.updatedAt = Date.now();
-  document.getElementById('org-new-sup-name').value = '';
-  document.getElementById('org-new-sup-pass').value = '';
+  cancelEditSupervisor();
   saveData();
   renderOrgAdminModal();
   toast(`Supervisor "${escapeHtml(name)}" creado.`, 'success');
@@ -2448,25 +2531,55 @@ function deleteSupervisorAccount(id){
   if(!confirm("¿Eliminar este supervisor?")) return;
   orgData.supervisors = orgData.supervisors.filter(s=>s.id!==id);
   orgData.updatedAt = Date.now();
+  if(orgEditState.supervisor && orgEditState.supervisor.id===id) cancelEditSupervisor();
   saveData();
   renderOrgAdminModal();
   toast('Supervisor eliminado.', 'info');
 }
 
-function addGerenteAccount(){
+function startEditGerente(id){
+  const g = orgData.gerentes.find(x=>x.id===id);
+  if(!g) return;
+  orgEditState.gerente = g;
+  document.getElementById('org-new-ger-name').value = g.name;
+  document.getElementById('org-new-ger-pass').value = g.password || '';
+  document.getElementById('btn-save-ger').innerText = 'Guardar Cambios';
+  document.getElementById('btn-cancel-ger').style.display = 'block';
+  renderOrgAdminModal();
+}
+function cancelEditGerente(){
+  orgEditState.gerente = null;
+  document.getElementById('org-new-ger-name').value = '';
+  document.getElementById('org-new-ger-pass').value = '';
+  document.getElementById('btn-save-ger').innerText = '+ Crear Gerente';
+  document.getElementById('btn-cancel-ger').style.display = 'none';
+  renderOrgAdminModal();
+}
+
+function saveGerenteAccount(){
   if(sessionRole !== 'supervisor') return;
   const name = document.getElementById('org-new-ger-name').value.trim();
   const pass = document.getElementById('org-new-ger-pass').value.trim();
   const centroIds = Array.from(document.querySelectorAll('.org-ger-centro-chk:checked')).map(el=>parseInt(el.value,10));
   if(!name) return toast("Escribe el nombre del gerente.", 'danger');
+
+  if(orgEditState.gerente){
+    orgEditState.gerente.name = name;
+    orgEditState.gerente.centroIds = centroIds;
+    if(pass) orgEditState.gerente.password = pass;
+    orgData.updatedAt = Date.now();
+    saveData();
+    cancelEditGerente();
+    toast(`Gerente "${escapeHtml(name)}" actualizado (${centroIds.length} centro(s) asignado(s)).`, 'success');
+    return;
+  }
+
   const id = nextOrgId(orgData.gerentes);
   orgData.gerentes.push({ id, name, photo: DEFAULT_AVATAR, password: pass || "gerente123", centroIds });
   orgData.updatedAt = Date.now();
-  document.getElementById('org-new-ger-name').value = '';
-  document.getElementById('org-new-ger-pass').value = '';
   saveData();
-  renderOrgAdminModal();
-  toast(`Gerente "${escapeHtml(name)}" creado.`, 'success');
+  cancelEditGerente();
+  toast(`Gerente "${escapeHtml(name)}" creado con ${centroIds.length} centro(s).`, 'success');
 }
 
 function deleteGerenteAccount(id){
@@ -2474,6 +2587,7 @@ function deleteGerenteAccount(id){
   if(!confirm("¿Eliminar este gerente?")) return;
   orgData.gerentes = orgData.gerentes.filter(g=>g.id!==id);
   orgData.updatedAt = Date.now();
+  if(orgEditState.gerente && orgEditState.gerente.id===id) orgEditState.gerente = null;
   saveData();
   renderOrgAdminModal();
   toast('Gerente eliminado.', 'info');
