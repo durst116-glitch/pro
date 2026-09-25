@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tarjetas de Avance</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #ffffff; --ink: #1c1f24; --ink-2: #555b66; --muted: #8a909b;
+    --line: #e2e5ea; --accent: #1d4ed8; --accent-ink: #ffffff; --soft: #eef2ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121417; --panel: #1b1e23; --ink: #eceef1; --ink-2: #b4bac4; --muted: #858c97;
+      --line: #2c3037; --accent: #6b8ff5; --accent-ink: #0d1020; --soft: #1f2640;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121417; --panel: #1b1e23; --ink: #eceef1; --ink-2: #b4bac4; --muted: #858c97;
+    --line: #2c3037; --accent: #6b8ff5; --accent-ink: #0d1020; --soft: #1f2640;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-size: 15px;
+  }
+  header.app { padding: 20px 16px 8px; max-width: 1200px; margin: 0 auto; }
+  header.app h1 { margin: 0 0 4px; font-size: 22px; }
+  header.app p { margin: 0; color: var(--ink-2); }
+  main { max-width: 1200px; margin: 0 auto; padding: 8px 16px 48px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-top: 16px; }
+  .panel h2 { margin: 0 0 12px; font-size: 16px; }
+  .uploads { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .upload { border: 1px dashed var(--line); border-radius: 10px; padding: 12px; }
+  .upload b { display: block; margin-bottom: 4px; }
+  .upload small { color: var(--muted); display: block; margin-bottom: 8px; }
+  .upload .status { margin-top: 8px; font-size: 13px; color: var(--ink-2); }
+  .upload.disabled { opacity: .55; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  select, input[type=date], button {
+    font: inherit; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--panel); color: var(--ink);
+  }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+  .team { border: 1px solid var(--line); border-radius: 10px; padding: 12px; cursor: pointer; }
+  .team.active { border-color: var(--accent); background: var(--soft); }
+  .team .t { font-weight: 700; }
+  .team .s { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+  .team .n { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .warn { color: #b45309; font-size: 13px; margin-top: 8px; }
+  .empty { color: var(--muted); text-align: center; padding: 32px 8px; }
+  .cards { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 16px; }
+  .card-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 100%; }
+  .card-scale { width: 540px; max-width: 100%; overflow: hidden; }
+
+  /* ---------- Tarjeta (se exporta como imagen; siempre en claro) ---------- */
+  .card {
+    width: 540px; background: #ffffff; color: #1c1f24; border-radius: 16px; overflow: hidden;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+  }
+  .card .hd { background: #13294b; color: #ffffff; padding: 18px 20px 16px; }
+  .card .hd .mes { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #aebbd3; }
+  .card .hd .nombre { font-size: 21px; font-weight: 700; margin-top: 4px; line-height: 1.2; }
+  .card .hd .meta { font-size: 12px; color: #d3dbea; margin-top: 6px; }
+  .card .hero { display: flex; border-bottom: 1px solid #e6e8ec; }
+  .card .hero > div { flex: 1; padding: 12px 16px; }
+  .card .hero > div + div { border-left: 1px solid #e6e8ec; }
+  .card .hero .lbl { font-size: 11px; color: #6b7280; }
+  .card .hero .val { font-size: 26px; font-weight: 700; margin-top: 2px; }
+  .card .hero .sub { font-size: 11px; color: #6b7280; }
+  .card .sec { padding: 12px 16px 4px; }
+  .card .sec-t { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #13294b; margin-bottom: 6px; }
+  .card table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .card th { text-align: right; font-weight: 600; color: #6b7280; font-size: 10px; padding: 2px 4px; }
+  .card th:first-child { text-align: left; }
+  .card td { padding: 3px 4px; border-top: 1px solid #f0f1f4; font-variant-numeric: tabular-nums; }
+  .card td.num { text-align: right; width: 44px; }
+  .card td.pct { text-align: right; width: 48px; font-weight: 600; }
+  .card td.bar { width: 110px; }
+  .card tr.grp td { background: #f5f7fa; font-weight: 700; color: #13294b; font-size: 11px; border-top: 1px solid #e6e8ec; }
+  .card td.ind { padding-left: 12px; color: #374151; }
+  .card tr.solo td.ind { padding-left: 4px; font-weight: 700; color: #13294b; }
+  .card .track { height: 8px; border-radius: 4px; background: #e8ebf0; overflow: hidden; }
+  .card .fill { height: 8px; border-radius: 4px; }
+  .card .st { display: inline-block; width: 12px; text-align: center; font-size: 10px; margin-left: 2px; }
+  .card .pend {
+    border: 1px dashed #c9ced6; border-radius: 10px; padding: 12px; color: #6b7280;
+    font-size: 12px; text-align: center; margin-bottom: 8px;
+  }
+  .card .legend { font-size: 10px; color: #6b7280; padding: 4px 16px 0; }
+  .card .ft { font-size: 10px; color: #8a909b; padding: 8px 16px 14px; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<header class="app">
+  <h1>Tarjetas de avance por asesor</h1>
+  <p>Carga los archivos del mes y descarga una imagen por asesor con su avance en ventas y encuestas.</p>
+</header>
+<main>
+  <section class="panel">
+    <h2>1. Archivos</h2>
+    <div class="uploads">
+      <div class="upload">
+        <b>Presupuesto inicial</b>
+        <small>Excel con la pestaña «PPTO X SUPER» (equipos, asesores y metas).</small>
+        <input type="file" id="f-ppto" accept=".xlsx,.xls,.xlsm">
+        <div class="status" id="st-ppto">Sin cargar</div>
+      </div>
+      <div class="upload disabled">
+        <b>Ventas del mes</b>
+        <small>Pendiente: en cuanto recibamos el archivo de ventas se conecta aquí.</small>
+        <input type="file" disabled>
+      </div>
+      <div class="upload disabled">
+        <b>Encuestas</b>
+        <small>Pendiente: en cuanto recibamos el archivo de encuestas se conecta aquí.</small>
+        <input type="file" disabled>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-equipos" hidden>
+    <h2>2. Equipos</h2>
+    <div class="controls">
+      <label>Fecha de corte <input type="date" id="corte"></label>
+      <button id="b-borrar">Borrar datos cargados</button>
+    </div>
+    <div class="summary" id="equipos"></div>
+    <div class="warn" id="avisos"></div>
+  </section>
+
+  <section class="panel" id="p-tarjetas" hidden>
+    <h2>3. Tarjetas</h2>
+    <div class="controls">
+      <button class="primary" id="b-zip">Descargar todas las del equipo (ZIP)</button>
+      <span id="zip-st" style="color:var(--muted);font-size:13px"></span>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+  <div class="empty" id="vacio">Carga el presupuesto inicial para ver a tu equipo.</div>
+</main>
+
+<script>
+const STORE_KEY = 'tarjetas-asesores-v1';
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const MES_CORTO = { ene:0, feb:1, mar:2, abr:3, may:4, jun:5, jul:6, ago:7, sep:8, oct:9, nov:10, dic:11 };
+const STATUS = { good: '#0ca30c', warning: '#fab219', critical: '#d03b3b', none: '#9aa3b2' };
+
+let state = { ppto: null, equipoSel: null };
+
+const norm = v => String(v ?? '').replace(/\s+/g, ' ').trim();
+const key = v => norm(v).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cap = s => norm(s).toLowerCase().replace(/(^|\s)\S/g, m => m.toUpperCase());
+
+// ---------- Lectura del presupuesto inicial ----------
+// La pestaña "PPTO X SUPER" trae un bloque por supervisor. Cada bloque tiene:
+//   fila de grupos (POSPAGO, WiFi TELCEL, ...) · fila de encabezados (nombre asesor, ...) · asesores · TOTAL
+function parsePresupuesto(wb, fileName) {
+  const sheetName = wb.SheetNames.find(n => key(n) === 'PPTO X SUPER')
+    || wb.SheetNames.find(n => key(n).includes('PPTO X SUPER'));
+  if (!sheetName) throw new Error('No se encontró la pestaña «PPTO X SUPER».');
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: null, raw: true });
+
+  const equipos = [];
+  const avisos = [];
+  let indicadores = null;
+
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const iAsesor = row.findIndex(c => key(c) === 'NOMBRE ASESOR');
+    if (iAsesor < 0) continue;
+
+    const col = name => row.findIndex(c => key(c).startsWith(name));
+    const c = {
+      cac: row.findIndex(x => key(x) === 'CAC'),
+      userSup: col('USER SUPERVISOR'), nomSup: col('NOMBRE SUPERVISOR'), equipo: col('EQUIPO'),
+      asesor: iAsesor, userAs: col('USER ASESOR'), diasIni: col('DIAS INICIALES'), diasFin: col('DIAS FINALES'),
+    };
+    const firstInd = Math.max(c.diasFin, c.diasIni, c.userAs, c.asesor) + 1;
+
+    // Indicadores: grupo de la fila de arriba (se hereda hacia la derecha) + subindicador de esta fila.
+    const grupos = rows[r - 1] || [];
+    const width = Math.max(row.length, grupos.length);
+    const inds = [];
+    let grupo = null;
+    for (let j = firstInd; j < width; j++) {
+      const g = norm(grupos[j]), s = norm(row[j]);
+      if (g) grupo = g;
+      if (!g && !s) break;
+      inds.push({ col: j, grupo, sub: s, id: key(grupo) + '|' + key(s) });
+    }
+    if (!indicadores) indicadores = inds.map(({ grupo, sub, id }) => ({ grupo, sub, id }));
+
+    const eq = { nombre: null, supervisor: null, userSup: null, cac: null, asesores: [] };
+    for (let k = r + 1; k < rows.length; k++) {
+      const d = rows[k] || [];
+      if (key(d[0]).startsWith('TOTAL') || d.some(x => key(x) === 'NOMBRE ASESOR')) break;
+      const nombre = norm(d[c.asesor]);
+      if (!nombre) continue;
+      eq.nombre = eq.nombre || norm(d[c.equipo]);
+      eq.supervisor = eq.supervisor || norm(d[c.nomSup]);
+      eq.userSup = eq.userSup || norm(d[c.userSup]);
+      eq.cac = eq.cac || norm(d[c.cac]);
+      const metas = {};
+      inds.forEach(ind => { const v = Number(d[ind.col]); metas[ind.id] = isFinite(v) ? v : 0; });
+      eq.asesores.push({
+        nombre, user: norm(d[c.userAs]),
+        dias: Number(d[c.diasFin]) || Number(d[c.diasIni]) || null,
+        metas, real: {},
+      });
+    }
+    if (eq.asesores.length) {
+      eq.nombre = eq.nombre || 'EQUIPO ' + (equipos.length + 1);
+      equipos.push(eq);
+    }
+  }
+  if (!equipos.length) throw new Error('La pestaña «PPTO X SUPER» no tiene asesores capturados.');
+
+  const vistos = {};
+  equipos.forEach(e => e.asesores.forEach(a => {
+    if (!a.user) avisos.push(`${a.nombre} (${e.nombre}) no tiene user.`);
+    else if (vistos[a.user]) avisos.push(`El user ${a.user} aparece en ${vistos[a.user]} y en ${e.nombre}.`);
+    else vistos[a.user] = e.nombre;
+  }));
+
+  return { archivo: fileName, mes: detectarMes(wb, fileName), indicadores, equipos, avisos };
+}
+
+// Mes de las metas: primero la pestaña CARTA ("Asunto: Metas de septiembre 2026"), luego el nombre del archivo.
+function detectarMes(wb, fileName) {
+  const carta = wb.SheetNames.find(n => key(n) === 'CARTA');
+  if (carta) {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[carta], { header: 1, defval: null });
+    for (const row of rows) for (const cell of row || []) {
+      const m = /metas de\s+([a-záéíóú]+)\s+(\d{4})/i.exec(String(cell ?? ''));
+      if (m) {
+        const idx = MESES.indexOf(m[1].toLowerCase());
+        if (idx >= 0) return { idx, anio: Number(m[2]) };
+      }
+    }
+  }
+  const hoy = new Date();
+  const m = /(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)/i.exec(fileName || '');
+  return { idx: m ? MES_CORTO[m[1].toLowerCase()] : hoy.getMonth(), anio: hoy.getFullYear() };
+}
+
+// ---------- Cálculos ----------
+function diasDelMes(mes) { return new Date(mes.anio, mes.idx + 1, 0).getDate(); }
+
+// Porcentaje del mes que ya transcurrió a la fecha de corte (ritmo esperado).
+function ritmoEsperado() {
+  const mes = state.ppto.mes;
+  const corte = document.getElementById('corte').value;
+  if (!corte) return null;
+  const [y, m, d] = corte.split('-').map(Number);
+  if (y !== mes.anio || m - 1 !== mes.idx) return (y * 12 + m - 1) > (mes.anio * 12 + mes.idx) ? 1 : 0;
+  return d / diasDelMes(mes);
+}
+
+function estado(pct, ritmo) {
+  if (pct == null) return { color: STATUS.none, icon: '·', txt: 'Sin datos' };
+  if (pct >= 1) return { color: STATUS.good, icon: '✓', txt: 'Cumplido' };
+  if (ritmo != null && pct >= ritmo) return { color: STATUS.warning, icon: '→', txt: 'En ritmo' };
+  return { color: STATUS.critical, icon: '↓', txt: 'Abajo del ritmo' };
+}
+
+function resumenAsesor(a) {
+  const inds = state.ppto.indicadores.filter(i => a.metas[i.id] > 0);
+  const conReal = inds.filter(i => a.real[i.id] != null);
+  if (!conReal.length) return { cumplidos: null, total: inds.length, promedio: null };
+  const pcts = conReal.map(i => Math.min(a.real[i.id] / a.metas[i.id], 1));
+  return {
+    cumplidos: conReal.filter(i => a.real[i.id] >= a.metas[i.id]).length,
+    total: inds.length,
+    promedio: pcts.reduce((s, p) => s + p, 0) / inds.length,
+  };
+}
+
+// ---------- Render ----------
+function renderEquipos() {
+  const { equipos, avisos, mes } = state.ppto;
+  const total = equipos.reduce((s, e) => s + e.asesores.length, 0);
+  document.getElementById('st-ppto').textContent =
+    `✓ ${state.ppto.archivo} · ${cap(MESES[mes.idx])} ${mes.anio} · ${equipos.length} equipos · ${total} asesores`;
+  document.getElementById('equipos').innerHTML = equipos.map((e, i) => `
+    <div class="team ${i === state.equipoSel ? 'active' : ''}" data-i="${i}">
+      <div class="t">${esc(e.nombre)}</div>
+      <div class="s">${esc(e.supervisor)}${e.userSup ? ' · ' + esc(e.userSup) : ''}</div>
+      <div class="n">${e.asesores.length} asesores · ${esc(cap(e.cac))}</div>
+    </div>`).join('');
+  document.getElementById('avisos').textContent = avisos.length ? '⚠ ' + avisos.join(' ') : '';
+  document.querySelectorAll('.team').forEach(el => el.onclick = () => {
+    state.equipoSel = Number(el.dataset.i); renderEquipos(); renderTarjetas();
+  });
+}
+
+function filaIndicador(a, ind, solo, ritmo) {
+  const meta = a.metas[ind.id];
+  const real = a.real[ind.id];
+  const pct = real != null && meta > 0 ? real / meta : null;
+  const st = estado(pct, ritmo);
+  const w = pct == null ? 0 : Math.min(pct, 1) * 100;
+  return `<tr class="${solo ? 'solo' : ''}">
+    <td class="ind">${esc(solo ? cap(ind.grupo) : ind.sub)}</td>
+    <td class="num">${meta}</td>
+    <td class="num">${real ?? '—'}</td>
+    <td class="pct">${pct == null ? '—' : Math.round(pct * 100) + '%'}<span class="st" style="color:${st.color}">${st.icon}</span></td>
+    <td class="bar"><div class="track"><div class="fill" style="width:${w}%;background:${st.color}"></div></div></td>
+  </tr>`;
+}
+
+function tarjetaHTML(e, a) {
+  const { indicadores, mes } = state.ppto;
+  const ritmo = ritmoEsperado();
+  const res = resumenAsesor(a);
+  const corte = document.getElementById('corte').value;
+
+  // Agrupa indicadores respetando el orden del Excel; los que no tienen subindicador van solos.
+  let filas = '', ultimo = null;
+  indicadores.forEach((ind, i) => {
+    if (!(a.metas[ind.id] > 0)) return;
+    const hermanos = indicadores.filter(x => x.grupo === ind.grupo && a.metas[x.id] > 0);
+    const solo = hermanos.length === 1 && !ind.sub;
+    if (!solo && ind.grupo !== ultimo) filas += `<tr class="grp"><td colspan="5">${esc(cap(ind.grupo))}</td></tr>`;
+    ultimo = ind.grupo;
+    filas += filaIndicador(a, ind, solo, ritmo);
+  });
+
+  return `<div class="card">
+    <div class="hd">
+      <div class="mes">Metas ${esc(MESES[mes.idx])} ${mes.anio} · ${esc(cap(e.cac))}</div>
+      <div class="nombre">${esc(cap(a.nombre))}</div>
+      <div class="meta">${esc(a.user)} · ${esc(cap(e.nombre))} · Sup. ${esc(cap(e.supervisor))}${a.dias ? ' · ' + a.dias + ' días a trabajar' : ''}</div>
+    </div>
+    <div class="hero">
+      <div><div class="lbl">Cumplimiento de ventas</div>
+        <div class="val">${res.promedio == null ? '—' : Math.round(res.promedio * 100) + '%'}</div>
+        <div class="sub">${res.promedio == null ? 'Pendiente de cargar ventas' : 'Promedio de indicadores'}</div></div>
+      <div><div class="lbl">Indicadores cumplidos</div>
+        <div class="val">${res.cumplidos == null ? '—' : res.cumplidos} <span style="font-size:15px;color:#6b7280">/ ${res.total}</span></div>
+        <div class="sub">${ritmo == null ? '' : 'Ritmo esperado al corte: ' + Math.round(ritmo * 100) + '%'}</div></div>
+      <div><div class="lbl">Encuestas</div>
+        <div class="val">—</div>
+        <div class="sub">Pendiente de cargar</div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-t">Ventas</div>
+      <table>
+        <tr><th>Indicador</th><th>Meta</th><th>Llevas</th><th>Avance</th><th></th></tr>
+        ${filas}
+      </table>
+    </div>
+    <div class="legend">
+      <span style="color:${STATUS.good}">✓</span> Cumplido ·
+      <span style="color:${STATUS.warning}">→</span> En ritmo ·
+      <span style="color:${STATUS.critical}">↓</span> Abajo del ritmo
+    </div>
+    <div class="sec">
+      <div class="sec-t">Encuestas</div>
+      <div class="pend">Aquí aparecerá tu resultado de encuestas en cuanto se cargue el archivo.</div>
+    </div>
+    <div class="ft"><span>${corte ? 'Corte al ' + corte.split('-').reverse().join('/') : ''}</span><span>${esc(a.user)}</span></div>
+  </div>`;
+}
+
+function renderTarjetas() {
+  const e = state.ppto.equipos[state.equipoSel];
+  document.getElementById('cards').innerHTML = e.asesores.map((a, i) => `
+    <div class="card-wrap">
+      <div class="card-scale" id="card-${i}">${tarjetaHTML(e, a)}</div>
+      <button data-i="${i}" class="b-png">Descargar imagen</button>
+    </div>`).join('');
+  document.querySelectorAll('.b-png').forEach(b => b.onclick = async () => {
+    const i = Number(b.dataset.i);
+    b.disabled = true;
+    try {
+      const blob = await cardBlob(document.querySelector(`#card-${i} .card`));
+      descargar(blob, nombreArchivo(e, e.asesores[i]));
+    } finally { b.disabled = false; }
+  });
+}
+
+function render() {
+  const ok = !!state.ppto;
+  document.getElementById('p-equipos').hidden = !ok;
+  document.getElementById('p-tarjetas').hidden = !ok;
+  document.getElementById('vacio').hidden = ok;
+  if (!ok) return;
+  if (state.equipoSel == null || state.equipoSel >= state.ppto.equipos.length) state.equipoSel = 0;
+  renderEquipos();
+  renderTarjetas();
+}
+
+// ---------- Imágenes ----------
+async function cardBlob(el) {
+  const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', logging: false });
+  return new Promise(res => canvas.toBlob(res, 'image/png'));
+}
+function nombreArchivo(e, a) {
+  return `${e.nombre} - ${a.nombre}`.replace(/[\\/:*?"<>|]/g, '').trim() + '.png';
+}
+function descargar(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = name;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+document.getElementById('b-zip').onclick = async () => {
+  const e = state.ppto.equipos[state.equipoSel];
+  const btn = document.getElementById('b-zip'), st = document.getElementById('zip-st');
+  btn.disabled = true;
+  try {
+    const zip = new JSZip();
+    for (let i = 0; i < e.asesores.length; i++) {
+      st.textContent = `Generando ${i + 1} de ${e.asesores.length}…`;
+      zip.file(nombreArchivo(e, e.asesores[i]), await cardBlob(document.querySelector(`#card-${i} .card`)));
+    }
+    descargar(await zip.generateAsync({ type: 'blob' }), `${e.nombre}.zip`);
+    st.textContent = '';
+  } catch (err) {
+    st.textContent = 'No se pudo generar el ZIP: ' + err.message;
+  } finally { btn.disabled = false; }
+};
+
+// ---------- Carga y guardado ----------
+function guardar() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({ ppto: state.ppto, corte: document.getElementById('corte').value })); } catch (_) {}
+}
+function cargarGuardado() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    if (s && s.ppto) { state.ppto = s.ppto; if (s.corte) document.getElementById('corte').value = s.corte; }
+  } catch (_) {}
+}
+
+document.getElementById('f-ppto').onchange = async ev => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const st = document.getElementById('st-ppto');
+  st.textContent = 'Leyendo…';
+  try {
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    state.ppto = parsePresupuesto(wb, file.name);
+    state.equipoSel = 0;
+    guardar();
+    render();
+  } catch (err) {
+    st.textContent = '✗ ' + err.message;
+  }
+  ev.target.value = '';
+};
+
+document.getElementById('corte').onchange = () => { guardar(); if (state.ppto) renderTarjetas(); };
+document.getElementById('b-borrar').onclick = () => {
+  if (!confirm('¿Borrar los datos cargados en este navegador?')) return;
+  try { localStorage.removeItem(STORE_KEY); } catch (_) {}
+  state.ppto = null;
+  document.getElementById('st-ppto').textContent = 'Sin cargar';
+  render();
+};
+
+const hoy = new Date();
+document.getElementById('corte').value =
+  `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+cargarGuardado();
+render();
+</script>
+</body>
+</html>
