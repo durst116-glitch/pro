@@ -65,22 +65,56 @@
 
   /* ---------- Tarjeta (se exporta como imagen; siempre en claro) ---------- */
   .card {
-    width: 540px; background: #ffffff; color: #1c1f24; border-radius: 16px; overflow: hidden;
+    width: 540px; background: #ffffff; color: #1c1f24; border-radius: 20px; overflow: hidden;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+    box-shadow: 0 2px 10px rgba(15,23,42,.15);
   }
-  .card .hd { background: #13294b; color: #ffffff; padding: 18px 20px 16px; }
-  .card .hd .mes { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #aebbd3; }
-  .card .hd .nombre { font-size: 21px; font-weight: 700; margin-top: 4px; line-height: 1.2; }
-  .card .hd .meta { font-size: 12px; color: #d3dbea; margin-top: 6px; }
-  .card .hero { display: flex; border-bottom: 1px solid #e6e8ec; }
-  .card .hero > div { flex: 1; padding: 12px 16px; }
-  .card .hero > div + div { border-left: 1px solid #e6e8ec; }
-  .card .hero .lbl { font-size: 11px; color: #6b7280; }
-  .card .hero .val { font-size: 26px; font-weight: 700; margin-top: 2px; }
-  .card .hero .sub { font-size: 11px; color: #6b7280; }
-  .card .sec { padding: 12px 16px 4px; }
-  .card .sec-t { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #13294b; margin-bottom: 6px; }
+  .card .hd {
+    position: relative; overflow: hidden; color: #ffffff; padding: 22px 22px 20px;
+    background: linear-gradient(135deg, #0b1f4b 0%, #1e40af 60%, #2563eb 100%);
+  }
+  .card .deco { position: absolute; border-radius: 50%; background: rgba(255,255,255,.08); }
+  .card .deco.d1 { width: 220px; height: 220px; right: -60px; top: -90px; }
+  .card .deco.d2 { width: 140px; height: 140px; right: 70px; bottom: -80px; background: rgba(255,255,255,.06); }
+  .card .hd-in { position: relative; display: flex; align-items: center; gap: 18px; }
+  .card .foto {
+    width: 108px; height: 108px; border-radius: 50%; flex: none; padding: 4px; background: #ffffff;
+  }
+  .card .foto img, .card .foto .ini {
+    width: 100px; height: 100px; border-radius: 50%; display: block;
+  }
+  .card .foto .ini {
+    background: linear-gradient(135deg, #93c5fd, #3b82f6); color: #ffffff; font-size: 38px; font-weight: 800;
+    line-height: 100px; text-align: center; letter-spacing: 1px;
+  }
+  .card .hd-txt { min-width: 0; }
+  .card .chip {
+    display: inline-block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700;
+    background: rgba(255,255,255,.16); color: #e0e7ff; padding: 4px 10px; border-radius: 999px;
+  }
+  .card .hd .nombre { font-size: 24px; font-weight: 800; margin-top: 8px; line-height: 1.15; }
+  .card .hd .meta { font-size: 12px; color: #dbe4ff; margin-top: 6px; line-height: 1.4; }
+  .card .medal {
+    display: inline-block; margin-top: 8px; background: #fde68a; color: #78350f; font-size: 12px; font-weight: 800;
+    padding: 5px 12px; border-radius: 999px; box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  }
+  .card .banner {
+    margin: 14px 16px 0; border-radius: 14px; padding: 12px 14px; display: flex; gap: 12px; align-items: center;
+  }
+  .card .banner .ico { font-size: 28px; line-height: 1; }
+  .card .banner .bt { font-size: 15px; font-weight: 800; }
+  .card .banner .bs { font-size: 12px; margin-top: 2px; line-height: 1.35; }
+  .card .hero { display: flex; gap: 10px; padding: 14px 16px 0; }
+  .card .hero > div { flex: 1; background: #f4f7fd; border-radius: 14px; padding: 12px; }
+  .card .hero .kring { display: flex; align-items: center; gap: 10px; }
+  .card .hero .lbl { font-size: 11px; color: #6b7280; font-weight: 600; }
+  .card .hero .val { font-size: 26px; font-weight: 800; margin-top: 2px; color: #0b1f4b; }
+  .card .hero .sub { font-size: 11px; color: #6b7280; line-height: 1.3; }
+  .card .sec { padding: 14px 16px 4px; }
+  .card .sec-t {
+    font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #1e40af;
+    margin-bottom: 8px; border-left: 4px solid #2563eb; padding-left: 8px;
+  }
   .card table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .card th { text-align: right; font-weight: 600; color: #6b7280; font-size: 10px; padding: 2px 4px; }
   .card th:first-child { text-align: left; }
@@ -88,9 +122,9 @@
   .card td.num { text-align: right; width: 44px; }
   .card td.pct { text-align: right; width: 60px; font-weight: 600; white-space: nowrap; }
   .card td.bar { width: 84px; }
-  .card tr.grp td { background: #f5f7fa; font-weight: 700; color: #13294b; font-size: 11px; border-top: 1px solid #e6e8ec; }
+  .card tr.grp td { background: #eef2ff; font-weight: 800; color: #1e3a8a; font-size: 11px; border-top: 1px solid #e0e7ff; }
   .card td.ind { padding-left: 12px; color: #374151; }
-  .card tr.solo td.ind { padding-left: 4px; font-weight: 700; color: #13294b; }
+  .card tr.solo td.ind { padding-left: 4px; font-weight: 700; color: #1e3a8a; }
   .card .track { height: 8px; border-radius: 4px; background: #e8ebf0; overflow: hidden; }
   .card .fill { height: 8px; border-radius: 4px; }
   .card .st { display: inline-block; width: 12px; text-align: center; font-size: 10px; margin-left: 2px; }
@@ -99,14 +133,20 @@
     font-size: 12px; text-align: center; margin-bottom: 8px;
   }
   .card .rubros { display: flex; gap: 8px; }
-  .card .rubro { flex: 1; border: 1px solid #e6e8ec; border-radius: 10px; padding: 8px 10px; }
+  .card .rubro { flex: 1; background: #f4f7fd; border-radius: 12px; padding: 10px; }
   .card .rn { font-size: 11px; color: #6b7280; }
   .card .rv { font-size: 20px; font-weight: 700; }
   .card .rs { font-size: 11px; font-weight: 700; }
   .card .rf { font-size: 10px; color: #6b7280; margin-top: 2px; line-height: 1.3; }
   .card td.stt { font-size: 11px; font-weight: 700; text-align: right; }
   .card .legend { font-size: 10px; color: #6b7280; padding: 4px 16px 0; }
-  .card .ft { font-size: 10px; color: #8a909b; padding: 8px 16px 14px; display: flex; justify-content: space-between; }
+  .card .ft {
+    font-size: 11px; color: #ffffff; padding: 10px 16px; margin-top: 12px; display: flex; justify-content: space-between;
+    background: linear-gradient(90deg, #0b1f4b, #1e40af);
+  }
+  .card .ft b { font-weight: 800; }
+  .foto-ctl { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .foto-ctl label { font: inherit; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; }
 </style>
 </head>
 <body>
@@ -166,8 +206,11 @@
     <h2>4. Tarjetas</h2>
     <div class="controls">
       <button class="primary" id="b-zip">Descargar todas las del equipo (ZIP)</button>
+      <label class="upload-btn" style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);cursor:pointer">Cargar varias fotos
+        <input type="file" id="f-fotos" accept="image/*" multiple hidden></label>
       <span id="zip-st" style="color:var(--muted);font-size:13px"></span>
     </div>
+    <p style="margin:8px 0 0;color:var(--ink-2);font-size:13px">Para cargar varias fotos a la vez, nombra cada archivo con el user del asesor (por ejemplo <code>XOB7F34.jpg</code>) o con su nombre completo.</p>
     <div class="cards" id="cards"></div>
   </section>
   <section class="panel" id="p-mapeo" hidden>
@@ -538,12 +581,96 @@ function rubrosAsesor(a, real) {
 function rubrosHTML(rubros) {
   if (!rubros) return '';
   return `<div class="sec"><div class="sec-t">Rubros (mínimo ${Math.round(RUBRO_MINIMO * 100)}% en cada indicador)</div>
-    <div class="rubros">${rubros.map(r => `<div class="rubro">
+    <div class="rubros">${rubros.map(r => `<div class="rubro" style="background:${r.califica ? '#dcfce7' : '#f4f7fd'}">
       <div class="rn">${esc(r.nombre)}</div>
       <div class="rv">${r.promedio == null ? '—' : Math.round(r.promedio * 100) + '%'}</div>
       <div class="rs" style="color:${r.califica ? STATUS.good : STATUS.critical}">${r.califica ? '✓ Califica' : '↓ No califica'}</div>
       <div class="rf">${r.total - r.faltan.length} de ${r.total} indicadores en ${Math.round(RUBRO_MINIMO * 100)}% o más</div>
     </div>`).join('')}</div></div>`;
+}
+
+// ---------- Fotos de asesores ----------
+// Se guardan recortadas en cuadrado (256 px, JPEG) por user, en este navegador.
+const FOTOS_KEY = 'tarjetas-asesores-fotos';
+let fotos = {};
+try { fotos = JSON.parse(localStorage.getItem(FOTOS_KEY) || '{}'); } catch (_) {}
+function guardarFotos() {
+  try { localStorage.setItem(FOTOS_KEY, JSON.stringify(fotos)); return true; }
+  catch (_) { alert('No hay espacio para guardar más fotos en este navegador.'); return false; }
+}
+
+function recortarFoto(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const lado = Math.min(img.width, img.height), T = 256;
+      const c = document.createElement('canvas');
+      c.width = c.height = T;
+      // Recorte centrado, un poco cargado hacia arriba para no cortar la cara.
+      const sx = (img.width - lado) / 2, sy = Math.max(0, (img.height - lado) / 2 - (img.height - lado) * 0.2);
+      c.getContext('2d').drawImage(img, sx, sy, lado, lado, 0, 0, T, T);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('No se pudo leer la imagen ' + file.name)); };
+    img.src = url;
+  });
+}
+
+function iniciales(nombre) {
+  // Los nombres vienen como "APELLIDO APELLIDO NOMBRE(S)": primera letra del nombre y del primer apellido.
+  const w = norm(nombre).split(' ');
+  return ((w.length >= 3 ? w[2][0] : w[w.length - 1][0]) + w[0][0]).toUpperCase();
+}
+
+function avatarHTML(a, color) {
+  const f = fotos[a.user];
+  return `<div class="foto" style="box-shadow:0 0 0 4px ${color}">
+    ${f ? `<img src="${f}" alt="">` : `<div class="ini">${esc(iniciales(a.nombre))}</div>`}</div>`;
+}
+
+// Anillo de avance (SVG) para el cumplimiento de ventas.
+function anilloHTML(pct, color) {
+  const r = 24, c = 2 * Math.PI * r, v = Math.max(0, Math.min(pct ?? 0, 1));
+  return `<svg width="60" height="60" viewBox="0 0 60 60">
+    <circle cx="30" cy="30" r="${r}" fill="none" stroke="#dbe3f4" stroke-width="8"/>
+    <circle cx="30" cy="30" r="${r}" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round"
+      stroke-dasharray="${(c * v).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 30 30)"/>
+  </svg>`;
+}
+
+// Mensaje motivacional según el avance contra el ritmo del mes.
+function mensajeHTML(a, res, ritmo, reales, indicadores) {
+  if (res.promedio == null) return '';
+  const quedan = Math.max(diasDelMes(state.ppto.mes) - (diaCorte() ?? 0), 0);
+  const enfoque = indicadores
+    .filter(i => a.metas[i.id] > 0 && reales[i.id] < a.metas[i.id])
+    .map(i => ({ i, pct: reales[i.id] / a.metas[i.id], faltan: a.metas[i.id] - reales[i.id] }))
+    .sort((x, y) => x.pct - y.pct || y.faltan - x.faltan)
+    .slice(0, 2)
+    .map(({ i }) => i.sub ? `${cap(i.grupo)} ${i.sub}` : cap(i.grupo));
+  const foco = enfoque.length ? `Enfócate en ${enfoque.join(' y ')}.` : '';
+  const mejor = indicadores.filter(i => a.metas[i.id] > 0 && reales[i.id] > 0)
+    .map(i => ({ i, pct: reales[i.id] / a.metas[i.id] })).sort((x, y) => y.pct - x.pct)[0];
+  const destaca = mejor && mejor.pct >= 0.5
+    ? `Destacas en ${mejor.i.sub ? `${cap(mejor.i.grupo)} ${mejor.i.sub}` : cap(mejor.i.grupo)} (${Math.round(mejor.pct * 100)}%). ` : '';
+  const dias = quedan ? ` Quedan ${quedan} días.` : '';
+  let m;
+  if (res.promedio >= 1) m = { ico: '🏆', t: '¡Meta del mes cumplida!', s: 'Gracias por tu gran trabajo, eres ejemplo para tu equipo.', bg: '#dcfce7', fg: '#14532d' };
+  else if (ritmo != null && res.promedio >= ritmo) m = { ico: '🚀', t: '¡Vas en ritmo, sigue así!', s: `Mantén el paso para cerrar el mes arriba.${dias}`, bg: '#dbeafe', fg: '#1e3a8a' };
+  else if (ritmo != null && res.promedio >= ritmo * 0.8) m = { ico: '💪', t: '¡Estás muy cerca del ritmo!', s: `${destaca}${foco}${dias}`, bg: '#fef3c7', fg: '#78350f' };
+  else m = { ico: '🔥', t: '¡Tú puedes lograrlo!', s: `${destaca}${foco}${dias} Cada venta cuenta.`, bg: '#ffe4e6', fg: '#881337' };
+  return `<div class="banner" style="background:${m.bg};color:${m.fg}">
+    <div class="ico">${m.ico}</div><div><div class="bt">${m.t}</div><div class="bs">${esc(m.s.trim())}</div></div></div>`;
+}
+
+// Lugar del asesor en su equipo por cumplimiento de ventas (solo se muestra el top 3).
+function lugarEnEquipo(e, a) {
+  const lista = e.asesores.map(x => ({ u: x.user, p: resumenAsesor(x, realAsesor(x)).promedio }))
+    .filter(x => x.p != null).sort((x, y) => y.p - x.p);
+  const i = lista.findIndex(x => x.u === a.user);
+  return i >= 0 && i < 3 && lista[i].p > 0 ? i + 1 : null;
 }
 
 function encuestasHTML(enc) {
@@ -632,15 +759,28 @@ function tarjetaHTML(e, a) {
     filas += filaIndicador(a, ind, solo, ritmo, reales);
   });
 
+  const general = res.promedio == null ? STATUS.none : estado(res.promedio, ritmo).color;
+  const lugar = reales && indicadores.length ? lugarEnEquipo(e, a) : null;
+  const MEDALLAS = { 1: '🥇 1er lugar del equipo', 2: '🥈 2º lugar del equipo', 3: '🥉 3er lugar del equipo' };
+
   return `<div class="card">
     <div class="hd">
-      <div class="mes">Metas ${esc(MESES[mes.idx])} ${mes.anio} · ${esc(cap(e.cac))}</div>
-      <div class="nombre">${esc(cap(a.nombre))}</div>
-      <div class="meta">${esc(a.user)} · ${esc(cap(e.nombre))} · Sup. ${esc(cap(e.supervisor))}${a.dias ? ' · ' + a.dias + ' días a trabajar' : ''}</div>
+      <div class="deco d1"></div><div class="deco d2"></div>
+      <div class="hd-in">
+        ${avatarHTML(a, general)}
+        <div class="hd-txt">
+          <div class="chip">${esc(MESES[mes.idx])} ${mes.anio} · ${esc(cap(e.cac))}</div>
+          <div class="nombre">${esc(cap(a.nombre))}</div>
+          <div class="meta">${esc(cap(e.nombre))} · Sup. ${esc(cap(e.supervisor))}<br>${esc(a.user)}${a.dias ? ' · ' + a.dias + ' días a trabajar' : ''}</div>
+          ${lugar ? `<div class="medal">${MEDALLAS[lugar]}</div>` : ''}
+        </div>
+      </div>
     </div>
+    ${reales ? mensajeHTML(a, res, ritmo, reales, indicadores) : ''}
     <div class="hero">
       ${indicadores.length ? `<div><div class="lbl">Cumplimiento de ventas</div>
-        <div class="val">${res.promedio == null ? '—' : Math.round(res.promedio * 100) + '%'}</div>
+        <div class="kring">${anilloHTML(res.promedio, general)}
+          <div class="val">${res.promedio == null ? '—' : Math.round(res.promedio * 100) + '%'}</div></div>
         <div class="sub">${res.promedio == null ? 'Pendiente de cargar ventas' : `Promedio de ${res.total} indicadores`}</div></div>
       <div><div class="lbl">Indicadores cumplidos</div>
         <div class="val">${res.cumplidos == null ? '—' : res.cumplidos} <span style="font-size:15px;color:#6b7280">/ ${res.total}</span></div>
@@ -666,7 +806,7 @@ function tarjetaHTML(e, a) {
       <div class="sec-t">Encuestas</div>
       ${encuestasHTML(enc)}
     </div>` : ''}
-    <div class="ft"><span>${corte ? 'Ventas acumuladas al ' + corte.split('-').reverse().join('/') : ''}</span><span>${esc(a.user)}</span></div>
+    <div class="ft"><span>${corte ? 'Ventas acumuladas al ' + corte.split('-').reverse().join('/') : ''}</span><b>¡Vamos por más!</b></div>
   </div>`.replace(/<div class="hero">\s*<\/div>/, '');
 }
 
@@ -675,8 +815,25 @@ function renderTarjetas() {
   document.getElementById('cards').innerHTML = e.asesores.map((a, i) => `
     <div class="card-wrap">
       <div class="card-scale" id="card-${i}">${tarjetaHTML(e, a)}</div>
-      <button data-i="${i}" class="b-png">Descargar imagen</button>
+      <div class="foto-ctl">
+        <button data-i="${i}" class="b-png">Descargar imagen</button>
+        <label>${fotos[a.user] ? 'Cambiar foto' : 'Agregar foto'}<input type="file" accept="image/*" data-u="${esc(a.user)}" class="f-foto" hidden></label>
+        ${fotos[a.user] ? `<button data-u="${esc(a.user)}" class="b-quitar">Quitar foto</button>` : ''}
+      </div>
     </div>`).join('');
+  document.querySelectorAll('.f-foto').forEach(inp => inp.onchange = async () => {
+    const file = inp.files[0];
+    if (!file) return;
+    try {
+      const previa = fotos[inp.dataset.u];
+      fotos[inp.dataset.u] = await recortarFoto(file);
+      if (!guardarFotos()) { if (previa) fotos[inp.dataset.u] = previa; else delete fotos[inp.dataset.u]; }
+    } catch (err) { alert(err.message); }
+    renderTarjetas();
+  });
+  document.querySelectorAll('.b-quitar').forEach(b => b.onclick = () => {
+    delete fotos[b.dataset.u]; guardarFotos(); renderTarjetas();
+  });
   document.querySelectorAll('.b-png').forEach(b => b.onclick = async () => {
     const i = Number(b.dataset.i);
     b.disabled = true;
@@ -879,6 +1036,23 @@ document.getElementById('f-enc').onchange = async ev => {
     st.textContent = '✗ ' + err.message;
   }
   ev.target.value = '';
+};
+
+document.getElementById('f-fotos').onchange = async ev => {
+  const files = [...ev.target.files];
+  const st = document.getElementById('zip-st');
+  const asesores = Object.values(state.meses).flatMap(m => m.equipos.flatMap(e => e.asesores));
+  let ok = 0; const sinMatch = [];
+  for (const f of files) {
+    const base = key(f.name.replace(/\.[^.]+$/, ''));
+    const a = asesores.find(x => key(x.user) === base || key(x.nombre) === base);
+    if (!a) { sinMatch.push(f.name); continue; }
+    try { fotos[a.user] = await recortarFoto(f); ok++; } catch (_) { sinMatch.push(f.name); }
+  }
+  guardarFotos();
+  st.textContent = `${ok} foto(s) asignadas.` + (sinMatch.length ? ` Sin asesor: ${sinMatch.join(', ')}.` : '');
+  ev.target.value = '';
+  renderTarjetas();
 };
 
 // Al cambiar de mes, la fecha de corte se ajusta: hoy si cae en ese mes, si no el último día del mes.
