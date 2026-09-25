@@ -75,22 +75,29 @@
   .g-st { font-weight: 700; }
   .g-bar { display: inline-block; width: 70px; height: 8px; border-radius: 4px; background: var(--line); vertical-align: middle; margin-left: 6px; overflow: hidden; }
   .g-bar i { display: block; height: 8px; border-radius: 4px; }
-  .g-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .g-ichip { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
-  .g-ichip.on { border-color: var(--accent); background: var(--soft); font-weight: 700; }
-  .g-ichip span { display: inline-block; min-width: 20px; text-align: center; border-radius: 999px; padding: 0 6px; margin-left: 4px; font-weight: 800; font-size: 12px; }
-  .g-ichip .n0 { background: #dc2626; color: #ffffff; }
-  .g-ichip .nok { background: #16a34a; color: #ffffff; }
-  .g-res { margin-top: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
-  .g-res-t { font-size: 16px; font-weight: 800; margin-bottom: 10px; }
-  .g-sub { color: var(--muted); font-size: 12px; font-weight: 400; }
-  .g-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
-  .g-col { border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
-  .g-col .g-tabla td.t { white-space: normal; min-width: 180px; }
-  .g-col.cero { border-color: #fca5a5; }
-  .g-col-t { font-weight: 800; padding: 8px 10px; background: var(--soft); }
-  .g-col.cero .g-col-t { background: #fee2e2; color: #7f1d1d; }
-  .g-vacio { padding: 16px; color: var(--muted); text-align: center; }
+  .gc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 18px; }
+  .gc { background: var(--panel); border-radius: 24px; padding: 22px 24px; box-shadow: 0 6px 20px rgba(15,23,42,.08); border: 1px solid var(--line); }
+  .gc-hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .gc-t { font-size: 20px; font-weight: 900; letter-spacing: .02em; display: flex; align-items: center; gap: 10px; }
+  .gc-i { font-size: 22px; }
+  .gc-b { font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  .gc-b.mal { background: #dc2626; color: #ffffff; }
+  .gc-b.bien { background: #dcfce7; color: #14532d; }
+  .gc-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .gc-tab { font: inherit; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink-2); cursor: pointer; }
+  .gc-tab.on { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+  .gc-tab span { background: #dc2626; color: #ffffff; border-radius: 999px; padding: 0 6px; margin-left: 2px; }
+  .gc-sep { border-top: 2px dashed var(--line); margin: 14px 0 6px; }
+  .gc-fila { display: grid; grid-template-columns: minmax(110px, 1fr) 1.3fr 64px; align-items: center; gap: 12px; padding: 7px 0; }
+  .gc-n { cursor: pointer; font-weight: 800; letter-spacing: .02em; color: var(--ink); display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
+  .gc-p { width: 15px; height: 15px; fill: #1e3a8a; flex: none; }
+  .gc-bar { height: 12px; border-radius: 6px; background: var(--line); overflow: hidden; }
+  .gc-bar i { display: block; height: 12px; border-radius: 6px; }
+  .gc-v { text-align: right; font-weight: 900; font-size: 17px; font-variant-numeric: tabular-nums; }
+  .gc-v span { font-size: 11px; font-weight: 600; color: var(--muted); }
+  .gc-fila.cero .gc-n { color: #dc2626; }
+  .gc-fila.cero .gc-p { fill: #dc2626; }
+  .gc-fila.cero .gc-v { color: #dc2626; }
   .g-link { font: inherit; font-size: 12px; font-weight: 700; color: #dc2626; background: none; border: 1px solid #fca5a5; border-radius: 999px; padding: 2px 8px; cursor: pointer; }
   .g-mapa { border-collapse: separate; border-spacing: 2px; font-size: 12px; }
   .g-mapa th, .g-mapa td { background: var(--panel); }
@@ -773,10 +780,26 @@ function recortarFoto(file) {
   });
 }
 
+// Los nombres vienen como "APELLIDO APELLIDO NOMBRE(S)"; los apellidos pueden llevar partículas ("DEL ROSAL").
+const PARTICULAS = ['DE', 'DEL', 'LA', 'LAS', 'LOS', 'Y', 'SAN', 'MC'];
+function partesNombre(nombre) {
+  const w = norm(nombre).toUpperCase().split(' ');
+  const apellidos = [];
+  let k = 0;
+  for (let n = 0; n < 2 && w.length - k > 1; n++) {
+    const inicio = k;
+    while (k < w.length - 1 && PARTICULAS.includes(w[k])) k++;
+    k++;
+    apellidos.push(w.slice(inicio, k).join(' '));
+  }
+  const nombres = w.slice(k);
+  return { pila: nombres[0] || w[w.length - 1], apellido: apellidos[0] || '', nombres };
+}
+
 function iniciales(nombre) {
-  // Los nombres vienen como "APELLIDO APELLIDO NOMBRE(S)": primera letra del nombre y del primer apellido.
-  const w = norm(nombre).split(' ');
-  return ((w.length >= 3 ? w[2][0] : w[w.length - 1][0]) + w[0][0]).toUpperCase();
+  const { pila, apellido } = partesNombre(nombre);
+  const ap = apellido.split(' ').filter(x => !PARTICULAS.includes(x))[0] || apellido;
+  return (pila[0] + (ap[0] || '')).toUpperCase();
 }
 
 function avatarHTML(a, color) {
@@ -1095,7 +1118,40 @@ document.getElementById('b-aj-add').onclick = () => {
 // Proyección lineal al cierre: ventas al corte ÷ días transcurridos × días del mes.
 const TAB_KEY = 'tarjetas-asesores-tab';
 let gEquipo = 'todos';
-let gInd = null; // indicador elegido en «¿Quién va en cero?»
+const gSub = {}; // por categoría: 'TOTAL' o id del indicador elegido en su tarjeta
+
+// Estilo de cada categoría en las tarjetas de avance (color del título e icono).
+const CATEGORIAS = [
+  ['POSPAGO', '#2563eb', '📱'], ['WIFI', '#0891b2', '📶'], ['ZEEK', '#7c3aed', '🚗'], ['PREPAGO', '#16a34a', '💳'],
+  ['PORTABILIDAD', '#db2777', '🔁'], ['RENOVACION', '#eab308', '🔄'], ['TELCEL UP', '#ea580c', '⬆️'],
+  ['INFINITUM', '#0d9488', '🏠'], ['NORTON', '#ca8a04', '🛡️'], ['ACCESORIOS', '#9333ea', '🎧'],
+  ['CLARO PAY', '#dc2626', '💰'], ['TRADE IN', '#059669', '♻️'], ['BUNDLE', '#4b5563', '🎁'],
+  ['UP GRADE', '#4f46e5', '⏫'], ['TELCEL PARA SIEMPRE', '#1d4ed8', '♾️'],
+];
+const estiloCat = grupo => { const c = CATEGORIAS.find(([k]) => key(grupo).startsWith(k)); return c ? { color: c[1], icono: c[2] } : { color: '#374151', icono: '📊' }; };
+
+// Nombres cortos para el panel. Se pueden cambiar con clic (se guardan por user en este navegador).
+const ALIAS_KEY = 'tarjetas-asesores-alias';
+let alias = {};
+try { alias = JSON.parse(localStorage.getItem(ALIAS_KEY) || '{}'); } catch (_) {}
+
+// Si se repite el nombre de pila, se agrega la inicial del primer apellido; si aun así se repite, el apellido completo.
+function nombresCortos(asesores) {
+  const datos = asesores.map(a => {
+    const { pila, apellido } = partesNombre(a.nombre);
+    const ap = apellido.split(' ').filter(x => !PARTICULAS.includes(x))[0] || apellido;
+    return { a, pila, ap };
+  });
+  const contar = f => { const c = {}; datos.forEach(d => { const k = f(d); c[k] = (c[k] || 0) + 1; }); return c; };
+  const porPila = contar(d => d.pila), porInicial = contar(d => `${d.pila} ${d.ap[0]}.`);
+  const res = {};
+  datos.forEach(d => {
+    const ini = `${d.pila} ${d.ap[0]}.`;
+    res[d.a.user] = alias[d.a.user] || (porPila[d.pila] === 1 ? d.pila : porInicial[ini] === 1 ? ini : `${d.pila} ${d.ap}`);
+  });
+  return res;
+}
+const ICONO_PERSONA = '<svg class="gc-p" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="4.5" r="3.2"/><path d="M1.5 15.5c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6z"/></svg>';
 
 function semaforo(f) {
   if (f == null) return { color: STATUS.none, icon: '·', txt: 'Sin datos' };
@@ -1246,43 +1302,41 @@ function renderPanel() {
       ${ppto.encuestas ? `<td>${x.calidez == null ? '—' : fmtPts(x.calidez)}</td>` : ''}
     </tr>`).join('');
 
-  // ¿Quién va en cero? — consulta por indicador.
-  if (!g.porInd.some(x => x.i.id === gInd)) {
-    const peor = [...g.porInd].sort((a, b) => b.ceros.length - a.ceros.length)[0];
-    gInd = peor ? peor.i.id : null;
-  }
-  const elegido = g.porInd.find(x => x.i.id === gInd);
+  // Tarjetas por categoría: quién va en cero y cuánto lleva cada asesor.
   const corteTxt = document.getElementById('corte').value.split('-').reverse().join('/');
-  let consulta = '';
-  if (elegido) {
-    const conMeta = g.asesores.filter(x => x.a.metas[elegido.i.id] > 0);
-    const enCero = conMeta.filter(x => !(x.real[elegido.i.id] > 0));
-    const conVentas = conMeta.filter(x => x.real[elegido.i.id] > 0)
-      .sort((a, b) => b.real[elegido.i.id] / b.a.metas[elegido.i.id] - a.real[elegido.i.id] / a.a.metas[elegido.i.id]);
-    const sinMeta = g.asesores.length - conMeta.length;
-    const quien = x => `<b>${esc(cap(x.a.nombre))}</b><br><span class="g-sub">${esc(x.a.user)} · ${esc(cap(x.e.nombre))} · Sup. ${esc(cap(x.e.supervisor))}</span>`;
-    consulta = `<div class="g-sec" id="g-consulta"><h3>¿Quién va en cero?</h3>
-      <p>Elige un indicador para ver qué asesores no llevan ninguna venta al ${esc(corteTxt)}. El número rojo es cuántos asesores van en cero.</p>
-      <div class="g-chips">${g.porInd.map(x => `<button class="g-ichip ${x.i.id === gInd ? 'on' : ''}" data-ind="${esc(x.i.id)}">
-        ${esc(nombreInd(x.i))} <span class="${x.ceros.length ? 'n0' : 'nok'}">${x.ceros.length}</span></button>`).join('')}</div>
-      <div class="g-res">
-        <div class="g-res-t">${esc(nombreInd(elegido.i))}: <span style="color:${enCero.length ? STATUS.critical : STATUS.good}">${enCero.length} de ${conMeta.length}</span> asesores van en cero al ${esc(corteTxt)}${sinMeta ? ` <span class="g-sub">(${sinMeta} sin meta en este indicador)</span>` : ''}</div>
-        <div class="g-cols">
-          <div class="g-col cero"><div class="g-col-t">🔴 En cero (${enCero.length})</div>
-            ${enCero.length ? `<table class="g-tabla"><tr><th>Asesor</th><th>Meta</th><th>Necesita al día</th></tr>
-              ${enCero.map(x => `<tr><td class="t">${quien(x)}</td><td>${x.a.metas[elegido.i.id]}</td>
-                <td>${g.quedan ? Math.ceil(x.a.metas[elegido.i.id] / g.quedan * 10) / 10 : '—'}</td></tr>`).join('')}</table>`
-              : '<div class="g-vacio">¡Nadie va en cero en este indicador! 🎉</div>'}
-          </div>
-          <div class="g-col"><div class="g-col-t">Con ventas (${conVentas.length})</div>
-            ${conVentas.length ? `<table class="g-tabla"><tr><th>Asesor</th><th>Llevan</th><th>Avance</th></tr>
-              ${conVentas.map(x => { const f = x.real[elegido.i.id] / x.a.metas[elegido.i.id];
-                return `<tr><td class="t">${quien(x)}</td><td>${x.real[elegido.i.id]} / ${x.a.metas[elegido.i.id]}</td><td>${pctTxt(f)}${barra(f)}</td></tr>`; }).join('')}</table>`
-              : '<div class="g-vacio">Nadie ha vendido este indicador todavía.</div>'}
-          </div>
-        </div>
-      </div></div>`;
-  }
+  const cortos = nombresCortos(g.asesores.map(x => x.a));
+  const grupos = [];
+  g.porInd.forEach(x => { let gr = grupos.find(y => y.nombre === x.i.grupo); if (!gr) grupos.push(gr = { nombre: x.i.grupo, inds: [] }); gr.inds.push(x.i); });
+  const tarjetaCat = (gr, k) => {
+    const est = estiloCat(gr.nombre);
+    const conSub = gr.inds.length > 1;
+    let elegido = gSub[gr.nombre] || 'TOTAL';
+    if (elegido !== 'TOTAL' && !gr.inds.some(i => i.id === elegido)) elegido = 'TOTAL';
+    const ids = elegido === 'TOTAL' ? gr.inds.map(i => i.id) : [elegido];
+    const filas = g.asesores.map(x => ({
+      x, meta: ids.reduce((t, id) => t + (x.a.metas[id] || 0), 0), real: ids.reduce((t, id) => t + (x.real[id] || 0), 0),
+    })).filter(f => f.meta > 0).sort((a, b) => a.real / a.meta - b.real / b.meta || b.meta - a.meta);
+    const ceros = filas.filter(f => f.real <= 0).length;
+    const cerosDe = id => g.asesores.filter(x => x.a.metas[id] > 0 && !(x.real[id] > 0)).length;
+    const color = f => f.real <= 0 ? 'transparent' : f.real >= f.meta ? STATUS.good : f.real / f.meta >= g.dc / g.D ? STATUS.warning : STATUS.critical;
+    return `<div class="gc" id="gc-${k}">
+      <div class="gc-hd"><div class="gc-t" style="color:${est.color}"><span class="gc-i">${est.icono}</span>${esc(gr.nombre.toUpperCase())}</div>
+        <div class="gc-b ${ceros ? 'mal' : 'bien'}">${ceros ? `${ceros} en cero` : '✓ Todos venden'}</div></div>
+      ${conSub ? `<div class="gc-tabs">
+        <button class="gc-tab ${elegido === 'TOTAL' ? 'on' : ''}" data-g="${esc(gr.nombre)}" data-id="TOTAL">Total</button>
+        ${gr.inds.map(i => { const c = cerosDe(i.id); return `<button class="gc-tab ${elegido === i.id ? 'on' : ''}" data-g="${esc(gr.nombre)}" data-id="${esc(i.id)}">${esc(i.sub)}${c ? ` <span>${c}</span>` : ''}</button>`; }).join('')}
+      </div>` : ''}
+      <div class="gc-sep"></div>
+      ${filas.map(f => `<div class="gc-fila ${f.real <= 0 ? 'cero' : ''}" title="${esc(cap(f.x.a.nombre))} · ${esc(cap(f.x.e.nombre))}: ${f.real} de ${f.meta}">
+        <div class="gc-n" data-u="${esc(f.x.a.user)}" title="Clic para cambiar el nombre que se muestra">${esc(cortos[f.x.a.user].toUpperCase())} ${ICONO_PERSONA}</div>
+        <div class="gc-bar"><i style="width:${Math.min(f.real / f.meta, 1) * 100}%;background:${color(f)}"></i></div>
+        <div class="gc-v">${f.real}<span> / ${f.meta}</span></div>
+      </div>`).join('')}
+    </div>`;
+  };
+  const consulta = `<div class="g-sec" id="g-consulta"><h3>Avance por categoría · ¿quién va en cero?</h3>
+    <p>Ventas de cada asesor al ${esc(corteTxt)} contra su meta. Arriba de cada lista quedan quienes van en cero (en rojo). En las categorías con varios productos, elige «Total» o un producto (por ejemplo Amigo Kit); el número rojo en cada pestaña es cuántos asesores van en cero en ese producto.</p>
+    <div class="gc-grid">${grupos.map(tarjetaCat).join('')}</div></div>`;
 
   cuerpo.innerHTML = kpis + consulta + `
     ${g.porEquipo.length > 1 ? `<div class="g-sec"><h3>Por equipo</h3>
@@ -1308,10 +1362,21 @@ function renderPanel() {
         <span class="ley na">–</span> sin meta. Pasa el cursor sobre una celda para ver el detalle.</p>
       <div class="g-scroll">${mapa}</div></div>`;
 
-  cuerpo.querySelectorAll('.g-ichip').forEach(b => b.onclick = () => { gInd = b.dataset.ind; renderPanel(); });
+  cuerpo.querySelectorAll('.gc-n').forEach(el => el.onclick = () => {
+    const a = g.asesores.find(x => x.a.user === el.dataset.u).a;
+    const nuevo = prompt(`Nombre que se muestra para ${cap(a.nombre)} (déjalo vacío para usar el nombre de pila):`, alias[a.user] || '');
+    if (nuevo === null) return;
+    if (nuevo.trim()) alias[a.user] = nuevo.trim(); else delete alias[a.user];
+    try { localStorage.setItem(ALIAS_KEY, JSON.stringify(alias)); } catch (_) {}
+    renderPanel();
+  });
+  cuerpo.querySelectorAll('.gc-tab').forEach(b => b.onclick = () => { gSub[b.dataset.g] = b.dataset.id; renderPanel(); });
   cuerpo.querySelectorAll('.g-link').forEach(b => b.onclick = () => {
-    gInd = b.dataset.ind; renderPanel();
-    document.getElementById('g-consulta').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const i = state.ppto.indicadores.find(x => x.id === b.dataset.ind);
+    const k = grupos.findIndex(gr => gr.nombre === i.grupo);
+    gSub[i.grupo] = grupos[k].inds.length > 1 ? i.id : 'TOTAL';
+    renderPanel();
+    document.getElementById('gc-' + k).scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 }
 
