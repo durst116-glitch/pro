@@ -53,6 +53,46 @@
   .team .t { font-weight: 700; }
   .team .s { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
   .team .n { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .tabs { max-width: 1200px; margin: 8px auto 0; padding: 0 16px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab { font: inherit; font-weight: 700; padding: 10px 16px; border-radius: 10px 10px 0 0; border: 1px solid var(--line); border-bottom: 3px solid transparent; background: var(--panel); color: var(--ink-2); cursor: pointer; }
+  .tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+  .g-nota { color: var(--ink-2); font-size: 13px; margin: 8px 0 0; }
+  .g-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 12px; }
+  .g-kpi { border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  .g-kpi .l { font-size: 12px; color: var(--ink-2); }
+  .g-kpi .v { font-size: 26px; font-weight: 800; margin-top: 2px; }
+  .g-kpi .s { font-size: 12px; color: var(--muted); }
+  .g-sec { margin-top: 20px; }
+  .g-sec h3 { font-size: 15px; margin: 0 0 4px; }
+  .g-sec p { font-size: 13px; color: var(--ink-2); margin: 0 0 8px; }
+  .g-tabla { border-collapse: collapse; font-size: 13px; width: 100%; }
+  .g-tabla th { text-align: right; font-size: 12px; color: var(--ink-2); padding: 6px 8px; border-bottom: 2px solid var(--line); white-space: nowrap; position: sticky; top: 0; background: var(--panel); }
+  .g-tabla td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .g-tabla th:first-child, .g-tabla td:first-child, .g-tabla td.t, .g-tabla th.t { text-align: left; }
+  .g-tabla tr.grp td { background: var(--soft); font-weight: 700; text-align: left; }
+  .g-tabla td.wrap { white-space: normal; }
+  .g-scroll { overflow-x: auto; max-height: 640px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; }
+  .g-st { font-weight: 700; }
+  .g-bar { display: inline-block; width: 70px; height: 8px; border-radius: 4px; background: var(--line); vertical-align: middle; margin-left: 6px; overflow: hidden; }
+  .g-bar i { display: block; height: 8px; border-radius: 4px; }
+  .g-mapa { border-collapse: separate; border-spacing: 2px; font-size: 12px; }
+  .g-mapa th, .g-mapa td { background: var(--panel); }
+  .g-mapa .mn { position: sticky; left: 0; z-index: 1; text-align: left; white-space: nowrap; padding: 4px 8px; min-width: 220px; }
+  .g-mapa .mn span { color: var(--muted); font-size: 11px; }
+  .g-mapa .mz { text-align: center; font-weight: 800; padding: 4px 6px; }
+  .g-mapa th.mh { vertical-align: bottom; padding: 4px 0; height: 170px; }
+  .g-mapa th.mh span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-weight: 600; font-size: 11px; color: var(--ink-2); }
+  .g-mapa th { position: sticky; top: 0; z-index: 2; }
+  .g-mapa th.mn { z-index: 3; }
+  .g-mapa td.mc { width: 34px; min-width: 34px; text-align: center; border-radius: 4px; padding: 5px 0; font-variant-numeric: tabular-nums; }
+  .mc.cero, .ley.cero { background: #dc2626 !important; color: #ffffff; font-weight: 800; }
+  .mc.bajo, .ley.bajo { background: #fee2e2 !important; color: #7f1d1d; }
+  .mc.ritmo, .ley.ritmo { background: #fef3c7 !important; color: #78350f; }
+  .mc.ok, .ley.ok { background: #16a34a !important; color: #ffffff; font-weight: 700; }
+  .mc.na, .ley.na { color: var(--muted); }
+  .g-mapa tr.mt td { font-weight: 800; border-top: 2px solid var(--line); }
+  .ley { display: inline-block; min-width: 22px; text-align: center; border-radius: 4px; padding: 0 4px; font-size: 12px; }
+  .chip0 { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; margin: 2px 4px 2px 0; background: #fee2e2; color: #7f1d1d; border: 1px solid #fca5a5; }
   .aj-form label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--ink-2); }
   .aj-form input, .aj-form select { font: inherit; font-size: 14px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
   #t-ajustes td, #t-ajustes th { padding: 5px 8px; border-top: 1px solid var(--line); text-align: left; }
@@ -185,6 +225,10 @@
   <h1>Tarjetas de avance por asesor</h1>
   <p>Carga los archivos del mes y descarga una imagen por asesor con su avance en ventas y encuestas.</p>
 </header>
+<nav class="tabs" id="tabs">
+  <button data-tab="tarjetas" class="tab">Tarjetas de asesores</button>
+  <button data-tab="gerente" class="tab">Panel del gerente</button>
+</nav>
 <main>
   <section class="panel">
     <h2>1. Archivos</h2>
@@ -210,13 +254,17 @@
     </div>
   </section>
 
-  <section class="panel" id="p-equipos" hidden>
-    <h2>2. Equipos</h2>
+  <section class="panel" id="p-periodo" hidden>
     <div class="controls">
       <label>Mes <select id="mes-sel"></select></label>
       <label>Fecha de corte <input type="date" id="corte"></label>
       <button id="b-borrar">Eliminar este mes</button>
     </div>
+  </section>
+
+  <div id="tab-tarjetas">
+  <section class="panel" id="p-equipos" hidden>
+    <h2>2. Equipos</h2>
     <div class="summary" id="equipos"></div>
     <div class="warn" id="avisos"></div>
   </section>
@@ -267,6 +315,19 @@
     <div style="overflow-x:auto"><table id="t-mapeo" style="border-collapse:collapse;font-size:13px;width:100%"></table></div>
     <div class="warn" id="avisos-ventas"></div>
   </section>
+  </div>
+
+  <div id="tab-gerente" hidden>
+  <section class="panel" id="p-gerente" hidden>
+    <h2>Panel del gerente</h2>
+    <div class="controls">
+      <label>Equipo <select id="g-equipo"></select></label>
+      <button id="g-export">Exportar a Excel</button>
+    </div>
+    <p class="g-nota" id="g-nota"></p>
+    <div id="g-cuerpo"></div>
+  </section>
+  </div>
   <div class="empty" id="vacio">Carga el presupuesto inicial para ver a tu equipo.</div>
 </main>
 
@@ -911,6 +972,7 @@ function tarjetaHTML(e, a) {
 }
 
 function renderTarjetas() {
+  renderGerente();
   const e = state.ppto.equipos[state.equipoSel];
   document.getElementById('cards').innerHTML = e.asesores.map((a, i) => `
     <div class="card-wrap">
@@ -951,6 +1013,8 @@ function render() {
   document.getElementById('p-tarjetas').hidden = !ok;
   document.getElementById('p-indicadores').hidden = !ok;
   document.getElementById('p-ajustes').hidden = !ok;
+  document.getElementById('p-periodo').hidden = !ok;
+  document.getElementById('p-gerente').hidden = !ok;
   document.getElementById('vacio').hidden = ok;
   if (!ok) return;
   if (state.equipoSel == null || state.equipoSel >= state.ppto.equipos.length) state.equipoSel = 0;
@@ -1009,6 +1073,219 @@ document.getElementById('b-aj-add').onclick = () => {
   const corte = diaCorte();
   if (corte != null && dia > corte) err.textContent = `Guardada. No se ve en las tarjetas porque el día ${dia} es posterior a la fecha de corte.`;
 };
+
+// ---------- Panel del gerente ----------
+// Proyección lineal al cierre: ventas al corte ÷ días transcurridos × días del mes.
+const TAB_KEY = 'tarjetas-asesores-tab';
+let gEquipo = 'todos';
+
+function semaforo(f) {
+  if (f == null) return { color: STATUS.none, icon: '·', txt: 'Sin datos' };
+  if (f >= 1) return { color: STATUS.good, icon: '✓', txt: 'Llega' };
+  if (f >= 0.8) return { color: STATUS.warning, icon: '→', txt: 'Cerca' };
+  return { color: STATUS.critical, icon: '↓', txt: 'No llega' };
+}
+const pctTxt = f => f == null ? '—' : Math.round(f * 100) + '%';
+const barra = f => `<span class="g-bar"><i style="width:${Math.min(Math.max(f || 0, 0), 1) * 100}%;background:${semaforo(f).color}"></i></span>`;
+const stTxt = f => { const x = semaforo(f); return `<span class="g-st" style="color:${x.color}">${x.icon} ${x.txt}</span>`; };
+const nombreInd = i => cap(i.grupo) + (i.sub ? ' · ' + i.sub : '');
+
+function datosGerente() {
+  const ppto = state.ppto;
+  const D = diasDelMes(ppto.mes);
+  const dc = diaCorte() ?? D;
+  const factor = dc > 0 ? D / dc : null;
+  const quedan = Math.max(D - dc, 0);
+  const inds = indicadoresActivos();
+  const equipos = ppto.equipos.filter((e, k) => gEquipo === 'todos' || String(k) === gEquipo);
+
+  const asesores = equipos.flatMap(e => e.asesores.map(a => {
+    const real = realAsesor(a) || {};
+    const conMeta = inds.filter(i => a.metas[i.id] > 0);
+    const prom = f => conMeta.length ? conMeta.reduce((t, i) => t + Math.min(f(i) / a.metas[i.id], 1), 0) / conMeta.length : null;
+    const enc = ppto.encuestas ? ppto.encuestas.porUser[a.user] || null : null;
+    const cz = calidezAsesor(enc);
+    return {
+      a, e,
+      cumpl: prom(i => real[i.id] || 0),
+      proy: factor == null ? null : prom(i => (real[i.id] || 0) * factor),
+      ceros: conMeta.filter(i => !(real[i.id] > 0)),
+      conMeta: conMeta.length,
+      real,
+      tnps: enc ? enc.tnps.valor : null,
+      calidez: cz ? cz.total : null,
+    };
+  }));
+
+  const porInd = inds.map(i => {
+    const meta = asesores.reduce((t, x) => t + (x.a.metas[i.id] || 0), 0);
+    const real = asesores.reduce((t, x) => t + (x.real[i.id] || 0), 0);
+    const proy = factor == null ? null : real * factor;
+    const ceros = asesores.filter(x => x.a.metas[i.id] > 0 && !(x.real[i.id] > 0));
+    return {
+      i, meta, real, proy,
+      fReal: meta ? real / meta : null,
+      fProy: meta && proy != null ? proy / meta : null,
+      brecha: proy == null ? null : Math.round(meta - proy),
+      porDia: quedan ? Math.max(meta - real, 0) / quedan : null,
+      ceros,
+    };
+  }).filter(x => x.meta > 0);
+
+  const porEquipo = equipos.map(e => {
+    const xs = asesores.filter(x => x.e === e);
+    const avg = f => { const v = xs.map(f).filter(n => n != null); return v.length ? v.reduce((t, n) => t + n, 0) / v.length : null; };
+    return { e, n: xs.length, cumpl: avg(x => x.cumpl), proy: avg(x => x.proy), ceros: xs.reduce((t, x) => t + x.ceros.length, 0), calidez: avg(x => x.calidez) };
+  });
+
+  return { D, dc, quedan, factor, asesores, porInd, porEquipo };
+}
+
+function renderGerente() {
+  const ppto = state.ppto;
+  if (!ppto) return;
+  const sel = document.getElementById('g-equipo');
+  sel.innerHTML = `<option value="todos">Todos los equipos</option>` +
+    ppto.equipos.map((e, k) => `<option value="${k}">${esc(cap(e.nombre))} · ${esc(cap(e.supervisor))}</option>`).join('');
+  if (![...sel.options].some(o => o.value === gEquipo)) gEquipo = 'todos';
+  sel.value = gEquipo;
+
+  const cuerpo = document.getElementById('g-cuerpo'), nota = document.getElementById('g-nota');
+  if (!ppto.ventas && !(ppto.ajustes || []).length) {
+    nota.textContent = '';
+    cuerpo.innerHTML = '<div class="empty">Carga el registro de ventas del mes para ver el panel.</div>';
+    return;
+  }
+  const g = datosGerente();
+  nota.textContent = `${mesTxt(ppto.mes)} · corte al día ${g.dc} de ${g.D} (${g.quedan} días restantes). ` +
+    `Estimado al cierre = ventas al corte ÷ ${g.dc} días × ${g.D} días. Incluye ventas capturadas a mano.`;
+
+  const avg = f => { const v = g.asesores.map(f).filter(n => n != null); return v.length ? v.reduce((t, n) => t + n, 0) / v.length : null; };
+  const cumpl = avg(x => x.cumpl), proy = avg(x => x.proy);
+  const indLlegan = g.porInd.filter(x => x.fProy >= 1).length;
+  const ceros = g.asesores.reduce((t, x) => t + x.ceros.length, 0);
+  const pares = g.asesores.reduce((t, x) => t + x.conMeta, 0);
+  const cz = avg(x => x.calidez);
+
+  const kpis = `<div class="g-kpis">
+    <div class="g-kpi"><div class="l">Asesores</div><div class="v">${g.asesores.length}</div><div class="s">${g.porEquipo.length} equipo(s)</div></div>
+    <div class="g-kpi"><div class="l">Cumplimiento al corte</div><div class="v">${pctTxt(cumpl)}</div><div class="s">Ritmo esperado ${pctTxt(g.dc / g.D)}</div></div>
+    <div class="g-kpi"><div class="l">Estimado al cierre</div><div class="v" style="color:${semaforo(proy).color}">${pctTxt(proy)}</div><div class="s">${stTxt(proy)} · promedio por asesor</div></div>
+    <div class="g-kpi"><div class="l">Indicadores que llegan a la meta</div><div class="v">${indLlegan} <span style="font-size:15px;color:var(--muted)">/ ${g.porInd.length}</span></div><div class="s">Según el estimado al cierre</div></div>
+    <div class="g-kpi"><div class="l">Indicadores en cero</div><div class="v" style="color:${ceros ? STATUS.critical : STATUS.good}">${ceros}</div><div class="s">de ${pares} asesor-indicador con meta (${pctTxt(pares ? ceros / pares : null)})</div></div>
+    ${ppto.encuestas ? `<div class="g-kpi"><div class="l">Calidez promedio</div><div class="v">${cz == null ? '—' : fmtPts(cz)} <span style="font-size:15px;color:var(--muted)">/ ${CALIDEZ_MAX} pts</span></div><div class="s">Encuestas</div></div>` : ''}
+  </div>`;
+
+  let ultimo = null;
+  const filasInd = g.porInd.map(x => {
+    let grp = '';
+    if (x.i.sub && x.i.grupo !== ultimo) grp = `<tr class="grp"><td colspan="10">${esc(cap(x.i.grupo))}</td></tr>`;
+    ultimo = x.i.sub ? x.i.grupo : null;
+    return grp + `<tr>
+      <td class="t" style="${x.i.sub ? 'padding-left:20px' : 'font-weight:700'}">${esc(x.i.sub || cap(x.i.grupo))}</td>
+      <td>${x.meta}</td><td>${x.real}</td><td>${pctTxt(x.fReal)}</td>
+      <td><b>${x.proy == null ? '—' : Math.round(x.proy)}</b></td>
+      <td>${pctTxt(x.fProy)}${barra(x.fProy)}</td>
+      <td>${stTxt(x.fProy)}</td>
+      <td>${x.brecha == null ? '—' : x.brecha > 0 ? x.brecha : '—'}</td>
+      <td>${x.porDia == null ? '—' : (Math.ceil(x.porDia * 10) / 10)}</td>
+      <td style="color:${x.ceros.length ? STATUS.critical : 'inherit'};font-weight:${x.ceros.length ? 700 : 400}">${x.ceros.length}</td>
+    </tr>`;
+  }).join('');
+
+  const asesoresOrd = [...g.asesores].sort((x, y) => (x.proy ?? 0) - (y.proy ?? 0));
+  const filasAs = asesoresOrd.map(x => `<tr>
+      <td class="t"><b>${esc(cap(x.a.nombre))}</b><br><span style="color:var(--muted);font-size:12px">${esc(x.a.user)} · ${esc(cap(x.e.nombre))}</span></td>
+      <td>${pctTxt(x.cumpl)}</td>
+      <td>${pctTxt(x.proy)}${barra(x.proy)}</td>
+      <td>${stTxt(x.proy)}</td>
+      ${ppto.encuestas ? `<td>${x.calidez == null ? '—' : fmtPts(x.calidez)}</td><td>${fmtScore(x.tnps)}</td>` : ''}
+      <td style="color:${x.ceros.length ? STATUS.critical : STATUS.good};font-weight:700">${x.ceros.length} / ${x.conMeta}</td>
+    </tr>`).join('');
+
+  // Mapa: una fila por asesor, una columna por indicador. Rojo = meta sin ventas; verde = meta cumplida.
+  const ritmo = g.dc / g.D;
+  const celda = (x, i) => {
+    const meta = x.a.metas[i.id] || 0, real = x.real[i.id] || 0;
+    if (!meta) return '<td class="mc na">–</td>';
+    const f = real / meta;
+    const cls = real <= 0 ? 'cero' : f >= 1 ? 'ok' : f >= ritmo ? 'ritmo' : 'bajo';
+    return `<td class="mc ${cls}" title="${esc(cap(x.a.nombre))} · ${esc(nombreInd(i))}: ${real} de ${meta}">${real <= 0 ? '0' : Math.round(f * 100)}</td>`;
+  };
+  const indsMapa = g.porInd.map(x => x.i);
+  const mapa = `<table class="g-mapa">
+    <tr><th class="mn">Asesor</th><th class="mz">En cero</th>${indsMapa.map(i => `<th class="mh"><span>${esc(nombreInd(i))}</span></th>`).join('')}</tr>
+    ${asesoresOrd.map(x => `<tr><td class="mn"><b>${esc(cap(x.a.nombre))}</b> <span>${esc(cap(x.e.nombre))}</span></td>
+      <td class="mz" style="color:${x.ceros.length ? STATUS.critical : STATUS.good}">${x.ceros.length}</td>
+      ${indsMapa.map(i => celda(x, i)).join('')}</tr>`).join('')}
+    <tr class="mt"><td class="mn"><b>Asesores en cero</b></td><td class="mz"></td>${g.porInd.map(x => `<td class="mc">${x.ceros.length}</td>`).join('')}</tr>
+  </table>`;
+
+  const filasEq = g.porEquipo.map(x => `<tr>
+      <td class="t"><b>${esc(cap(x.e.nombre))}</b><br><span style="color:var(--muted);font-size:12px">${esc(cap(x.e.supervisor))}</span></td>
+      <td>${x.n}</td><td>${pctTxt(x.cumpl)}</td><td>${pctTxt(x.proy)}${barra(x.proy)}</td><td>${stTxt(x.proy)}</td>
+      <td style="color:${x.ceros ? STATUS.critical : 'inherit'};font-weight:700">${x.ceros}</td>
+      ${ppto.encuestas ? `<td>${x.calidez == null ? '—' : fmtPts(x.calidez)}</td>` : ''}
+    </tr>`).join('');
+
+  cuerpo.innerHTML = kpis + `
+    ${g.porEquipo.length > 1 ? `<div class="g-sec"><h3>Por equipo</h3>
+      <div class="g-scroll"><table class="g-tabla"><tr><th>Equipo</th><th>Asesores</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th><th></th><th>Indicadores en cero</th>${ppto.encuestas ? '<th>Calidez (pts)</th>' : ''}</tr>${filasEq}</table></div></div>` : ''}
+    <div class="g-sec"><h3>Estimado de ventas al cierre por indicador</h3>
+      <p>Suma de ${g.porEquipo.length > 1 ? 'todos los equipos' : 'el equipo'}. «Brecha» es lo que faltaría al cierre si se mantiene el ritmo; «Necesario por día» es lo que hay que vender cada día restante para llegar a la meta.</p>
+      <div class="g-scroll"><table class="g-tabla">
+        <tr><th>Indicador</th><th>Meta</th><th>Llevan</th><th>Avance</th><th>Estimado al cierre</th><th>% estimado</th><th></th><th>Brecha</th><th>Necesario por día</th><th>Asesores en cero</th></tr>
+        ${filasInd}
+      </table></div></div>
+    <div class="g-sec"><h3>Asesores</h3>
+      <p>Ordenados de menor a mayor estimado al cierre, para ver primero a quien necesita apoyo.</p>
+      <div class="g-scroll"><table class="g-tabla">
+        <tr><th>Asesor</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th><th></th>${ppto.encuestas ? '<th>Calidez</th><th>TNPS</th>' : ''}<th>Indicadores en cero</th></tr>
+        ${filasAs}
+      </table></div></div>
+    <div class="g-sec"><h3>Mapa de cero avance</h3>
+      <p>Cada celda es el % de avance del asesor en ese indicador.
+        <span class="ley cero">0</span> sin ventas ·
+        <span class="ley bajo">%</span> abajo del ritmo (${pctTxt(ritmo)}) ·
+        <span class="ley ritmo">%</span> en ritmo ·
+        <span class="ley ok">%</span> meta cumplida ·
+        <span class="ley na">–</span> sin meta. Pasa el cursor sobre una celda para ver el detalle.</p>
+      <div class="g-scroll">${mapa}</div></div>`;
+}
+
+document.getElementById('g-equipo').onchange = ev => { gEquipo = ev.target.value; renderGerente(); };
+
+document.getElementById('g-export').onclick = () => {
+  if (!state.ppto) return;
+  const g = datosGerente();
+  const r1 = v => v == null ? '' : Math.round(v * 1000) / 10;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+    ['Indicador', 'Meta', 'Llevan', 'Avance %', 'Estimado al cierre', '% estimado', 'Brecha', 'Necesario por día', 'Asesores en cero'],
+    ...g.porInd.map(x => [nombreInd(x.i), x.meta, x.real, r1(x.fReal), x.proy == null ? '' : Math.round(x.proy), r1(x.fProy),
+      x.brecha > 0 ? x.brecha : 0, x.porDia == null ? '' : Math.ceil(x.porDia * 10) / 10, x.ceros.length]),
+  ]), 'Estimado por indicador');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+    ['Asesor', 'User', 'Equipo', 'Supervisor', 'Cumplimiento al corte %', 'Estimado al cierre %', 'Calidez (pts)', 'TNPS', 'Indicadores en cero', 'Cuáles'],
+    ...g.asesores.map(x => [cap(x.a.nombre), x.a.user, cap(x.e.nombre), cap(x.e.supervisor), r1(x.cumpl), r1(x.proy),
+      x.calidez == null ? '' : Math.round(x.calidez * 10) / 10, x.tnps == null ? '' : Math.round(x.tnps * 10) / 10,
+      x.ceros.length, x.ceros.map(nombreInd).join(', ')]),
+  ]), 'Asesores');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+    ['Asesor', 'User', 'Equipo', 'Indicador en cero', 'Meta'],
+    ...g.asesores.flatMap(x => x.ceros.map(i => [cap(x.a.nombre), x.a.user, cap(x.e.nombre), nombreInd(i), x.a.metas[i.id]])),
+  ]), 'Cero avance');
+  XLSX.writeFile(wb, `Panel gerente ${mesTxt(state.ppto.mes)} corte ${g.dc}.xlsx`);
+};
+
+function mostrarTab(t) {
+  document.getElementById('tab-tarjetas').hidden = t !== 'tarjetas';
+  document.getElementById('tab-gerente').hidden = t !== 'gerente';
+  document.querySelectorAll('#tabs .tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  try { localStorage.setItem(TAB_KEY, t); } catch (_) {}
+}
+document.querySelectorAll('#tabs .tab').forEach(b => b.onclick = () => mostrarTab(b.dataset.tab));
+try { mostrarTab(localStorage.getItem(TAB_KEY) === 'gerente' ? 'gerente' : 'tarjetas'); } catch (_) { mostrarTab('tarjetas'); }
 
 function renderMapeo() {
   const v = state.ppto.ventas;
