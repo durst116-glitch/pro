@@ -82,8 +82,8 @@
   .card th:first-child { text-align: left; }
   .card td { padding: 3px 4px; border-top: 1px solid #f0f1f4; font-variant-numeric: tabular-nums; }
   .card td.num { text-align: right; width: 44px; }
-  .card td.pct { text-align: right; width: 48px; font-weight: 600; }
-  .card td.bar { width: 110px; }
+  .card td.pct { text-align: right; width: 60px; font-weight: 600; white-space: nowrap; }
+  .card td.bar { width: 84px; }
   .card tr.grp td { background: #f5f7fa; font-weight: 700; color: #13294b; font-size: 11px; border-top: 1px solid #e6e8ec; }
   .card td.ind { padding-left: 12px; color: #374151; }
   .card tr.solo td.ind { padding-left: 4px; font-weight: 700; color: #13294b; }
@@ -113,10 +113,11 @@
         <input type="file" id="f-ppto" accept=".xlsx,.xls,.xlsm">
         <div class="status" id="st-ppto">Sin cargar</div>
       </div>
-      <div class="upload disabled">
-        <b>Ventas del mes</b>
-        <small>Pendiente: en cuanto recibamos el archivo de ventas se conecta aquí.</small>
-        <input type="file" disabled>
+      <div class="upload">
+        <b>Registro de ventas</b>
+        <small>Excel con una pestaña por día (1 a 31). Se guarda en el mes seleccionado; súbelo de nuevo cada vez que se actualice.</small>
+        <input type="file" id="f-ventas" accept=".xlsx,.xls,.xlsm" disabled>
+        <div class="status" id="st-ventas">Primero carga el presupuesto del mes.</div>
       </div>
       <div class="upload disabled">
         <b>Encuestas</b>
@@ -144,6 +145,12 @@
       <span id="zip-st" style="color:var(--muted);font-size:13px"></span>
     </div>
     <div class="cards" id="cards"></div>
+  </section>
+  <section class="panel" id="p-mapeo" hidden>
+    <h2>¿Cómo se cuenta cada meta?</h2>
+    <p style="margin:0 0 8px;color:var(--ink-2);font-size:13px">Columnas del registro de ventas que se suman para cada indicador del presupuesto.</p>
+    <div style="overflow-x:auto"><table id="t-mapeo" style="border-collapse:collapse;font-size:13px;width:100%"></table></div>
+    <div class="warn" id="avisos-ventas"></div>
   </section>
   <div class="empty" id="vacio">Carga el presupuesto inicial para ver a tu equipo.</div>
 </main>
@@ -260,17 +267,127 @@ function detectarMes(wb, fileName) {
   return { idx: m ? MES_CORTO[m[1].toLowerCase()] : hoy.getMonth(), anio: hoy.getFullYear() };
 }
 
+// ---------- Lectura del registro de ventas ----------
+// Qué columna del registro suma a qué indicador del presupuesto:
+//   [encabezado en el registro, texto del grupo en el presupuesto, texto del subindicador ('' = cualquiera)]
+const MAPEO_VENTAS = [
+  ['POSPAGO LIBRE CON EQUIPO A PLAZOS', 'POSPAGO', 'CON EQUIPO'],
+  ['POSPAGO LIBRE', 'POSPAGO', 'LIBRE'],
+  ['VIP', 'POSPAGO', 'VIP'],
+  ['TELCEL PARA SIEMPRE', 'TELCEL PARA SIEMPRE', ''],
+  ['PREPAGO A. KIT', 'PREPAGO', 'KIT'],
+  ['PREPAGO A. CHIP', 'PREPAGO', 'CHIP'],
+  ['PREPAGO AMIGO PAGUITOS', 'PREPAGO', 'PAGUITOS'],
+  ['PORTABILIDAD LIBRE CON EQUIPO A PLAZOS', 'PORTABILIDAD', 'CON EQUIPO'],
+  ['PORTABILIDAD LIBRE', 'PORTABILIDAD', 'LIBRE'],
+  ['PORTABILIDAD TELCEL PARA SIEMPRE', 'TELCEL PARA SIEMPRE', ''],
+  ['PORTABILIDAD PREPAGO', 'PORTABILIDAD', 'PREPAGO'],
+  ['CAMBIO DE PLAN LIBRE CON EQUIPO A PLAZOS', 'RENOVACION', 'CON EQUIPO'],
+  ['CAMBIO DE PLAN VIP', 'RENOVACION', 'VIP'],
+  ['CAMBIO DE PLAN TELCEL PARA SIEMPRE', 'TELCEL PARA SIEMPRE', ''],
+  ['RENUEVATE', 'RENOVACION', 'RENUEVATE'],
+  ['TELCEL UP CON EQUIPO A PLAZOS', 'TELCEL UP', 'POSPAGO'],
+  ['TELCEL UP LITE', 'TELCEL UP', 'POSPAGO'],
+  ['TELCEL UP PREPAGO', 'TELCEL UP', 'PREPAGO'],
+  ['INFINITUM', 'INFINITUM', ''],
+  ['WIFI TELCEL LIBRE CON EQUIPO A PLAZOS', 'WIFI', 'CON EQUIPO'],
+  ['WIFI TELCEL LIBRE', 'WIFI', 'SIN EQUIPO'],
+  ['WIFI TELCEL PREPAGO', 'WIFI', 'PREPAGO'],
+  ['FINGER PRINT', 'FINGER', ''],
+  ['ZEEK MI AUTO', 'ZEEK', ''],
+  ['NORTON EQUIPO A PLAZOS', 'NORTON', 'POSPAGO'],
+  ['NORTON PREPAGO', 'NORTON', 'PREPAGO'],
+  ['ACCESORIOS', 'ACCESORIOS', ''],
+  ['CLARO PAY', 'CLARO PAY', ''],
+  ['TRADE IN', 'TRADE IN', ''],
+  ['UP GRADE CAMCA', 'UP GRADE', ''],
+  ['BUNDLE APPLE AIRPODS', 'BUNDLE', ''],
+];
+
+function indicadorDestino(indicadores, encabezado) {
+  const regla = MAPEO_VENTAS.find(r => r[0] === key(encabezado));
+  if (!regla) return null;
+  const ind = indicadores.find(i => key(i.grupo).startsWith(regla[1]) && key(i.sub).includes(regla[2]));
+  return ind ? ind.id : null;
+}
+
+// Cada pestaña "1".."31" es un día. Se guarda lo vendido por asesor (user), por día y por indicador.
+function parseVentas(wb, fileName, ppto) {
+  const hojas = wb.SheetNames.filter(n => /^\s*\d{1,2}\s*$/.test(n) && Number(n) >= 1 && Number(n) <= 31);
+  if (!hojas.length) throw new Error('No se encontraron pestañas por día (1, 2, 3…).');
+
+  const porUser = {}, sinMapear = {}, usadas = {};
+  const usersPpto = new Set(ppto.equipos.flatMap(e => e.asesores.map(a => a.user)));
+  const desconocidos = new Set();
+  let ultimoDia = 0;
+
+  hojas.forEach(h => {
+    const dia = Number(h);
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[h], { header: 1, defval: null, raw: true });
+    const hr = rows.findIndex(r => (r || []).some(c => key(c) === 'USER') && (r || []).some(c => key(c) === 'ASESOR'));
+    if (hr < 0) return;
+    const head = rows[hr];
+    const cUser = head.findIndex(c => key(c) === 'USER');
+    const cols = [];
+    head.forEach((h, j) => {
+      if (j <= cUser || !norm(h)) return;
+      cols.push({ j, nombre: norm(h), id: indicadorDestino(ppto.indicadores, h) });
+    });
+    for (let r = hr + 1; r < rows.length; r++) {
+      const row = rows[r] || [];
+      if (row.some(c => key(c).startsWith('TOTAL'))) break;
+      const user = norm(row[cUser]);
+      if (!user) continue;
+      cols.forEach(c => {
+        const n = Number(row[c.j]);
+        if (!n || !isFinite(n)) return;
+        if (!c.id) { sinMapear[c.nombre] = (sinMapear[c.nombre] || 0) + n; return; }
+        usadas[c.nombre] = c.id;
+        if (!usersPpto.has(user)) desconocidos.add(user);
+        const u = porUser[user] = porUser[user] || {};
+        const d = u[dia] = u[dia] || {};
+        d[c.id] = (d[c.id] || 0) + n;
+        ultimoDia = Math.max(ultimoDia, dia);
+      });
+    }
+  });
+
+  const avisos = [];
+  if (desconocidos.size) avisos.push(`Users con ventas que no están en el presupuesto: ${[...desconocidos].join(', ')}.`);
+  return { archivo: fileName, porUser, ultimoDia, sinMapear, avisos };
+}
+
 // ---------- Cálculos ----------
 function diasDelMes(mes) { return new Date(mes.anio, mes.idx + 1, 0).getDate(); }
 
-// Porcentaje del mes que ya transcurrió a la fecha de corte (ritmo esperado).
-function ritmoEsperado() {
+// Día del mes seleccionado que marca la fecha de corte (0 = antes del mes, fin de mes si es posterior).
+function diaCorte() {
   const mes = state.ppto.mes;
   const corte = document.getElementById('corte').value;
   if (!corte) return null;
   const [y, m, d] = corte.split('-').map(Number);
-  if (y !== mes.anio || m - 1 !== mes.idx) return (y * 12 + m - 1) > (mes.anio * 12 + mes.idx) ? 1 : 0;
-  return d / diasDelMes(mes);
+  if (y !== mes.anio || m - 1 !== mes.idx) return (y * 12 + m - 1) > (mes.anio * 12 + mes.idx) ? diasDelMes(mes) : 0;
+  return d;
+}
+
+// Porcentaje del mes que ya transcurrió a la fecha de corte (ritmo esperado).
+function ritmoEsperado() {
+  const d = diaCorte();
+  return d == null ? null : d / diasDelMes(state.ppto.mes);
+}
+
+// Ventas acumuladas del asesor del día 1 a la fecha de corte, por indicador. null si no hay registro cargado.
+function realAsesor(a) {
+  const v = state.ppto.ventas;
+  if (!v) return null;
+  const hasta = diaCorte() ?? 31;
+  const real = {};
+  state.ppto.indicadores.forEach(i => real[i.id] = 0);
+  Object.entries(v.porUser[a.user] || {}).forEach(([dia, cant]) => {
+    if (Number(dia) > hasta) return;
+    Object.entries(cant).forEach(([id, n]) => { if (id in real) real[id] += n; });
+  });
+  return real;
 }
 
 function estado(pct, ritmo) {
@@ -280,15 +397,15 @@ function estado(pct, ritmo) {
   return { color: STATUS.critical, icon: '↓', txt: 'Abajo del ritmo' };
 }
 
-function resumenAsesor(a) {
+// Cumplimiento general: promedio del avance de cada indicador con meta, topando cada uno en 100%.
+function resumenAsesor(a, real) {
   const inds = state.ppto.indicadores.filter(i => a.metas[i.id] > 0);
-  const conReal = inds.filter(i => a.real[i.id] != null);
-  if (!conReal.length) return { cumplidos: null, total: inds.length, promedio: null };
-  const pcts = conReal.map(i => Math.min(a.real[i.id] / a.metas[i.id], 1));
+  if (!real) return { cumplidos: null, total: inds.length, promedio: null };
+  const pcts = inds.map(i => Math.min(real[i.id] / a.metas[i.id], 1));
   return {
-    cumplidos: conReal.filter(i => a.real[i.id] >= a.metas[i.id]).length,
+    cumplidos: inds.filter(i => real[i.id] >= a.metas[i.id]).length,
     total: inds.length,
-    promedio: pcts.reduce((s, p) => s + p, 0) / inds.length,
+    promedio: inds.length ? pcts.reduce((s, p) => s + p, 0) / inds.length : null,
   };
 }
 
@@ -307,14 +424,20 @@ function renderEquipos() {
       <div class="n">${e.asesores.length} asesores · ${esc(cap(e.cac))}</div>
     </div>`).join('');
   document.getElementById('avisos').textContent = avisos.length ? '⚠ ' + avisos.join(' ') : '';
+  const v = state.ppto.ventas;
+  document.getElementById('f-ventas').disabled = false;
+  document.getElementById('st-ventas').textContent = v
+    ? `✓ ${v.archivo} · ${mesTxt(mes)} · ventas capturadas hasta el día ${v.ultimoDia}`
+    : `Sin cargar para ${mesTxt(mes)}.`;
+  renderMapeo();
   document.querySelectorAll('.team').forEach(el => el.onclick = () => {
     state.equipoSel = Number(el.dataset.i); renderEquipos(); renderTarjetas();
   });
 }
 
-function filaIndicador(a, ind, solo, ritmo) {
+function filaIndicador(a, ind, solo, ritmo, reales) {
   const meta = a.metas[ind.id];
-  const real = a.real[ind.id];
+  const real = reales ? reales[ind.id] : null;
   const pct = real != null && meta > 0 ? real / meta : null;
   const st = estado(pct, ritmo);
   const w = pct == null ? 0 : Math.min(pct, 1) * 100;
@@ -322,6 +445,7 @@ function filaIndicador(a, ind, solo, ritmo) {
     <td class="ind">${esc(solo ? cap(ind.grupo) : ind.sub)}</td>
     <td class="num">${meta}</td>
     <td class="num">${real ?? '—'}</td>
+    <td class="num">${real == null ? '—' : Math.max(meta - real, 0)}</td>
     <td class="pct">${pct == null ? '—' : Math.round(pct * 100) + '%'}<span class="st" style="color:${st.color}">${st.icon}</span></td>
     <td class="bar"><div class="track"><div class="fill" style="width:${w}%;background:${st.color}"></div></div></td>
   </tr>`;
@@ -330,7 +454,8 @@ function filaIndicador(a, ind, solo, ritmo) {
 function tarjetaHTML(e, a) {
   const { indicadores, mes } = state.ppto;
   const ritmo = ritmoEsperado();
-  const res = resumenAsesor(a);
+  const reales = realAsesor(a);
+  const res = resumenAsesor(a, reales);
   const corte = document.getElementById('corte').value;
 
   // Agrupa indicadores respetando el orden del Excel; los que no tienen subindicador van solos.
@@ -339,9 +464,9 @@ function tarjetaHTML(e, a) {
     if (!(a.metas[ind.id] > 0)) return;
     const hermanos = indicadores.filter(x => x.grupo === ind.grupo && a.metas[x.id] > 0);
     const solo = hermanos.length === 1 && !ind.sub;
-    if (!solo && ind.grupo !== ultimo) filas += `<tr class="grp"><td colspan="5">${esc(cap(ind.grupo))}</td></tr>`;
+    if (!solo && ind.grupo !== ultimo) filas += `<tr class="grp"><td colspan="6">${esc(cap(ind.grupo))}</td></tr>`;
     ultimo = ind.grupo;
-    filas += filaIndicador(a, ind, solo, ritmo);
+    filas += filaIndicador(a, ind, solo, ritmo, reales);
   });
 
   return `<div class="card">
@@ -353,7 +478,7 @@ function tarjetaHTML(e, a) {
     <div class="hero">
       <div><div class="lbl">Cumplimiento de ventas</div>
         <div class="val">${res.promedio == null ? '—' : Math.round(res.promedio * 100) + '%'}</div>
-        <div class="sub">${res.promedio == null ? 'Pendiente de cargar ventas' : 'Promedio de indicadores'}</div></div>
+        <div class="sub">${res.promedio == null ? 'Pendiente de cargar ventas' : `Promedio de ${res.total} indicadores`}</div></div>
       <div><div class="lbl">Indicadores cumplidos</div>
         <div class="val">${res.cumplidos == null ? '—' : res.cumplidos} <span style="font-size:15px;color:#6b7280">/ ${res.total}</span></div>
         <div class="sub">${ritmo == null ? '' : 'Ritmo esperado al corte: ' + Math.round(ritmo * 100) + '%'}</div></div>
@@ -364,7 +489,7 @@ function tarjetaHTML(e, a) {
     <div class="sec">
       <div class="sec-t">Ventas</div>
       <table>
-        <tr><th>Indicador</th><th>Meta</th><th>Llevas</th><th>Avance</th><th></th></tr>
+        <tr><th>Indicador</th><th>Meta</th><th>Llevas</th><th>Faltan</th><th>Avance</th><th></th></tr>
         ${filas}
       </table>
     </div>
@@ -377,7 +502,7 @@ function tarjetaHTML(e, a) {
       <div class="sec-t">Encuestas</div>
       <div class="pend">Aquí aparecerá tu resultado de encuestas en cuanto se cargue el archivo.</div>
     </div>
-    <div class="ft"><span>${corte ? 'Corte al ' + corte.split('-').reverse().join('/') : ''}</span><span>${esc(a.user)}</span></div>
+    <div class="ft"><span>${corte ? 'Ventas acumuladas al ' + corte.split('-').reverse().join('/') : ''}</span><span>${esc(a.user)}</span></div>
   </div>`;
 }
 
@@ -408,6 +533,27 @@ function render() {
   if (state.equipoSel == null || state.equipoSel >= state.ppto.equipos.length) state.equipoSel = 0;
   renderEquipos();
   renderTarjetas();
+}
+
+function renderMapeo() {
+  const v = state.ppto.ventas;
+  document.getElementById('p-mapeo').hidden = !v;
+  if (!v) return;
+  const fuentes = {};
+  MAPEO_VENTAS.forEach(([enc]) => {
+    const id = indicadorDestino(state.ppto.indicadores, enc);
+    if (id) (fuentes[id] = fuentes[id] || []).push(enc);
+  });
+  const td = 'style="padding:4px 8px;border-top:1px solid var(--line);text-align:left"';
+  document.getElementById('t-mapeo').innerHTML =
+    `<tr><th ${td}>Indicador del presupuesto</th><th ${td}>Se suma del registro de ventas</th></tr>` +
+    state.ppto.indicadores.map(i => `<tr><td ${td}>${esc(cap(i.grupo))}${i.sub ? ' · ' + esc(i.sub) : ''}</td>
+      <td ${td}>${fuentes[i.id] ? esc(fuentes[i.id].map(cap).join(' + ')) : '<span style="color:#b45309">Sin columna en el registro</span>'}</td></tr>`).join('');
+  const extra = Object.entries(v.sinMapear).map(([k, n]) => `${cap(k)} (${n})`);
+  document.getElementById('avisos-ventas').textContent = [
+    ...v.avisos,
+    extra.length ? `Ventas registradas que no tienen meta en el presupuesto (no cuentan en la tarjeta): ${extra.join(', ')}.` : '',
+  ].filter(Boolean).join(' ');
 }
 
 // ---------- Imágenes ----------
@@ -483,8 +629,34 @@ document.getElementById('f-ppto').onchange = async ev => {
       if (state.ppto) render();
       return;
     }
+    if (previo && previo.ventas) ppto.ventas = previo.ventas;
     state.meses[k] = ppto;
     seleccionarMes(k);
+  } catch (err) {
+    st.textContent = '✗ ' + err.message;
+  }
+  ev.target.value = '';
+};
+
+document.getElementById('f-ventas').onchange = async ev => {
+  const file = ev.target.files[0];
+  if (!file || !state.ppto) return;
+  const st = document.getElementById('st-ventas');
+  st.textContent = 'Leyendo…';
+  try {
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    const ventas = parseVentas(wb, file.name, state.ppto);
+    const mes = state.ppto.mes;
+    const previo = state.ppto.ventas;
+    if (previo && !confirm(`${mesTxt(mes)} ya tiene ventas cargadas (${previo.archivo}). ¿Reemplazarlas por ${file.name}?`)) {
+      render();
+      return;
+    }
+    state.ppto.ventas = ventas;
+    // La fecha de corte pasa al último día con ventas capturadas.
+    if (ventas.ultimoDia) document.getElementById('corte').value = `${state.mesSel}-${String(ventas.ultimoDia).padStart(2, '0')}`;
+    guardar();
+    render();
   } catch (err) {
     st.textContent = '✗ ' + err.message;
   }
@@ -497,7 +669,9 @@ function seleccionarMes(k) {
   state.equipoSel = 0;
   const mes = state.meses[k].mes;
   const hoy = new Date();
-  const d = hoy.getFullYear() === mes.anio && hoy.getMonth() === mes.idx ? hoy.getDate() : diasDelMes(mes);
+  const v = state.meses[k].ventas;
+  const d = v && v.ultimoDia ? v.ultimoDia
+    : hoy.getFullYear() === mes.anio && hoy.getMonth() === mes.idx ? hoy.getDate() : diasDelMes(mes);
   document.getElementById('corte').value = `${k}-${String(d).padStart(2, '0')}`;
   guardar();
   render();
@@ -512,6 +686,8 @@ document.getElementById('b-borrar').onclick = () => {
   if (resto) return seleccionarMes(resto);
   state.mesSel = null;
   document.getElementById('st-ppto').textContent = 'Sin cargar';
+  document.getElementById('st-ventas').textContent = 'Primero carga el presupuesto del mes.';
+  document.getElementById('f-ventas').disabled = true;
   guardar();
   render();
 };
