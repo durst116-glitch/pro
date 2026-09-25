@@ -100,6 +100,7 @@
   .card .rv { font-size: 20px; font-weight: 700; }
   .card .rs { font-size: 11px; font-weight: 700; }
   .card .rf { font-size: 10px; color: #6b7280; margin-top: 2px; line-height: 1.3; }
+  .card td.stt { font-size: 11px; font-weight: 700; text-align: right; }
   .card .legend { font-size: 10px; color: #6b7280; padding: 4px 16px 0; }
   .card .ft { font-size: 10px; color: #8a909b; padding: 8px 16px 14px; display: flex; justify-content: space-between; }
 </style>
@@ -125,10 +126,11 @@
         <input type="file" id="f-ventas" accept=".xlsx,.xls,.xlsm" disabled>
         <div class="status" id="st-ventas">Primero carga el presupuesto del mes.</div>
       </div>
-      <div class="upload disabled">
+      <div class="upload">
         <b>Encuestas</b>
-        <small>Pendiente: en cuanto recibamos el archivo de encuestas se conecta aquí.</small>
-        <input type="file" disabled>
+        <small>CSV o Excel de encuestas por asesor (TNPS, satisfacción, actitud, solución, ofrecimiento). Se guarda en el mes seleccionado.</small>
+        <input type="file" id="f-enc" accept=".csv,.xlsx,.xls" disabled>
+        <div class="status" id="st-enc">Primero carga el presupuesto del mes.</div>
       </div>
     </div>
   </section>
@@ -391,6 +393,57 @@ function parseVentas(wb, fileName, ppto) {
   return { archivo: fileName, porUser, ultimoDia, sinMapear, avisos };
 }
 
+// ---------- Lectura de encuestas ----------
+// Mismos indicadores y objetivos que la hoja "Satisfaccion Individual" del Dashboard Operativo.
+// col: encabezado del puntaje (si hay dos iguales se toma el último, como hace el dashboard);
+// base: encabezados cuyo total es el número de encuestas de ese indicador.
+const ENCUESTAS = [
+  { id: 'tnps', nombre: 'TNPS', objetivo: 87, col: 'TNPS', base: ['BASE TNPS'] },
+  { id: 'satis', nombre: 'Satisfacción', objetivo: 89, col: 'SCORE SATISFACCION ASESOR', base: ['BASE SATISFACCION ASESOR'] },
+  { id: 'ofrec', nombre: 'Ofrecimiento', objetivo: 80, col: 'SI OFRECIMIENTO', base: ['BASE OFRECIMIENTO'] },
+  { id: 'soluc', nombre: 'Solución', objetivo: 92, col: 'SI SOLUCION SATISFECHO',
+    base: ['SI SOLUCION SATISFECHO#0', 'SI SOLUCION INSATISFECHO', 'NO SOLUCION'] },
+  { id: 'actit', nombre: 'Actitud', objetivo: 91, col: 'SCORE ACTITUD', base: ['BASE AMABILIDAD'] },
+];
+
+function parseEncuestas(wb, fileName, ppto) {
+  const ws = wb.Sheets[wb.SheetNames.find(n => key(n) === 'ENCUESTAS') || wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+  const hr = rows.findIndex(r => (r || []).some(c => key(c) === 'TNPS'));
+  if (hr < 0) throw new Error('No se encontró la columna TNPS.');
+  const head = rows[hr].map(key);
+  const cUser = head.findIndex(h => h === 'ASESOR' || h === 'ID ASESOR' || h === 'USER');
+  if (cUser < 0) throw new Error('No se encontró la columna Asesor (user).');
+  // "NOMBRE#0" = primera columna con ese nombre; "NOMBRE" = última.
+  const col = n => {
+    const [name, nth] = n.split('#');
+    return nth != null ? head.indexOf(name) : head.lastIndexOf(name);
+  };
+  const num = v => (v === null || v === '' || !isFinite(Number(v))) ? null : Number(v);
+
+  const porUser = {};
+  for (let r = hr + 1; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const user = norm(row[cUser]);
+    if (!user) continue;
+    const res = {};
+    ENCUESTAS.forEach(e => {
+      const c = col(e.col);
+      const base = e.base.map(col).filter(i => i >= 0).reduce((t, i) => t + (num(row[i]) || 0), 0);
+      res[e.id] = { valor: c >= 0 ? num(row[c]) : null, base };
+    });
+    porUser[user] = res;
+  }
+  const users = new Set(ppto.equipos.flatMap(e => e.asesores.map(a => a.user)));
+  const sinEnc = [...users].filter(u => !porUser[u]);
+  return {
+    archivo: fileName, porUser,
+    avisos: sinEnc.length ? [`Asesores sin encuestas en el archivo: ${sinEnc.join(', ')}.`] : [],
+  };
+}
+
+const fmtScore = v => v == null ? '—' : (Math.round(v * 10) / 10).toString();
+
 // ---------- Cálculos ----------
 function diasDelMes(mes) { return new Date(mes.anio, mes.idx + 1, 0).getDate(); }
 
@@ -467,6 +520,25 @@ function rubrosHTML(rubros) {
     </div>`).join('')}</div></div>`;
 }
 
+function encuestasHTML(enc) {
+  if (!state.ppto.encuestas) return '<div class="pend">Aquí aparecerá tu resultado de encuestas en cuanto se cargue el archivo.</div>';
+  if (!enc) return '<div class="pend">Aún no tienes encuestas registradas este mes.</div>';
+  return `<table>
+    <tr><th>Indicador</th><th>Objetivo</th><th>Resultado</th><th>Encuestas</th><th></th></tr>
+    ${ENCUESTAS.map(e => {
+      const r = enc[e.id];
+      const ok = r.valor != null && r.valor >= e.objetivo;
+      const st = r.valor == null ? { color: STATUS.none, icon: '·', txt: 'Sin datos' }
+        : ok ? { color: STATUS.good, icon: '✓', txt: 'En objetivo' } : { color: STATUS.critical, icon: '↓', txt: 'Abajo del objetivo' };
+      return `<tr><td class="ind" style="padding-left:4px">${esc(e.nombre)}</td>
+        <td class="num">${e.objetivo}</td>
+        <td class="pct">${fmtScore(r.valor)}<span class="st" style="color:${st.color}">${st.icon}</span></td>
+        <td class="num">${r.base || '—'}</td>
+        <td class="stt" style="color:${st.color}">${st.txt}</td></tr>`;
+    }).join('')}
+  </table>`;
+}
+
 // ---------- Render ----------
 function renderEquipos() {
   const { equipos, avisos, mes } = state.ppto;
@@ -486,6 +558,11 @@ function renderEquipos() {
   document.getElementById('f-ventas').disabled = false;
   document.getElementById('st-ventas').textContent = v
     ? `✓ ${v.archivo} · ${mesTxt(mes)} · ventas capturadas hasta el día ${v.ultimoDia}`
+    : `Sin cargar para ${mesTxt(mes)}.`;
+  const en = state.ppto.encuestas;
+  document.getElementById('f-enc').disabled = false;
+  document.getElementById('st-enc').textContent = en
+    ? `✓ ${en.archivo} · ${mesTxt(mes)} · ${Object.keys(en.porUser).length} users` + (en.avisos.length ? ' · ⚠ ' + en.avisos.join(' ') : '')
     : `Sin cargar para ${mesTxt(mes)}.`;
   renderMapeo();
   document.querySelectorAll('.team').forEach(el => el.onclick = () => {
@@ -515,6 +592,7 @@ function tarjetaHTML(e, a) {
   const ritmo = ritmoEsperado();
   const reales = realAsesor(a);
   const res = resumenAsesor(a, reales);
+  const enc = state.ppto.encuestas ? state.ppto.encuestas.porUser[a.user] || null : null;
   const corte = document.getElementById('corte').value;
 
   // Agrupa indicadores respetando el orden del Excel; los que no tienen subindicador van solos.
@@ -541,9 +619,9 @@ function tarjetaHTML(e, a) {
       <div><div class="lbl">Indicadores cumplidos</div>
         <div class="val">${res.cumplidos == null ? '—' : res.cumplidos} <span style="font-size:15px;color:#6b7280">/ ${res.total}</span></div>
         <div class="sub">${ritmo == null ? '' : 'Ritmo esperado al corte: ' + Math.round(ritmo * 100) + '%'}</div></div>
-      <div><div class="lbl">Encuestas</div>
-        <div class="val">—</div>
-        <div class="sub">Pendiente de cargar</div></div>
+      <div><div class="lbl">TNPS (objetivo ${ENCUESTAS[0].objetivo})</div>
+        <div class="val">${enc ? fmtScore(enc.tnps.valor) : '—'}</div>
+        <div class="sub">${!state.ppto.encuestas ? 'Pendiente de cargar encuestas' : enc ? `${enc.tnps.base} encuestas` : 'Sin encuestas'}</div></div>
     </div>
     ${rubrosHTML(rubrosAsesor(a, reales))}
     <div class="sec">
@@ -560,7 +638,7 @@ function tarjetaHTML(e, a) {
     </div>
     <div class="sec">
       <div class="sec-t">Encuestas</div>
-      <div class="pend">Aquí aparecerá tu resultado de encuestas en cuanto se cargue el archivo.</div>
+      ${encuestasHTML(enc)}
     </div>
     <div class="ft"><span>${corte ? 'Ventas acumuladas al ' + corte.split('-').reverse().join('/') : ''}</span><span>${esc(a.user)}</span></div>
   </div>`;
@@ -690,6 +768,7 @@ document.getElementById('f-ppto').onchange = async ev => {
       return;
     }
     if (previo && previo.ventas) ppto.ventas = previo.ventas;
+    if (previo && previo.encuestas) ppto.encuestas = previo.encuestas;
     state.meses[k] = ppto;
     seleccionarMes(k);
   } catch (err) {
@@ -723,6 +802,31 @@ document.getElementById('f-ventas').onchange = async ev => {
   ev.target.value = '';
 };
 
+document.getElementById('f-enc').onchange = async ev => {
+  const file = ev.target.files[0];
+  if (!file || !state.ppto) return;
+  const st = document.getElementById('st-enc');
+  st.textContent = 'Leyendo…';
+  try {
+    // Los CSV se leen como texto UTF-8 para conservar los acentos de los encabezados.
+    const wb = /\.csv$/i.test(file.name)
+      ? XLSX.read((await file.text()).replace(/^\uFEFF/, ''), { type: 'string' })
+      : XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    const enc = parseEncuestas(wb, file.name, state.ppto);
+    const previo = state.ppto.encuestas;
+    if (previo && !confirm(`${mesTxt(state.ppto.mes)} ya tiene encuestas cargadas (${previo.archivo}). ¿Reemplazarlas por ${file.name}?`)) {
+      render();
+      return;
+    }
+    state.ppto.encuestas = enc;
+    guardar();
+    render();
+  } catch (err) {
+    st.textContent = '✗ ' + err.message;
+  }
+  ev.target.value = '';
+};
+
 // Al cambiar de mes, la fecha de corte se ajusta: hoy si cae en ese mes, si no el último día del mes.
 function seleccionarMes(k) {
   state.mesSel = k;
@@ -748,6 +852,8 @@ document.getElementById('b-borrar').onclick = () => {
   document.getElementById('st-ppto').textContent = 'Sin cargar';
   document.getElementById('st-ventas').textContent = 'Primero carga el presupuesto del mes.';
   document.getElementById('f-ventas').disabled = true;
+  document.getElementById('st-enc').textContent = 'Primero carga el presupuesto del mes.';
+  document.getElementById('f-enc').disabled = true;
   guardar();
   render();
 };
