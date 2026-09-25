@@ -53,6 +53,9 @@
   .team .t { font-weight: 700; }
   .team .s { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
   .team .n { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .aj-form label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--ink-2); }
+  .aj-form input, .aj-form select { font: inherit; font-size: 14px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+  #t-ajustes td, #t-ajustes th { padding: 5px 8px; border-top: 1px solid var(--line); text-align: left; }
   .ind-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
   .ind-g { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
   .ind-g b { display: block; font-size: 13px; margin-bottom: 4px; }
@@ -216,6 +219,23 @@
     </div>
     <div class="summary" id="equipos"></div>
     <div class="warn" id="avisos"></div>
+  </section>
+
+  <section class="panel" id="p-ajustes" hidden>
+    <details id="d-ajustes">
+      <summary style="cursor:pointer;font-weight:700">Ventas adicionales (captura manual) <span id="aj-cuenta" style="font-weight:400;color:var(--muted);font-size:13px"></span></summary>
+      <p style="margin:8px 0;color:var(--ink-2);font-size:13px">Registra aquí las ventas que todavía no aparecen en el registro. Se suman a lo que trae el archivo, se guardan en el mes seleccionado y se conservan aunque vuelvas a subir el registro. Cuando el registro ya incluya la venta, elimínala de esta lista para no contarla dos veces. Puedes usar cantidades negativas para corregir.</p>
+      <div class="controls aj-form">
+        <label>Asesor <select id="aj-asesor"></select></label>
+        <label>Indicador <select id="aj-ind"></select></label>
+        <label>Día <input type="number" id="aj-dia" min="1" max="31" style="width:70px"></label>
+        <label>Cantidad <input type="number" id="aj-cant" value="1" step="1" style="width:80px"></label>
+        <label>Nota <input type="text" id="aj-nota" placeholder="Opcional" style="width:160px"></label>
+        <button class="primary" id="b-aj-add">Agregar venta</button>
+      </div>
+      <div class="warn" id="aj-err"></div>
+      <div style="overflow-x:auto;margin-top:8px"><table id="t-ajustes" style="border-collapse:collapse;font-size:13px;width:100%"></table></div>
+    </details>
   </section>
 
   <section class="panel" id="p-indicadores" hidden>
@@ -583,18 +603,25 @@ function ritmoEsperado() {
 }
 
 // Ventas acumuladas del asesor del día 1 a la fecha de corte, por indicador. null si no hay registro cargado.
+// Incluye las ventas adicionales capturadas a mano (state.ppto.ajustes) con día <= corte.
 function realAsesor(a) {
   const v = state.ppto.ventas;
-  if (!v) return null;
+  const ajustes = state.ppto.ajustes || [];
+  if (!v && !ajustes.length) return null;
   const hasta = diaCorte() ?? 31;
   const real = {};
   state.ppto.indicadores.forEach(i => real[i.id] = 0);
-  Object.entries(v.porUser[a.user] || {}).forEach(([dia, cant]) => {
+  Object.entries((v && v.porUser[a.user]) || {}).forEach(([dia, cant]) => {
     if (Number(dia) > hasta) return;
     Object.entries(cant).forEach(([id, n]) => { if (id in real) real[id] += n; });
   });
+  ajustes.forEach(j => {
+    if (j.user === a.user && j.dia <= hasta && j.id in real) real[j.id] += j.cantidad;
+  });
   return real;
 }
+
+const ajustesDe = a => (state.ppto.ajustes || []).filter(j => j.user === a.user && j.dia <= (diaCorte() ?? 31));
 
 function estado(pct, ritmo) {
   if (pct == null) return { color: STATUS.none, icon: '·', txt: 'Sin datos' };
@@ -879,7 +906,7 @@ function tarjetaHTML(e, a) {
       <span style="color:${STATUS.critical}">↓</span> Abajo del ritmo
     </div>` : ''}
 
-    <div class="ft"><span>${corte ? 'Ventas acumuladas al ' + corte.split('-').reverse().join('/') : ''}</span><b>¡Vamos por más!</b></div>
+    <div class="ft"><span>${corte ? 'Ventas acumuladas al ' + corte.split('-').reverse().join('/') : ''}${ajustesDe(a).length ? ` · incluye ${ajustesDe(a).reduce((t, j) => t + j.cantidad, 0)} venta(s) capturada(s) a mano` : ''}</span><b>¡Vamos por más!</b></div>
   </div>`.replace(/<div class="hero">\s*<\/div>/, '');
 }
 
@@ -923,13 +950,65 @@ function render() {
   document.getElementById('p-equipos').hidden = !ok;
   document.getElementById('p-tarjetas').hidden = !ok;
   document.getElementById('p-indicadores').hidden = !ok;
+  document.getElementById('p-ajustes').hidden = !ok;
   document.getElementById('vacio').hidden = ok;
   if (!ok) return;
   if (state.equipoSel == null || state.equipoSel >= state.ppto.equipos.length) state.equipoSel = 0;
   renderEquipos();
   renderSelector();
+  renderAjustes();
   renderTarjetas();
 }
+
+function renderAjustes() {
+  const ppto = state.ppto;
+  const ajustes = ppto.ajustes || [];
+  const asesores = ppto.equipos.flatMap(e => e.asesores.map(a => ({ a, e })));
+  const selA = document.getElementById('aj-asesor'), selI = document.getElementById('aj-ind');
+  const prevA = selA.value, prevI = selI.value;
+  selA.innerHTML = asesores.map(({ a, e }) => `<option value="${esc(a.user)}">${esc(cap(a.nombre))} · ${esc(a.user)} (${esc(cap(e.nombre))})</option>`).join('');
+  selI.innerHTML = indicadoresActivos().map(i => `<option value="${esc(i.id)}">${esc(cap(i.grupo))}${i.sub ? ' · ' + esc(i.sub) : ''}</option>`).join('');
+  if (prevA && asesores.some(x => x.a.user === prevA)) selA.value = prevA;
+  if (prevI && [...selI.options].some(o => o.value === prevI)) selI.value = prevI;
+  const dia = document.getElementById('aj-dia');
+  dia.max = diasDelMes(ppto.mes);
+  if (!dia.value) dia.value = Math.max(diaCorte() || 1, 1);
+
+  const nombre = u => { const x = asesores.find(y => y.a.user === u); return x ? cap(x.a.nombre) : u; };
+  const ind = id => { const i = ppto.indicadores.find(x => x.id === id); return i ? cap(i.grupo) + (i.sub ? ' · ' + i.sub : '') : id; };
+  document.getElementById('aj-cuenta').textContent = ajustes.length ? `(${ajustes.length} capturada(s) en ${mesTxt(ppto.mes)})` : '';
+  document.getElementById('t-ajustes').innerHTML = ajustes.length
+    ? '<tr><th>Asesor</th><th>Indicador</th><th>Día</th><th>Cantidad</th><th>Nota</th><th></th></tr>' +
+      ajustes.map((j, k) => `<tr><td>${esc(nombre(j.user))}</td><td>${esc(ind(j.id))}</td><td>${j.dia}</td>
+        <td>${j.cantidad > 0 ? '+' : ''}${j.cantidad}</td><td>${esc(j.nota || '')}</td>
+        <td><button data-k="${k}" class="b-aj-del">Eliminar</button></td></tr>`).join('')
+    : `<tr><td style="color:var(--muted)">No hay ventas adicionales en ${esc(mesTxt(ppto.mes))}.</td></tr>`;
+  document.querySelectorAll('.b-aj-del').forEach(b => b.onclick = () => {
+    ppto.ajustes.splice(Number(b.dataset.k), 1);
+    guardar(); renderAjustes(); renderTarjetas();
+  });
+}
+
+document.getElementById('b-aj-add').onclick = () => {
+  const ppto = state.ppto;
+  const err = document.getElementById('aj-err');
+  const dia = Number(document.getElementById('aj-dia').value);
+  const cantidad = Number(document.getElementById('aj-cant').value);
+  err.textContent = '';
+  if (!Number.isInteger(dia) || dia < 1 || dia > diasDelMes(ppto.mes)) { err.textContent = `El día debe estar entre 1 y ${diasDelMes(ppto.mes)}.`; return; }
+  if (!Number.isInteger(cantidad) || cantidad === 0) { err.textContent = 'La cantidad debe ser un número entero distinto de 0.'; return; }
+  ppto.ajustes = ppto.ajustes || [];
+  ppto.ajustes.push({
+    user: document.getElementById('aj-asesor').value,
+    id: document.getElementById('aj-ind').value,
+    dia, cantidad,
+    nota: document.getElementById('aj-nota').value.trim(),
+  });
+  document.getElementById('aj-nota').value = '';
+  guardar(); renderAjustes(); renderTarjetas();
+  const corte = diaCorte();
+  if (corte != null && dia > corte) err.textContent = `Guardada. No se ve en las tarjetas porque el día ${dia} es posterior a la fecha de corte.`;
+};
 
 function renderMapeo() {
   const v = state.ppto.ventas;
@@ -1056,6 +1135,7 @@ document.getElementById('f-ppto').onchange = async ev => {
     }
     if (previo && previo.ventas) ppto.ventas = previo.ventas;
     if (previo && previo.encuestas) ppto.encuestas = previo.encuestas;
+    if (previo && previo.ajustes) ppto.ajustes = previo.ajustes;
     state.meses[k] = ppto;
     seleccionarMes(k);
   } catch (err) {
@@ -1134,6 +1214,7 @@ document.getElementById('f-fotos').onchange = async ev => {
 // Al cambiar de mes, la fecha de corte se ajusta: hoy si cae en ese mes, si no el último día del mes.
 function seleccionarMes(k) {
   state.mesSel = k;
+  document.getElementById('aj-dia').value = '';
   state.equipoSel = 0;
   const mes = state.meses[k].mes;
   const hoy = new Date();
