@@ -161,7 +161,7 @@
   .card .cz-p { width: 84px; text-align: right; font-size: 18px; font-weight: 900; color: #1e1b4b; white-space: nowrap; }
   .card .cz-p span { font-size: 11px; font-weight: 700; color: #6b7280; }
   .card .cz-otras { display: flex; gap: 8px; padding: 10px 14px 12px; border-top: 1px solid #e0e7ff; background: #ede9fe; }
-  .card .cz-o { flex: 1; background: #ffffff; border-radius: 12px; padding: 8px 10px; }
+  .card .cz-o { flex: 1; background: #ffffff; border: 2px solid #d1d5db; border-radius: 12px; padding: 8px 10px; }
   .card .cz-on { font-size: 11px; font-weight: 700; color: #6b7280; }
   .card .cz-ov { font-size: 20px; font-weight: 900; color: #1e1b4b; }
   .card .cz-ov span { font-size: 11px; font-weight: 600; color: #6b7280; }
@@ -744,12 +744,16 @@ function encuestasBloqueHTML(enc) {
       </div>`).join('') : '')
       + (otras.length ? `<div class="cz-otras">${otras.map(e => {
         const r = enc[e.id];
-        const ok = r.valor != null && r.valor >= e.objetivo;
-        const col = r.valor == null ? STATUS.none : ok ? STATUS.good : STATUS.critical;
-        return `<div class="cz-o">
-          <div class="cz-on">${esc(e.nombre)}</div>
-          <div class="cz-ov">${fmtScore(r.valor)} <span>obj. ${e.objetivo}</span></div>
-          <div class="cz-os" style="color:${col}">${r.valor == null ? 'Sin datos' : ok ? '✓ En objetivo' : '↓ Abajo del objetivo'}</div>
+        // Semáforo: verde al alcanzar el objetivo, amarillo desde 80% del objetivo, rojo abajo.
+        const f = r.valor == null ? null : r.valor / e.objetivo;
+        const t = f == null ? { bg: '#f3f4f6', bd: '#d1d5db', fg: '#4b5563', txt: 'Sin datos' }
+          : f >= 1 ? { bg: '#dcfce7', bd: '#16a34a', fg: '#14532d', txt: '✓ En objetivo' }
+          : f >= 0.8 ? { bg: '#fef3c7', bd: '#f59e0b', fg: '#78350f', txt: '→ Cerca del objetivo' }
+          : { bg: '#fee2e2', bd: '#dc2626', fg: '#7f1d1d', txt: '↓ Abajo del objetivo' };
+        return `<div class="cz-o" style="background:${t.bg};border-color:${t.bd}">
+          <div class="cz-on" style="color:${t.fg}">${esc(e.nombre)}</div>
+          <div class="cz-ov" style="color:${t.fg}">${fmtScore(r.valor)} <span>obj. ${e.objetivo}</span></div>
+          <div class="cz-os" style="color:${t.fg}">${t.txt}</div>
         </div>`;
       }).join('')}</div>` : '');
   }
