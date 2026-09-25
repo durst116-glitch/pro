@@ -76,28 +76,32 @@
   .g-bar { display: inline-block; width: 70px; height: 8px; border-radius: 4px; background: var(--line); vertical-align: middle; margin-left: 6px; overflow: hidden; }
   .g-bar i { display: block; height: 8px; border-radius: 4px; }
   .gc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 18px; }
-  .gc { background: var(--panel); border-radius: 24px; padding: 22px 24px; box-shadow: 0 6px 20px rgba(15,23,42,.08); border: 1px solid var(--line); }
+  .gc {
+    background: radial-gradient(120% 90% at 0% 0%, #1a1f3a 0%, #0b0e1c 55%, #07090f 100%);
+    border-radius: 24px; padding: 22px 24px; color: #e8ecff;
+    border: 1px solid color-mix(in srgb, var(--neon) 45%, transparent);
+    box-shadow: 0 0 0 1px #00000066, 0 0 22px color-mix(in srgb, var(--neon) 22%, transparent), inset 0 0 30px #00000080;
+  }
   .gc-hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .gc-t { font-size: 20px; font-weight: 900; letter-spacing: .02em; display: flex; align-items: center; gap: 10px; }
-  .gc-i { font-size: 22px; }
+  .gc-t { font-size: 20px; font-weight: 900; letter-spacing: .04em; display: flex; align-items: center; gap: 10px; }
+  .gc-i { font-size: 22px; filter: drop-shadow(0 0 6px var(--neon)); }
   .gc-b { font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
-  .gc-b.mal { background: #dc2626; color: #ffffff; }
-  .gc-b.bien { background: #dcfce7; color: #14532d; }
+  .gc-b.mal { background: transparent; color: #ff3864; border: 1px solid #ff3864; box-shadow: 0 0 10px #ff386480, inset 0 0 6px #ff386440; text-shadow: 0 0 6px #ff3864; }
+  .gc-b.bien { background: transparent; color: #39ff14; border: 1px solid #39ff14; box-shadow: 0 0 10px #39ff1480; text-shadow: 0 0 6px #39ff14; }
   .gc-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-  .gc-tab { font: inherit; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink-2); cursor: pointer; }
-  .gc-tab.on { background: var(--ink); color: var(--panel); border-color: var(--ink); }
-  .gc-tab span { background: #dc2626; color: #ffffff; border-radius: 999px; padding: 0 6px; margin-left: 2px; }
-  .gc-sep { border-top: 2px dashed var(--line); margin: 14px 0 6px; }
+  .gc-tab { font: inherit; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid #ffffff2e; background: #ffffff0d; color: #b9c2e8; cursor: pointer; }
+  .gc-tab.on { background: var(--neon); color: #05060c; border-color: var(--neon); box-shadow: 0 0 12px var(--neon); }
+  .gc-tab span { background: #ff3864; color: #ffffff; border-radius: 999px; padding: 0 6px; margin-left: 2px; box-shadow: 0 0 6px #ff3864; }
+  .gc-sep { border-top: 2px dashed color-mix(in srgb, var(--neon) 40%, transparent); margin: 14px 0 6px; }
   .gc-fila { display: grid; grid-template-columns: minmax(110px, 1fr) 1.3fr 64px; align-items: center; gap: 12px; padding: 7px 0; }
-  .gc-n { cursor: pointer; font-weight: 800; letter-spacing: .02em; color: var(--ink); display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
-  .gc-p { width: 15px; height: 15px; fill: #1e3a8a; flex: none; }
-  .gc-bar { height: 12px; border-radius: 6px; background: var(--line); overflow: hidden; }
+  .gc-n { cursor: pointer; font-weight: 800; letter-spacing: .03em; color: #e8ecff; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
+  .gc-p { width: 15px; height: 15px; fill: var(--neon); flex: none; filter: drop-shadow(0 0 3px var(--neon)); }
+  .gc-bar { height: 12px; border-radius: 6px; background: #ffffff14; box-shadow: inset 0 0 4px #00000099; overflow: hidden; }
   .gc-bar i { display: block; height: 12px; border-radius: 6px; }
-  .gc-v { text-align: right; font-weight: 900; font-size: 17px; font-variant-numeric: tabular-nums; }
-  .gc-v span { font-size: 11px; font-weight: 600; color: var(--muted); }
-  .gc-fila.cero .gc-n { color: #dc2626; }
-  .gc-fila.cero .gc-p { fill: #dc2626; }
-  .gc-fila.cero .gc-v { color: #dc2626; }
+  .gc-v { text-align: right; font-weight: 900; font-size: 17px; font-variant-numeric: tabular-nums; color: #ffffff; }
+  .gc-v span { font-size: 11px; font-weight: 600; color: #8a93bd; }
+  .gc-fila.cero .gc-n, .gc-fila.cero .gc-v { color: #ff3864; text-shadow: 0 0 8px #ff386499; }
+  .gc-fila.cero .gc-p { fill: #ff3864; filter: drop-shadow(0 0 3px #ff3864); }
   .g-link { font: inherit; font-size: 12px; font-weight: 700; color: #dc2626; background: none; border: 1px solid #fca5a5; border-radius: 999px; padding: 2px 8px; cursor: pointer; }
   .g-mapa { border-collapse: separate; border-spacing: 2px; font-size: 12px; }
   .g-mapa th, .g-mapa td { background: var(--panel); }
@@ -1121,13 +1125,15 @@ let gEquipo = 'todos';
 const gSub = {}; // por categoría: 'TOTAL' o id del indicador elegido en su tarjeta
 
 // Estilo de cada categoría en las tarjetas de avance (color del título e icono).
+// Tonos neón sobre fondo oscuro.
 const CATEGORIAS = [
-  ['POSPAGO', '#2563eb', '📱'], ['WIFI', '#0891b2', '📶'], ['ZEEK', '#7c3aed', '🚗'], ['PREPAGO', '#16a34a', '💳'],
-  ['PORTABILIDAD', '#db2777', '🔁'], ['RENOVACION', '#eab308', '🔄'], ['TELCEL UP', '#ea580c', '⬆️'],
-  ['INFINITUM', '#0d9488', '🏠'], ['NORTON', '#ca8a04', '🛡️'], ['ACCESORIOS', '#9333ea', '🎧'],
-  ['CLARO PAY', '#dc2626', '💰'], ['TRADE IN', '#059669', '♻️'], ['BUNDLE', '#4b5563', '🎁'],
-  ['UP GRADE', '#4f46e5', '⏫'], ['TELCEL PARA SIEMPRE', '#1d4ed8', '♾️'],
+  ['POSPAGO', '#00e5ff', '📱'], ['WIFI', '#00ffc8', '📶'], ['ZEEK', '#bf5fff', '🚗'], ['PREPAGO', '#39ff14', '💳'],
+  ['PORTABILIDAD', '#ff2fd6', '🔁'], ['RENOVACION', '#fff01f', '🔄'], ['TELCEL UP', '#ff9f1c', '⬆️'],
+  ['INFINITUM', '#1effa0', '🏠'], ['NORTON', '#ffd000', '🛡️'], ['ACCESORIOS', '#d17bff', '🎧'],
+  ['CLARO PAY', '#ff3864', '💰'], ['TRADE IN', '#7dff4d', '♻️'], ['BUNDLE', '#ff6ec7', '🎁'],
+  ['UP GRADE', '#6e8bff', '⏫'], ['TELCEL PARA SIEMPRE', '#29b6ff', '♾️'],
 ];
+const NEON = { ok: '#39ff14', ritmo: '#fff01f', bajo: '#ff9f1c', cero: '#ff3864' };
 const estiloCat = grupo => { const c = CATEGORIAS.find(([k]) => key(grupo).startsWith(k)); return c ? { color: c[1], icono: c[2] } : { color: '#374151', icono: '📊' }; };
 
 // Nombres cortos para el panel. Se pueden cambiar con clic (se guardan por user en este navegador).
@@ -1318,9 +1324,9 @@ function renderPanel() {
     })).filter(f => f.meta > 0).sort((a, b) => a.real / a.meta - b.real / b.meta || b.meta - a.meta);
     const ceros = filas.filter(f => f.real <= 0).length;
     const cerosDe = id => g.asesores.filter(x => x.a.metas[id] > 0 && !(x.real[id] > 0)).length;
-    const color = f => f.real <= 0 ? 'transparent' : f.real >= f.meta ? STATUS.good : f.real / f.meta >= g.dc / g.D ? STATUS.warning : STATUS.critical;
-    return `<div class="gc" id="gc-${k}">
-      <div class="gc-hd"><div class="gc-t" style="color:${est.color}"><span class="gc-i">${est.icono}</span>${esc(gr.nombre.toUpperCase())}</div>
+    const color = f => f.real <= 0 ? 'transparent' : f.real >= f.meta ? NEON.ok : f.real / f.meta >= g.dc / g.D ? NEON.ritmo : NEON.bajo;
+    return `<div class="gc" id="gc-${k}" style="--neon:${est.color}">
+      <div class="gc-hd"><div class="gc-t" style="color:${est.color};text-shadow:0 0 6px ${est.color}99, 0 0 18px ${est.color}66"><span class="gc-i">${est.icono}</span>${esc(gr.nombre.toUpperCase())}</div>
         <div class="gc-b ${ceros ? 'mal' : 'bien'}">${ceros ? `${ceros} en cero` : '✓ Todos venden'}</div></div>
       ${conSub ? `<div class="gc-tabs">
         <button class="gc-tab ${elegido === 'TOTAL' ? 'on' : ''}" data-g="${esc(gr.nombre)}" data-id="TOTAL">Total</button>
@@ -1329,7 +1335,7 @@ function renderPanel() {
       <div class="gc-sep"></div>
       ${filas.map(f => `<div class="gc-fila ${f.real <= 0 ? 'cero' : ''}" title="${esc(cap(f.x.a.nombre))} · ${esc(cap(f.x.e.nombre))}: ${f.real} de ${f.meta}">
         <div class="gc-n" data-u="${esc(f.x.a.user)}" title="Clic para cambiar el nombre que se muestra">${esc(cortos[f.x.a.user].toUpperCase())} ${ICONO_PERSONA}</div>
-        <div class="gc-bar"><i style="width:${Math.min(f.real / f.meta, 1) * 100}%;background:${color(f)}"></i></div>
+        <div class="gc-bar"><i style="width:${Math.min(f.real / f.meta, 1) * 100}%;background:${color(f)};box-shadow:0 0 8px ${color(f)}, 0 0 2px ${color(f)}"></i></div>
         <div class="gc-v">${f.real}<span> / ${f.meta}</span></div>
       </div>`).join('')}
     </div>`;
