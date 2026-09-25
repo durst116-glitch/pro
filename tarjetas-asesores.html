@@ -109,7 +109,7 @@
     <div class="uploads">
       <div class="upload">
         <b>Presupuesto inicial</b>
-        <small>Excel con la pestaña «PPTO X SUPER» (equipos, asesores y metas).</small>
+        <small>Excel con la pestaña «PPTO X SUPER» (equipos, asesores y metas). Súbelo cada mes: se guarda por separado y, si ese mes ya estaba cargado, se reemplaza.</small>
         <input type="file" id="f-ppto" accept=".xlsx,.xls,.xlsm">
         <div class="status" id="st-ppto">Sin cargar</div>
       </div>
@@ -129,8 +129,9 @@
   <section class="panel" id="p-equipos" hidden>
     <h2>2. Equipos</h2>
     <div class="controls">
+      <label>Mes <select id="mes-sel"></select></label>
       <label>Fecha de corte <input type="date" id="corte"></label>
-      <button id="b-borrar">Borrar datos cargados</button>
+      <button id="b-borrar">Eliminar este mes</button>
     </div>
     <div class="summary" id="equipos"></div>
     <div class="warn" id="avisos"></div>
@@ -148,12 +149,19 @@
 </main>
 
 <script>
-const STORE_KEY = 'tarjetas-asesores-v1';
+const STORE_KEY = 'tarjetas-asesores-v2';
+const STORE_KEY_V1 = 'tarjetas-asesores-v1';
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const MES_CORTO = { ene:0, feb:1, mar:2, abr:3, may:4, jun:5, jul:6, ago:7, sep:8, oct:9, nov:10, dic:11 };
 const STATUS = { good: '#0ca30c', warning: '#fab219', critical: '#d03b3b', none: '#9aa3b2' };
 
-let state = { ppto: null, equipoSel: null };
+// Un presupuesto por mes ("2026-09" → datos). El mes seleccionado es el que se muestra.
+let state = {
+  meses: {}, mesSel: null, equipoSel: null,
+  get ppto() { return this.meses[this.mesSel] || null; },
+};
+const mesKey = mes => `${mes.anio}-${String(mes.idx + 1).padStart(2, '0')}`;
+const mesTxt = mes => `${cap(MESES[mes.idx])} ${mes.anio}`;
 
 const norm = v => String(v ?? '').replace(/\s+/g, ' ').trim();
 const key = v => norm(v).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -289,7 +297,9 @@ function renderEquipos() {
   const { equipos, avisos, mes } = state.ppto;
   const total = equipos.reduce((s, e) => s + e.asesores.length, 0);
   document.getElementById('st-ppto').textContent =
-    `✓ ${state.ppto.archivo} · ${cap(MESES[mes.idx])} ${mes.anio} · ${equipos.length} equipos · ${total} asesores`;
+    `✓ ${state.ppto.archivo} · ${mesTxt(mes)} · ${equipos.length} equipos · ${total} asesores`;
+  document.getElementById('mes-sel').innerHTML = Object.keys(state.meses).sort().reverse()
+    .map(k => `<option value="${k}" ${k === state.mesSel ? 'selected' : ''}>${esc(mesTxt(state.meses[k].mes))}</option>`).join('');
   document.getElementById('equipos').innerHTML = equipos.map((e, i) => `
     <div class="team ${i === state.equipoSel ? 'active' : ''}" data-i="${i}">
       <div class="t">${esc(e.nombre)}</div>
@@ -389,6 +399,7 @@ function renderTarjetas() {
 }
 
 function render() {
+  if (!state.ppto) state.mesSel = Object.keys(state.meses).sort().pop() || null;
   const ok = !!state.ppto;
   document.getElementById('p-equipos').hidden = !ok;
   document.getElementById('p-tarjetas').hidden = !ok;
@@ -434,12 +445,26 @@ document.getElementById('b-zip').onclick = async () => {
 
 // ---------- Carga y guardado ----------
 function guardar() {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify({ ppto: state.ppto, corte: document.getElementById('corte').value })); } catch (_) {}
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      meses: state.meses, mesSel: state.mesSel, corte: document.getElementById('corte').value,
+    }));
+  } catch (_) {}
 }
 function cargarGuardado() {
   try {
     const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
-    if (s && s.ppto) { state.ppto = s.ppto; if (s.corte) document.getElementById('corte').value = s.corte; }
+    if (s && s.meses) {
+      state.meses = s.meses; state.mesSel = s.mesSel;
+      if (s.corte) document.getElementById('corte').value = s.corte;
+      return;
+    }
+    // Datos guardados por la versión anterior (un solo presupuesto).
+    const v1 = JSON.parse(localStorage.getItem(STORE_KEY_V1) || 'null');
+    if (v1 && v1.ppto) {
+      state.meses[mesKey(v1.ppto.mes)] = v1.ppto; state.mesSel = mesKey(v1.ppto.mes);
+      if (v1.corte) document.getElementById('corte').value = v1.corte;
+    }
   } catch (_) {}
 }
 
@@ -450,22 +475,44 @@ document.getElementById('f-ppto').onchange = async ev => {
   st.textContent = 'Leyendo…';
   try {
     const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-    state.ppto = parsePresupuesto(wb, file.name);
-    state.equipoSel = 0;
-    guardar();
-    render();
+    const ppto = parsePresupuesto(wb, file.name);
+    const k = mesKey(ppto.mes);
+    const previo = state.meses[k];
+    if (previo && !confirm(`Ya hay un presupuesto de ${mesTxt(ppto.mes)} (${previo.archivo}). ¿Reemplazarlo por ${file.name}?`)) {
+      st.textContent = 'Carga cancelada.';
+      if (state.ppto) render();
+      return;
+    }
+    state.meses[k] = ppto;
+    seleccionarMes(k);
   } catch (err) {
     st.textContent = '✗ ' + err.message;
   }
   ev.target.value = '';
 };
 
+// Al cambiar de mes, la fecha de corte se ajusta: hoy si cae en ese mes, si no el último día del mes.
+function seleccionarMes(k) {
+  state.mesSel = k;
+  state.equipoSel = 0;
+  const mes = state.meses[k].mes;
+  const hoy = new Date();
+  const d = hoy.getFullYear() === mes.anio && hoy.getMonth() === mes.idx ? hoy.getDate() : diasDelMes(mes);
+  document.getElementById('corte').value = `${k}-${String(d).padStart(2, '0')}`;
+  guardar();
+  render();
+}
+document.getElementById('mes-sel').onchange = ev => seleccionarMes(ev.target.value);
+
 document.getElementById('corte').onchange = () => { guardar(); if (state.ppto) renderTarjetas(); };
 document.getElementById('b-borrar').onclick = () => {
-  if (!confirm('¿Borrar los datos cargados en este navegador?')) return;
-  try { localStorage.removeItem(STORE_KEY); } catch (_) {}
-  state.ppto = null;
+  if (!state.ppto || !confirm(`¿Eliminar el presupuesto de ${mesTxt(state.ppto.mes)} de este navegador?`)) return;
+  delete state.meses[state.mesSel];
+  const resto = Object.keys(state.meses).sort().pop();
+  if (resto) return seleccionarMes(resto);
+  state.mesSel = null;
   document.getElementById('st-ppto').textContent = 'Sin cargar';
+  guardar();
   render();
 };
 
