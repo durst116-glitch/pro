@@ -75,6 +75,23 @@
   .g-st { font-weight: 700; }
   .g-bar { display: inline-block; width: 70px; height: 8px; border-radius: 4px; background: var(--line); vertical-align: middle; margin-left: 6px; overflow: hidden; }
   .g-bar i { display: block; height: 8px; border-radius: 4px; }
+  .g-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .g-ichip { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+  .g-ichip.on { border-color: var(--accent); background: var(--soft); font-weight: 700; }
+  .g-ichip span { display: inline-block; min-width: 20px; text-align: center; border-radius: 999px; padding: 0 6px; margin-left: 4px; font-weight: 800; font-size: 12px; }
+  .g-ichip .n0 { background: #dc2626; color: #ffffff; }
+  .g-ichip .nok { background: #16a34a; color: #ffffff; }
+  .g-res { margin-top: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  .g-res-t { font-size: 16px; font-weight: 800; margin-bottom: 10px; }
+  .g-sub { color: var(--muted); font-size: 12px; font-weight: 400; }
+  .g-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+  .g-col { border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+  .g-col .g-tabla td.t { white-space: normal; min-width: 180px; }
+  .g-col.cero { border-color: #fca5a5; }
+  .g-col-t { font-weight: 800; padding: 8px 10px; background: var(--soft); }
+  .g-col.cero .g-col-t { background: #fee2e2; color: #7f1d1d; }
+  .g-vacio { padding: 16px; color: var(--muted); text-align: center; }
+  .g-link { font: inherit; font-size: 12px; font-weight: 700; color: #dc2626; background: none; border: 1px solid #fca5a5; border-radius: 999px; padding: 2px 8px; cursor: pointer; }
   .g-mapa { border-collapse: separate; border-spacing: 2px; font-size: 12px; }
   .g-mapa th, .g-mapa td { background: var(--panel); }
   .g-mapa .mn { position: sticky; left: 0; z-index: 1; text-align: left; white-space: nowrap; padding: 4px 8px; min-width: 220px; }
@@ -227,7 +244,7 @@
 </header>
 <nav class="tabs" id="tabs">
   <button data-tab="tarjetas" class="tab">Tarjetas de asesores</button>
-  <button data-tab="gerente" class="tab">Panel del gerente</button>
+  <button data-tab="supervisor" class="tab">Panel supervisor</button>
 </nav>
 <main>
   <section class="panel">
@@ -317,9 +334,9 @@
   </section>
   </div>
 
-  <div id="tab-gerente" hidden>
-  <section class="panel" id="p-gerente" hidden>
-    <h2>Panel del gerente</h2>
+  <div id="tab-supervisor" hidden>
+  <section class="panel" id="p-supervisor" hidden>
+    <h2>Panel supervisor</h2>
     <div class="controls">
       <label>Equipo <select id="g-equipo"></select></label>
       <button id="g-export">Exportar a Excel</button>
@@ -972,7 +989,7 @@ function tarjetaHTML(e, a) {
 }
 
 function renderTarjetas() {
-  renderGerente();
+  renderPanel();
   const e = state.ppto.equipos[state.equipoSel];
   document.getElementById('cards').innerHTML = e.asesores.map((a, i) => `
     <div class="card-wrap">
@@ -1014,7 +1031,7 @@ function render() {
   document.getElementById('p-indicadores').hidden = !ok;
   document.getElementById('p-ajustes').hidden = !ok;
   document.getElementById('p-periodo').hidden = !ok;
-  document.getElementById('p-gerente').hidden = !ok;
+  document.getElementById('p-supervisor').hidden = !ok;
   document.getElementById('vacio').hidden = ok;
   if (!ok) return;
   if (state.equipoSel == null || state.equipoSel >= state.ppto.equipos.length) state.equipoSel = 0;
@@ -1074,10 +1091,11 @@ document.getElementById('b-aj-add').onclick = () => {
   if (corte != null && dia > corte) err.textContent = `Guardada. No se ve en las tarjetas porque el día ${dia} es posterior a la fecha de corte.`;
 };
 
-// ---------- Panel del gerente ----------
+// ---------- Panel supervisor ----------
 // Proyección lineal al cierre: ventas al corte ÷ días transcurridos × días del mes.
 const TAB_KEY = 'tarjetas-asesores-tab';
 let gEquipo = 'todos';
+let gInd = null; // indicador elegido en «¿Quién va en cero?»
 
 function semaforo(f) {
   if (f == null) return { color: STATUS.none, icon: '·', txt: 'Sin datos' };
@@ -1090,7 +1108,7 @@ const barra = f => `<span class="g-bar"><i style="width:${Math.min(Math.max(f ||
 const stTxt = f => { const x = semaforo(f); return `<span class="g-st" style="color:${x.color}">${x.icon} ${x.txt}</span>`; };
 const nombreInd = i => cap(i.grupo) + (i.sub ? ' · ' + i.sub : '');
 
-function datosGerente() {
+function datosPanel() {
   const ppto = state.ppto;
   const D = diasDelMes(ppto.mes);
   const dc = diaCorte() ?? D;
@@ -1141,7 +1159,7 @@ function datosGerente() {
   return { D, dc, quedan, factor, asesores, porInd, porEquipo };
 }
 
-function renderGerente() {
+function renderPanel() {
   const ppto = state.ppto;
   if (!ppto) return;
   const sel = document.getElementById('g-equipo');
@@ -1156,7 +1174,7 @@ function renderGerente() {
     cuerpo.innerHTML = '<div class="empty">Carga el registro de ventas del mes para ver el panel.</div>';
     return;
   }
-  const g = datosGerente();
+  const g = datosPanel();
   nota.textContent = `${mesTxt(ppto.mes)} · corte al día ${g.dc} de ${g.D} (${g.quedan} días restantes). ` +
     `Estimado al cierre = ventas al corte ÷ ${g.dc} días × ${g.D} días. Incluye ventas capturadas a mano.`;
 
@@ -1189,7 +1207,7 @@ function renderGerente() {
       <td>${stTxt(x.fProy)}</td>
       <td>${x.brecha == null ? '—' : x.brecha > 0 ? x.brecha : '—'}</td>
       <td>${x.porDia == null ? '—' : (Math.ceil(x.porDia * 10) / 10)}</td>
-      <td style="color:${x.ceros.length ? STATUS.critical : 'inherit'};font-weight:${x.ceros.length ? 700 : 400}">${x.ceros.length}</td>
+      <td>${x.ceros.length ? `<button class="g-link" data-ind="${esc(x.i.id)}">${x.ceros.length} · ver</button>` : '0'}</td>
     </tr>`;
   }).join('');
 
@@ -1228,7 +1246,45 @@ function renderGerente() {
       ${ppto.encuestas ? `<td>${x.calidez == null ? '—' : fmtPts(x.calidez)}</td>` : ''}
     </tr>`).join('');
 
-  cuerpo.innerHTML = kpis + `
+  // ¿Quién va en cero? — consulta por indicador.
+  if (!g.porInd.some(x => x.i.id === gInd)) {
+    const peor = [...g.porInd].sort((a, b) => b.ceros.length - a.ceros.length)[0];
+    gInd = peor ? peor.i.id : null;
+  }
+  const elegido = g.porInd.find(x => x.i.id === gInd);
+  const corteTxt = document.getElementById('corte').value.split('-').reverse().join('/');
+  let consulta = '';
+  if (elegido) {
+    const conMeta = g.asesores.filter(x => x.a.metas[elegido.i.id] > 0);
+    const enCero = conMeta.filter(x => !(x.real[elegido.i.id] > 0));
+    const conVentas = conMeta.filter(x => x.real[elegido.i.id] > 0)
+      .sort((a, b) => b.real[elegido.i.id] / b.a.metas[elegido.i.id] - a.real[elegido.i.id] / a.a.metas[elegido.i.id]);
+    const sinMeta = g.asesores.length - conMeta.length;
+    const quien = x => `<b>${esc(cap(x.a.nombre))}</b><br><span class="g-sub">${esc(x.a.user)} · ${esc(cap(x.e.nombre))} · Sup. ${esc(cap(x.e.supervisor))}</span>`;
+    consulta = `<div class="g-sec" id="g-consulta"><h3>¿Quién va en cero?</h3>
+      <p>Elige un indicador para ver qué asesores no llevan ninguna venta al ${esc(corteTxt)}. El número rojo es cuántos asesores van en cero.</p>
+      <div class="g-chips">${g.porInd.map(x => `<button class="g-ichip ${x.i.id === gInd ? 'on' : ''}" data-ind="${esc(x.i.id)}">
+        ${esc(nombreInd(x.i))} <span class="${x.ceros.length ? 'n0' : 'nok'}">${x.ceros.length}</span></button>`).join('')}</div>
+      <div class="g-res">
+        <div class="g-res-t">${esc(nombreInd(elegido.i))}: <span style="color:${enCero.length ? STATUS.critical : STATUS.good}">${enCero.length} de ${conMeta.length}</span> asesores van en cero al ${esc(corteTxt)}${sinMeta ? ` <span class="g-sub">(${sinMeta} sin meta en este indicador)</span>` : ''}</div>
+        <div class="g-cols">
+          <div class="g-col cero"><div class="g-col-t">🔴 En cero (${enCero.length})</div>
+            ${enCero.length ? `<table class="g-tabla"><tr><th>Asesor</th><th>Meta</th><th>Necesita al día</th></tr>
+              ${enCero.map(x => `<tr><td class="t">${quien(x)}</td><td>${x.a.metas[elegido.i.id]}</td>
+                <td>${g.quedan ? Math.ceil(x.a.metas[elegido.i.id] / g.quedan * 10) / 10 : '—'}</td></tr>`).join('')}</table>`
+              : '<div class="g-vacio">¡Nadie va en cero en este indicador! 🎉</div>'}
+          </div>
+          <div class="g-col"><div class="g-col-t">Con ventas (${conVentas.length})</div>
+            ${conVentas.length ? `<table class="g-tabla"><tr><th>Asesor</th><th>Llevan</th><th>Avance</th></tr>
+              ${conVentas.map(x => { const f = x.real[elegido.i.id] / x.a.metas[elegido.i.id];
+                return `<tr><td class="t">${quien(x)}</td><td>${x.real[elegido.i.id]} / ${x.a.metas[elegido.i.id]}</td><td>${pctTxt(f)}${barra(f)}</td></tr>`; }).join('')}</table>`
+              : '<div class="g-vacio">Nadie ha vendido este indicador todavía.</div>'}
+          </div>
+        </div>
+      </div></div>`;
+  }
+
+  cuerpo.innerHTML = kpis + consulta + `
     ${g.porEquipo.length > 1 ? `<div class="g-sec"><h3>Por equipo</h3>
       <div class="g-scroll"><table class="g-tabla"><tr><th>Equipo</th><th>Asesores</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th><th></th><th>Indicadores en cero</th>${ppto.encuestas ? '<th>Calidez (pts)</th>' : ''}</tr>${filasEq}</table></div></div>` : ''}
     <div class="g-sec"><h3>Estimado de ventas al cierre por indicador</h3>
@@ -1251,13 +1307,19 @@ function renderGerente() {
         <span class="ley ok">%</span> meta cumplida ·
         <span class="ley na">–</span> sin meta. Pasa el cursor sobre una celda para ver el detalle.</p>
       <div class="g-scroll">${mapa}</div></div>`;
+
+  cuerpo.querySelectorAll('.g-ichip').forEach(b => b.onclick = () => { gInd = b.dataset.ind; renderPanel(); });
+  cuerpo.querySelectorAll('.g-link').forEach(b => b.onclick = () => {
+    gInd = b.dataset.ind; renderPanel();
+    document.getElementById('g-consulta').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 }
 
-document.getElementById('g-equipo').onchange = ev => { gEquipo = ev.target.value; renderGerente(); };
+document.getElementById('g-equipo').onchange = ev => { gEquipo = ev.target.value; renderPanel(); };
 
 document.getElementById('g-export').onclick = () => {
   if (!state.ppto) return;
-  const g = datosGerente();
+  const g = datosPanel();
   const r1 = v => v == null ? '' : Math.round(v * 1000) / 10;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
@@ -1275,17 +1337,17 @@ document.getElementById('g-export').onclick = () => {
     ['Asesor', 'User', 'Equipo', 'Indicador en cero', 'Meta'],
     ...g.asesores.flatMap(x => x.ceros.map(i => [cap(x.a.nombre), x.a.user, cap(x.e.nombre), nombreInd(i), x.a.metas[i.id]])),
   ]), 'Cero avance');
-  XLSX.writeFile(wb, `Panel gerente ${mesTxt(state.ppto.mes)} corte ${g.dc}.xlsx`);
+  XLSX.writeFile(wb, `Panel supervisor ${mesTxt(state.ppto.mes)} corte ${g.dc}.xlsx`);
 };
 
 function mostrarTab(t) {
   document.getElementById('tab-tarjetas').hidden = t !== 'tarjetas';
-  document.getElementById('tab-gerente').hidden = t !== 'gerente';
+  document.getElementById('tab-supervisor').hidden = t !== 'supervisor';
   document.querySelectorAll('#tabs .tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
   try { localStorage.setItem(TAB_KEY, t); } catch (_) {}
 }
 document.querySelectorAll('#tabs .tab').forEach(b => b.onclick = () => mostrarTab(b.dataset.tab));
-try { mostrarTab(localStorage.getItem(TAB_KEY) === 'gerente' ? 'gerente' : 'tarjetas'); } catch (_) { mostrarTab('tarjetas'); }
+try { mostrarTab(['supervisor', 'gerente'].includes(localStorage.getItem(TAB_KEY)) ? 'supervisor' : 'tarjetas'); } catch (_) { mostrarTab('tarjetas'); }
 
 function renderMapeo() {
   const v = state.ppto.ventas;
