@@ -66,7 +66,7 @@
   .g-sec h3 { font-size: 15px; margin: 0 0 4px; }
   .g-sec p { font-size: 13px; color: var(--ink-2); margin: 0 0 8px; }
   .g-tabla { border-collapse: collapse; font-size: 13px; width: 100%; }
-  .g-tabla th { text-align: right; font-size: 12px; color: var(--ink-2); padding: 6px 8px; border-bottom: 2px solid var(--line); white-space: nowrap; position: sticky; top: 0; background: var(--panel); }
+  .g-tabla th { text-align: right; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: #5b6b7f; padding: 8px; border-bottom: 2px solid #d5dbe4; border-top: 3px solid #4aa3e8; white-space: nowrap; position: sticky; top: 0; background: #eef1f5; }
   .g-tabla td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .g-tabla th:first-child, .g-tabla td:first-child, .g-tabla td.t, .g-tabla th.t { text-align: left; }
   .g-tabla tr.grp td { background: var(--soft); font-weight: 700; text-align: left; }
@@ -77,33 +77,44 @@
   .g-bar i { display: block; height: 8px; border-radius: 4px; }
   .gc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 18px; }
   .gc {
-    --tinta: color-mix(in srgb, var(--neon) 62%, #000000);
-    background: linear-gradient(160deg, color-mix(in srgb, var(--neon) 12%, #ffffff) 0%, #ffffff 45%, #ffffff 100%);
-    border-radius: 24px; padding: 22px 24px; color: #1f2544;
-    border: 2px solid var(--neon);
-    box-shadow: 0 0 16px color-mix(in srgb, var(--neon) 45%, transparent), 0 6px 18px rgba(15,23,42,.06);
+    background: #ffffff; border-radius: 22px; padding: 20px 22px 16px; color: #2d3748;
+    border: 1px solid #e3e8f0; border-top: 5px solid var(--neon); box-shadow: 0 6px 18px rgba(30,41,59,.07);
   }
   .gc-hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .gc-t { font-size: 20px; font-weight: 900; letter-spacing: .04em; display: flex; align-items: center; gap: 10px;
-    color: var(--tinta); text-shadow: 0 0 10px color-mix(in srgb, var(--neon) 70%, transparent); }
-  .gc-i { font-size: 22px; filter: drop-shadow(0 0 5px var(--neon)); }
-  .gc-b { font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
-  .gc-b.mal { background: #ff2f6b; color: #ffffff; box-shadow: 0 0 12px #ff2f6b99; }
-  .gc-b.bien { background: #39ff14; color: #0b3d02; box-shadow: 0 0 12px #39ff1499; }
+  .gc-t { font-size: 20px; font-weight: 900; letter-spacing: .04em; display: flex; align-items: center; gap: 10px; color: var(--neon); }
+  .gc-i { font-size: 22px; }
+  .gc-b { font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 10px; white-space: nowrap; color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  .gc-b.mal { background: linear-gradient(90deg, #e84c6c, #ea6240); border: 2px solid #f39a9a; }
+  .gc-b.bien { background: linear-gradient(90deg, #45ad8a, #8cc152); border: 2px solid #c1f07a; }
   .gc-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-  .gc-tab { font: inherit; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--neon) 55%, #ffffff); background: #ffffff; color: #3b4266; cursor: pointer; }
-  .gc-tab.on { background: var(--neon); color: #0a0d1f; border-color: var(--neon); box-shadow: 0 0 10px var(--neon); }
-  .gc-tab span { background: #ff2f6b; color: #ffffff; border-radius: 999px; padding: 0 6px; margin-left: 2px; }
-  .gc-sep { border-top: 2px dashed color-mix(in srgb, var(--neon) 70%, #ffffff); margin: 14px 0 6px; }
+  .gc-tab { font: inherit; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid #dfe5ee; background: #f4f6fa; color: #5b6b7f; cursor: pointer; }
+  .gc-tab.on { background: var(--neon); color: #ffffff; border-color: var(--neon); }
+  .gc-tab span { background: #e84c6c; color: #ffffff; border-radius: 999px; padding: 0 6px; margin-left: 2px; }
+  .gc-sep { border-top: 2px dashed #e3e8f0; margin: 14px 0 6px; }
   .gc-fila { display: grid; grid-template-columns: minmax(110px, 1fr) 1.3fr 64px; align-items: center; gap: 12px; padding: 7px 0; }
-  .gc-n { cursor: pointer; font-weight: 800; letter-spacing: .03em; color: #1f2544; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
-  .gc-p { width: 15px; height: 15px; fill: var(--tinta); flex: none; }
-  .gc-bar { height: 12px; border-radius: 6px; background: #edf0f7; overflow: hidden; }
+  .gc-n { cursor: pointer; font-weight: 800; letter-spacing: .03em; color: #2d3748; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
+  .gc-p { width: 15px; height: 15px; fill: #1e3a8a; flex: none; }
+  .gc-bar { height: 12px; border-radius: 6px; background: #eef1f5; overflow: hidden; }
   .gc-bar i { display: block; height: 12px; border-radius: 6px; }
-  .gc-v { text-align: right; font-weight: 900; font-size: 17px; font-variant-numeric: tabular-nums; color: #1f2544; }
-  .gc-v span { font-size: 11px; font-weight: 600; color: #8a90ab; }
-  .gc-fila.cero .gc-n, .gc-fila.cero .gc-v { color: #e8134f; text-shadow: 0 0 8px #ff2f6b55; }
-  .gc-fila.cero .gc-p { fill: #e8134f; }
+  .gc-v { text-align: right; font-weight: 900; font-size: 17px; font-variant-numeric: tabular-nums; color: #2d3748; }
+  .gc-v span { font-size: 11px; font-weight: 600; color: #8a95a8; }
+  .gc-fila.cero .gc-n, .gc-fila.cero .gc-v { color: #e0415f; }
+  .gc-fila.cero .gc-p { fill: #e0415f; }
+  .gc-tot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #e3f4f8; border-top: 2px solid #4aa3e8; }
+  .gc-tot > div:first-child { white-space: nowrap; color: #1e3a6e; font-weight: 800; }
+  .gc-tot b { color: #1e3a6e; font-weight: 900; }
+  .gc-tot-p { display: flex; align-items: center; gap: 8px; }
+  .gc-tot-p .lbl { font-size: 11px; color: #5b6b7f; letter-spacing: .06em; }
+  .pill {
+    display: inline-block; min-width: 86px; text-align: center; padding: 5px 12px; border-radius: 12px;
+    color: #ffffff; font-weight: 900; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,.25); white-space: nowrap;
+  }
+  .pill.bajo { background: linear-gradient(90deg, #e84c6c, #ea6240); border: 2px solid #f39a9a; }
+  .pill.ritmo { background: linear-gradient(90deg, #f2a33a, #f6c64f); border: 2px solid #fbdc8c; }
+  .pill.ok { background: linear-gradient(90deg, #45ad8a, #8cc152); border: 2px solid #c1f07a; }
+  .g-tabla tr.tot td { background: #e3f4f8; font-weight: 900; color: #1e3a6e; border-top: 2px solid #4aa3e8; font-size: 15px; }
+  .acum { margin-top: 12px; background: #f8e3ea; color: #b0245a; font-weight: 900; font-size: 20px; text-align: center; padding: 14px; border-radius: 16px; }
+  .acum span { font-size: 13px; font-weight: 700; color: #b0245a; opacity: .8; }
   .g-link { font: inherit; font-size: 12px; font-weight: 700; color: #dc2626; background: none; border: 1px solid #fca5a5; border-radius: 999px; padding: 2px 8px; cursor: pointer; }
   .g-mapa { border-collapse: separate; border-spacing: 2px; font-size: 12px; }
   .g-mapa th, .g-mapa td { background: var(--panel); }
@@ -1127,15 +1138,22 @@ let gEquipo = 'todos';
 const gSub = {}; // por categoría: 'TOTAL' o id del indicador elegido en su tarjeta
 
 // Estilo de cada categoría en las tarjetas de avance (color del título e icono).
-// Tonos neón sobre fondo claro (los títulos usan una versión un poco más oscura para leerse).
+// Colores de cada categoría (tonos suaves) y de las «pastillas» de avance: coral = no llega, ámbar = cerca, verde = llega.
 const CATEGORIAS = [
-  ['POSPAGO', '#00e5ff', '📱'], ['WIFI', '#00ffc8', '📶'], ['ZEEK', '#bf5fff', '🚗'], ['PREPAGO', '#39ff14', '💳'],
-  ['PORTABILIDAD', '#ff2fd6', '🔁'], ['RENOVACION', '#fff01f', '🔄'], ['TELCEL UP', '#ff9f1c', '⬆️'],
-  ['INFINITUM', '#1effa0', '🏠'], ['NORTON', '#ffd000', '🛡️'], ['ACCESORIOS', '#d17bff', '🎧'],
-  ['CLARO PAY', '#ff3864', '💰'], ['TRADE IN', '#7dff4d', '♻️'], ['BUNDLE', '#ff6ec7', '🎁'],
-  ['UP GRADE', '#6e8bff', '⏫'], ['TELCEL PARA SIEMPRE', '#29b6ff', '♾️'],
+  ['POSPAGO', '#3d9be9', '📱'], ['WIFI', '#22aebf', '📶'], ['ZEEK', '#8a6cf0', '🚗'], ['PREPAGO', '#3fae8f', '💳'],
+  ['PORTABILIDAD', '#e2559b', '🔁'], ['RENOVACION', '#e9a820', '🔄'], ['TELCEL UP', '#ef7d3a', '⬆️'],
+  ['INFINITUM', '#26a996', '🏠'], ['NORTON', '#d29a1c', '🛡️'], ['ACCESORIOS', '#9d63dc', '🎧'],
+  ['CLARO PAY', '#e8506a', '💰'], ['TRADE IN', '#5aab5b', '♻️'], ['BUNDLE', '#dd6aa6', '🎁'],
+  ['UP GRADE', '#6878ec', '⏫'], ['TELCEL PARA SIEMPRE', '#3b7ddd', '♾️'],
 ];
-const NEON = { ok: '#39ff14', ritmo: '#fff01f', bajo: '#ff9f1c', cero: '#ff3864' };
+const TONO = {
+  ok: 'linear-gradient(90deg, #45ad8a, #8cc152)',
+  ritmo: 'linear-gradient(90deg, #f2a33a, #f6c64f)',
+  bajo: 'linear-gradient(90deg, #e84c6c, #ea6240)',
+};
+const tonoDe = f => f == null ? null : f >= 1 ? 'ok' : f >= 0.8 ? 'ritmo' : 'bajo';
+const pct2 = f => f == null ? '—' : (Math.round(f * 10000) / 100).toFixed(2) + '%';
+const pill = f => f == null ? '—' : `<span class="pill ${tonoDe(f)}">${pct2(f)}</span>`;
 const estiloCat = grupo => { const c = CATEGORIAS.find(([k]) => key(grupo).startsWith(k)); return c ? { color: c[1], icono: c[2] } : { color: '#374151', icono: '📊' }; };
 
 // Nombres cortos para el panel. Se pueden cambiar con clic (se guardan por user en este navegador).
@@ -1261,26 +1279,26 @@ function renderPanel() {
   let ultimo = null;
   const filasInd = g.porInd.map(x => {
     let grp = '';
-    if (x.i.sub && x.i.grupo !== ultimo) grp = `<tr class="grp"><td colspan="10">${esc(cap(x.i.grupo))}</td></tr>`;
+    if (x.i.sub && x.i.grupo !== ultimo) grp = `<tr class="grp"><td colspan="9">${esc(cap(x.i.grupo))}</td></tr>`;
     ultimo = x.i.sub ? x.i.grupo : null;
     return grp + `<tr>
       <td class="t" style="${x.i.sub ? 'padding-left:20px' : 'font-weight:700'}">${esc(x.i.sub || cap(x.i.grupo))}</td>
       <td>${x.meta}</td><td>${x.real}</td><td>${pctTxt(x.fReal)}</td>
       <td><b>${x.proy == null ? '—' : Math.round(x.proy)}</b></td>
-      <td>${pctTxt(x.fProy)}${barra(x.fProy)}</td>
-      <td>${stTxt(x.fProy)}</td>
+      <td>${pill(x.fProy)}</td>
       <td>${x.brecha == null ? '—' : x.brecha > 0 ? x.brecha : '—'}</td>
       <td>${x.porDia == null ? '—' : (Math.ceil(x.porDia * 10) / 10)}</td>
       <td>${x.ceros.length ? `<button class="g-link" data-ind="${esc(x.i.id)}">${x.ceros.length} · ver</button>` : '0'}</td>
     </tr>`;
   }).join('');
 
+  const totMeta = g.porInd.reduce((t, x) => t + x.meta, 0), totReal = g.porInd.reduce((t, x) => t + x.real, 0);
+  const totProy = g.factor == null ? null : totReal * g.factor;
   const asesoresOrd = [...g.asesores].sort((x, y) => (x.proy ?? 0) - (y.proy ?? 0));
   const filasAs = asesoresOrd.map(x => `<tr>
       <td class="t"><b>${esc(cap(x.a.nombre))}</b><br><span style="color:var(--muted);font-size:12px">${esc(x.a.user)} · ${esc(cap(x.e.nombre))}</span></td>
       <td>${pctTxt(x.cumpl)}</td>
-      <td>${pctTxt(x.proy)}${barra(x.proy)}</td>
-      <td>${stTxt(x.proy)}</td>
+      <td>${pill(x.proy)}</td>
       ${ppto.encuestas ? `<td>${x.calidez == null ? '—' : fmtPts(x.calidez)}</td><td>${fmtScore(x.tnps)}</td>` : ''}
       <td style="color:${x.ceros.length ? STATUS.critical : STATUS.good};font-weight:700">${x.ceros.length} / ${x.conMeta}</td>
     </tr>`).join('');
@@ -1305,7 +1323,7 @@ function renderPanel() {
 
   const filasEq = g.porEquipo.map(x => `<tr>
       <td class="t"><b>${esc(cap(x.e.nombre))}</b><br><span style="color:var(--muted);font-size:12px">${esc(cap(x.e.supervisor))}</span></td>
-      <td>${x.n}</td><td>${pctTxt(x.cumpl)}</td><td>${pctTxt(x.proy)}${barra(x.proy)}</td><td>${stTxt(x.proy)}</td>
+      <td>${x.n}</td><td>${pctTxt(x.cumpl)}</td><td>${pill(x.proy)}</td>
       <td style="color:${x.ceros ? STATUS.critical : 'inherit'};font-weight:700">${x.ceros}</td>
       ${ppto.encuestas ? `<td>${x.calidez == null ? '—' : fmtPts(x.calidez)}</td>` : ''}
     </tr>`).join('');
@@ -1326,7 +1344,9 @@ function renderPanel() {
     })).filter(f => f.meta > 0).sort((a, b) => a.real / a.meta - b.real / b.meta || b.meta - a.meta);
     const ceros = filas.filter(f => f.real <= 0).length;
     const cerosDe = id => g.asesores.filter(x => x.a.metas[id] > 0 && !(x.real[id] > 0)).length;
-    const color = f => f.real <= 0 ? 'transparent' : f.real >= f.meta ? NEON.ok : f.real / f.meta >= g.dc / g.D ? NEON.ritmo : NEON.bajo;
+    const color = f => f.real <= 0 ? 'transparent' : f.real >= f.meta ? TONO.ok : f.real / f.meta >= g.dc / g.D ? TONO.ritmo : TONO.bajo;
+    const tMeta = filas.reduce((t, f) => t + f.meta, 0), tReal = filas.reduce((t, f) => t + f.real, 0);
+    const tProy = g.factor == null || !tMeta ? null : tReal * g.factor / tMeta;
     return `<div class="gc" id="gc-${k}" style="--neon:${est.color}">
       <div class="gc-hd"><div class="gc-t"><span class="gc-i">${est.icono}</span>${esc(gr.nombre.toUpperCase())}</div>
         <div class="gc-b ${ceros ? 'mal' : 'bien'}">${ceros ? `${ceros} en cero` : '✓ Todos venden'}</div></div>
@@ -1337,9 +1357,10 @@ function renderPanel() {
       <div class="gc-sep"></div>
       ${filas.map(f => `<div class="gc-fila ${f.real <= 0 ? 'cero' : ''}" title="${esc(cap(f.x.a.nombre))} · ${esc(cap(f.x.e.nombre))}: ${f.real} de ${f.meta}">
         <div class="gc-n" data-u="${esc(f.x.a.user)}" title="Clic para cambiar el nombre que se muestra">${esc(cortos[f.x.a.user].toUpperCase())} ${ICONO_PERSONA}</div>
-        <div class="gc-bar"><i style="width:${Math.min(f.real / f.meta, 1) * 100}%;background:${color(f)};box-shadow:0 0 8px ${color(f)}, 0 0 2px ${color(f)}"></i></div>
+        <div class="gc-bar"><i style="width:${Math.min(f.real / f.meta, 1) * 100}%;background:${color(f)}"></i></div>
         <div class="gc-v">${f.real}<span> / ${f.meta}</span></div>
       </div>`).join('')}
+      <div class="gc-tot"><div><b>TOTAL</b> ${tReal} / ${tMeta}</div><div class="gc-tot-p"><span class="lbl">PROYECTADO</span> ${pill(tProy)}</div></div>
     </div>`;
   };
   const consulta = `<div class="g-sec" id="g-consulta"><h3>Avance por categoría · ¿quién va en cero?</h3>
@@ -1348,17 +1369,21 @@ function renderPanel() {
 
   cuerpo.innerHTML = kpis + consulta + `
     ${g.porEquipo.length > 1 ? `<div class="g-sec"><h3>Por equipo</h3>
-      <div class="g-scroll"><table class="g-tabla"><tr><th>Equipo</th><th>Asesores</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th><th></th><th>Indicadores en cero</th>${ppto.encuestas ? '<th>Calidez (pts)</th>' : ''}</tr>${filasEq}</table></div></div>` : ''}
+      <div class="g-scroll"><table class="g-tabla"><tr><th>Equipo</th><th>Asesores</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th><th>Indicadores en cero</th>${ppto.encuestas ? '<th>Calidez (pts)</th>' : ''}</tr>${filasEq}</table></div></div>` : ''}
     <div class="g-sec"><h3>Estimado de ventas al cierre por indicador</h3>
       <p>Suma de ${g.porEquipo.length > 1 ? 'todos los equipos' : 'el equipo'}. «Brecha» es lo que faltaría al cierre si se mantiene el ritmo; «Necesario por día» es lo que hay que vender cada día restante para llegar a la meta.</p>
       <div class="g-scroll"><table class="g-tabla">
-        <tr><th>Indicador</th><th>Meta</th><th>Llevan</th><th>Avance</th><th>Estimado al cierre</th><th>% estimado</th><th></th><th>Brecha</th><th>Necesario por día</th><th>Asesores en cero</th></tr>
+        <tr><th>Indicador</th><th>Meta</th><th>Acumulado</th><th>Avance</th><th>Estimado al cierre</th><th>Proyectado</th><th>Brecha</th><th>Necesario por día</th><th>Asesores en cero</th></tr>
         ${filasInd}
-      </table></div></div>
+        <tr class="tot"><td class="t">TOTAL</td><td>${totMeta}</td><td>${totReal}</td><td>${pctTxt(totMeta ? totReal / totMeta : null)}</td>
+          <td>${totProy == null ? '—' : Math.round(totProy)}</td><td>${pill(totProy == null || !totMeta ? null : totProy / totMeta)}</td>
+          <td>${totProy == null ? '—' : Math.max(Math.round(totMeta - totProy), 0)}</td><td>${g.quedan ? Math.ceil(Math.max(totMeta - totReal, 0) / g.quedan * 10) / 10 : '—'}</td><td></td></tr>
+      </table></div>
+      <div class="acum">ACUM: ${pct2(totMeta ? totReal / totMeta : null)} <span>· ritmo esperado ${pct2(g.dc / g.D)} · proyectado ${pct2(totProy == null || !totMeta ? null : totProy / totMeta)}</span></div></div>
     <div class="g-sec"><h3>Asesores</h3>
       <p>Ordenados de menor a mayor estimado al cierre, para ver primero a quien necesita apoyo.</p>
       <div class="g-scroll"><table class="g-tabla">
-        <tr><th>Asesor</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th><th></th>${ppto.encuestas ? '<th>Calidez</th><th>TNPS</th>' : ''}<th>Indicadores en cero</th></tr>
+        <tr><th>Asesor</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th>${ppto.encuestas ? '<th>Calidez</th><th>TNPS</th>' : ''}<th>Indicadores en cero</th></tr>
         ${filasAs}
       </table></div></div>
     <div class="g-sec"><h3>Mapa de cero avance</h3>
