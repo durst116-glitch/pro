@@ -94,6 +94,12 @@
     border: 1px dashed #c9ced6; border-radius: 10px; padding: 12px; color: #6b7280;
     font-size: 12px; text-align: center; margin-bottom: 8px;
   }
+  .card .rubros { display: flex; gap: 8px; }
+  .card .rubro { flex: 1; border: 1px solid #e6e8ec; border-radius: 10px; padding: 8px 10px; }
+  .card .rn { font-size: 11px; color: #6b7280; }
+  .card .rv { font-size: 20px; font-weight: 700; }
+  .card .rs { font-size: 11px; font-weight: 700; }
+  .card .rf { font-size: 10px; color: #6b7280; margin-top: 2px; line-height: 1.3; }
   .card .legend { font-size: 10px; color: #6b7280; padding: 4px 16px 0; }
   .card .ft { font-size: 10px; color: #8a909b; padding: 8px 16px 14px; display: flex; justify-content: space-between; }
 </style>
@@ -268,8 +274,10 @@ function detectarMes(wb, fileName) {
 }
 
 // ---------- Lectura del registro de ventas ----------
-// Qué columna del registro suma a qué indicador del presupuesto:
-//   [encabezado en el registro, texto del grupo en el presupuesto, texto del subindicador ('' = cualquiera)]
+// Qué columna del registro suma a qué indicador del presupuesto. Replica las reglas de la hoja
+// "ASESORES DETALLES" del Dashboard Operativo (y "VENTAS_ANT" para Telcel Para Siempre):
+//   [encabezado en el registro, inicio del grupo en el presupuesto, texto del subindicador ('' = cualquiera)]
+// Hay alias para los nombres que usa el dashboard (INTERNET EN TU CASA = WiFi, TELCEL SIEMPRE, etc.).
 const MAPEO_VENTAS = [
   ['POSPAGO LIBRE CON EQUIPO A PLAZOS', 'POSPAGO', 'CON EQUIPO'],
   ['POSPAGO LIBRE', 'POSPAGO', 'LIBRE'],
@@ -285,6 +293,8 @@ const MAPEO_VENTAS = [
   ['CAMBIO DE PLAN LIBRE CON EQUIPO A PLAZOS', 'RENOVACION', 'CON EQUIPO'],
   ['CAMBIO DE PLAN VIP', 'RENOVACION', 'VIP'],
   ['CAMBIO DE PLAN TELCEL PARA SIEMPRE', 'TELCEL PARA SIEMPRE', ''],
+  ['PORTABILIDAD TELCEL SIEMPRE', 'TELCEL PARA SIEMPRE', ''],
+  ['TELCEL SIEMPRE', 'TELCEL PARA SIEMPRE', ''],
   ['RENUEVATE', 'RENOVACION', 'RENUEVATE'],
   ['TELCEL UP CON EQUIPO A PLAZOS', 'TELCEL UP', 'POSPAGO'],
   ['TELCEL UP LITE', 'TELCEL UP', 'POSPAGO'],
@@ -293,6 +303,9 @@ const MAPEO_VENTAS = [
   ['WIFI TELCEL LIBRE CON EQUIPO A PLAZOS', 'WIFI', 'CON EQUIPO'],
   ['WIFI TELCEL LIBRE', 'WIFI', 'SIN EQUIPO'],
   ['WIFI TELCEL PREPAGO', 'WIFI', 'PREPAGO'],
+  ['INTERNET EN TU CASA LIBRE CON EQUIPO A PLAZOS', 'WIFI', 'CON EQUIPO'],
+  ['INTERNET EN TU CASA LIBRE', 'WIFI', 'SIN EQUIPO'],
+  ['INTERNET EN TU CASA PREPAGO', 'WIFI', 'PREPAGO'],
   ['FINGER PRINT', 'FINGER', ''],
   ['ZEEK MI AUTO', 'ZEEK', ''],
   ['NORTON EQUIPO A PLAZOS', 'NORTON', 'POSPAGO'],
@@ -300,14 +313,31 @@ const MAPEO_VENTAS = [
   ['ACCESORIOS', 'ACCESORIOS', ''],
   ['CLARO PAY', 'CLARO PAY', ''],
   ['TRADE IN', 'TRADE IN', ''],
+  ['APPLE TRADE IN', 'TRADE IN', ''],
   ['UP GRADE CAMCA', 'UP GRADE', ''],
   ['BUNDLE APPLE AIRPODS', 'BUNDLE', ''],
+  ['BUNDLE APPLE WATCH', 'BUNDLE', ''],
+  ['BUNDLE APPLE', 'BUNDLE', ''],
 ];
+
+// Rubros del dashboard (columnas POSPAGO / PREPAGO / RENOVACION de "ASESORES DETALLES"):
+// califica si TODOS sus indicadores llevan 75% o más de la meta; el valor es el promedio de esos avances.
+const RUBRO_MINIMO = 0.75;
+const RUBROS = [
+  { nombre: 'Pospago', inds: [['POSPAGO', 'CON EQUIPO'], ['POSPAGO', 'LIBRE'], ['PORTABILIDAD', 'CON EQUIPO'],
+    ['PORTABILIDAD', 'LIBRE'], ['WIFI', 'CON EQUIPO'], ['WIFI', 'SIN EQUIPO'], ['ZEEK', '']] },
+  { nombre: 'Prepago', inds: [['PREPAGO', 'KIT'], ['PREPAGO', 'CHIP']] },
+  { nombre: 'Renovación', inds: [['RENOVACION', 'VIP'], ['RENOVACION', 'CON EQUIPO']] },
+];
+
+function buscarIndicador(indicadores, grupo, sub) {
+  return indicadores.find(i => key(i.grupo).startsWith(grupo) && key(i.sub).includes(sub)) || null;
+}
 
 function indicadorDestino(indicadores, encabezado) {
   const regla = MAPEO_VENTAS.find(r => r[0] === key(encabezado));
   if (!regla) return null;
-  const ind = indicadores.find(i => key(i.grupo).startsWith(regla[1]) && key(i.sub).includes(regla[2]));
+  const ind = buscarIndicador(indicadores, regla[1], regla[2]);
   return ind ? ind.id : null;
 }
 
@@ -409,6 +439,30 @@ function resumenAsesor(a, real) {
   };
 }
 
+// Indicadores sin meta no cuentan (igual que en Excel, donde su % queda vacío).
+function rubrosAsesor(a, real) {
+  if (!real) return null;
+  return RUBROS.map(r => {
+    const inds = r.inds.map(([g, s]) => buscarIndicador(state.ppto.indicadores, g, s))
+      .filter(i => i && a.metas[i.id] > 0);
+    const pcts = inds.map(i => ({ ind: i, pct: real[i.id] / a.metas[i.id] }));
+    const faltan = pcts.filter(p => p.pct < RUBRO_MINIMO);
+    const promedio = pcts.length ? pcts.reduce((t, p) => t + p.pct, 0) / pcts.length : null;
+    return { nombre: r.nombre, promedio, califica: pcts.length > 0 && !faltan.length, faltan, total: pcts.length };
+  });
+}
+
+function rubrosHTML(rubros) {
+  if (!rubros) return '';
+  return `<div class="sec"><div class="sec-t">Rubros (mínimo ${Math.round(RUBRO_MINIMO * 100)}% en cada indicador)</div>
+    <div class="rubros">${rubros.map(r => `<div class="rubro">
+      <div class="rn">${esc(r.nombre)}</div>
+      <div class="rv">${r.promedio == null ? '—' : Math.round(r.promedio * 100) + '%'}</div>
+      <div class="rs" style="color:${r.califica ? STATUS.good : STATUS.critical}">${r.califica ? '✓ Califica' : '↓ No califica'}</div>
+      <div class="rf">${r.total - r.faltan.length} de ${r.total} indicadores en ${Math.round(RUBRO_MINIMO * 100)}% o más</div>
+    </div>`).join('')}</div></div>`;
+}
+
 // ---------- Render ----------
 function renderEquipos() {
   const { equipos, avisos, mes } = state.ppto;
@@ -486,6 +540,7 @@ function tarjetaHTML(e, a) {
         <div class="val">—</div>
         <div class="sub">Pendiente de cargar</div></div>
     </div>
+    ${rubrosHTML(rubrosAsesor(a, reales))}
     <div class="sec">
       <div class="sec-t">Ventas</div>
       <table>
