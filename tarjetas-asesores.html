@@ -77,31 +77,33 @@
   .g-bar i { display: block; height: 8px; border-radius: 4px; }
   .gc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 18px; }
   .gc {
-    background: radial-gradient(120% 90% at 0% 0%, #1a1f3a 0%, #0b0e1c 55%, #07090f 100%);
-    border-radius: 24px; padding: 22px 24px; color: #e8ecff;
-    border: 1px solid color-mix(in srgb, var(--neon) 45%, transparent);
-    box-shadow: 0 0 0 1px #00000066, 0 0 22px color-mix(in srgb, var(--neon) 22%, transparent), inset 0 0 30px #00000080;
+    --tinta: color-mix(in srgb, var(--neon) 62%, #000000);
+    background: linear-gradient(160deg, color-mix(in srgb, var(--neon) 12%, #ffffff) 0%, #ffffff 45%, #ffffff 100%);
+    border-radius: 24px; padding: 22px 24px; color: #1f2544;
+    border: 2px solid var(--neon);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--neon) 45%, transparent), 0 6px 18px rgba(15,23,42,.06);
   }
   .gc-hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .gc-t { font-size: 20px; font-weight: 900; letter-spacing: .04em; display: flex; align-items: center; gap: 10px; }
-  .gc-i { font-size: 22px; filter: drop-shadow(0 0 6px var(--neon)); }
+  .gc-t { font-size: 20px; font-weight: 900; letter-spacing: .04em; display: flex; align-items: center; gap: 10px;
+    color: var(--tinta); text-shadow: 0 0 10px color-mix(in srgb, var(--neon) 70%, transparent); }
+  .gc-i { font-size: 22px; filter: drop-shadow(0 0 5px var(--neon)); }
   .gc-b { font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
-  .gc-b.mal { background: transparent; color: #ff3864; border: 1px solid #ff3864; box-shadow: 0 0 10px #ff386480, inset 0 0 6px #ff386440; text-shadow: 0 0 6px #ff3864; }
-  .gc-b.bien { background: transparent; color: #39ff14; border: 1px solid #39ff14; box-shadow: 0 0 10px #39ff1480; text-shadow: 0 0 6px #39ff14; }
+  .gc-b.mal { background: #ff2f6b; color: #ffffff; box-shadow: 0 0 12px #ff2f6b99; }
+  .gc-b.bien { background: #39ff14; color: #0b3d02; box-shadow: 0 0 12px #39ff1499; }
   .gc-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-  .gc-tab { font: inherit; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid #ffffff2e; background: #ffffff0d; color: #b9c2e8; cursor: pointer; }
-  .gc-tab.on { background: var(--neon); color: #05060c; border-color: var(--neon); box-shadow: 0 0 12px var(--neon); }
-  .gc-tab span { background: #ff3864; color: #ffffff; border-radius: 999px; padding: 0 6px; margin-left: 2px; box-shadow: 0 0 6px #ff3864; }
-  .gc-sep { border-top: 2px dashed color-mix(in srgb, var(--neon) 40%, transparent); margin: 14px 0 6px; }
+  .gc-tab { font: inherit; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--neon) 55%, #ffffff); background: #ffffff; color: #3b4266; cursor: pointer; }
+  .gc-tab.on { background: var(--neon); color: #0a0d1f; border-color: var(--neon); box-shadow: 0 0 10px var(--neon); }
+  .gc-tab span { background: #ff2f6b; color: #ffffff; border-radius: 999px; padding: 0 6px; margin-left: 2px; }
+  .gc-sep { border-top: 2px dashed color-mix(in srgb, var(--neon) 70%, #ffffff); margin: 14px 0 6px; }
   .gc-fila { display: grid; grid-template-columns: minmax(110px, 1fr) 1.3fr 64px; align-items: center; gap: 12px; padding: 7px 0; }
-  .gc-n { cursor: pointer; font-weight: 800; letter-spacing: .03em; color: #e8ecff; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
-  .gc-p { width: 15px; height: 15px; fill: var(--neon); flex: none; filter: drop-shadow(0 0 3px var(--neon)); }
-  .gc-bar { height: 12px; border-radius: 6px; background: #ffffff14; box-shadow: inset 0 0 4px #00000099; overflow: hidden; }
+  .gc-n { cursor: pointer; font-weight: 800; letter-spacing: .03em; color: #1f2544; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
+  .gc-p { width: 15px; height: 15px; fill: var(--tinta); flex: none; }
+  .gc-bar { height: 12px; border-radius: 6px; background: #edf0f7; overflow: hidden; }
   .gc-bar i { display: block; height: 12px; border-radius: 6px; }
-  .gc-v { text-align: right; font-weight: 900; font-size: 17px; font-variant-numeric: tabular-nums; color: #ffffff; }
-  .gc-v span { font-size: 11px; font-weight: 600; color: #8a93bd; }
-  .gc-fila.cero .gc-n, .gc-fila.cero .gc-v { color: #ff3864; text-shadow: 0 0 8px #ff386499; }
-  .gc-fila.cero .gc-p { fill: #ff3864; filter: drop-shadow(0 0 3px #ff3864); }
+  .gc-v { text-align: right; font-weight: 900; font-size: 17px; font-variant-numeric: tabular-nums; color: #1f2544; }
+  .gc-v span { font-size: 11px; font-weight: 600; color: #8a90ab; }
+  .gc-fila.cero .gc-n, .gc-fila.cero .gc-v { color: #e8134f; text-shadow: 0 0 8px #ff2f6b55; }
+  .gc-fila.cero .gc-p { fill: #e8134f; }
   .g-link { font: inherit; font-size: 12px; font-weight: 700; color: #dc2626; background: none; border: 1px solid #fca5a5; border-radius: 999px; padding: 2px 8px; cursor: pointer; }
   .g-mapa { border-collapse: separate; border-spacing: 2px; font-size: 12px; }
   .g-mapa th, .g-mapa td { background: var(--panel); }
@@ -1125,7 +1127,7 @@ let gEquipo = 'todos';
 const gSub = {}; // por categoría: 'TOTAL' o id del indicador elegido en su tarjeta
 
 // Estilo de cada categoría en las tarjetas de avance (color del título e icono).
-// Tonos neón sobre fondo oscuro.
+// Tonos neón sobre fondo claro (los títulos usan una versión un poco más oscura para leerse).
 const CATEGORIAS = [
   ['POSPAGO', '#00e5ff', '📱'], ['WIFI', '#00ffc8', '📶'], ['ZEEK', '#bf5fff', '🚗'], ['PREPAGO', '#39ff14', '💳'],
   ['PORTABILIDAD', '#ff2fd6', '🔁'], ['RENOVACION', '#fff01f', '🔄'], ['TELCEL UP', '#ff9f1c', '⬆️'],
@@ -1326,7 +1328,7 @@ function renderPanel() {
     const cerosDe = id => g.asesores.filter(x => x.a.metas[id] > 0 && !(x.real[id] > 0)).length;
     const color = f => f.real <= 0 ? 'transparent' : f.real >= f.meta ? NEON.ok : f.real / f.meta >= g.dc / g.D ? NEON.ritmo : NEON.bajo;
     return `<div class="gc" id="gc-${k}" style="--neon:${est.color}">
-      <div class="gc-hd"><div class="gc-t" style="color:${est.color};text-shadow:0 0 6px ${est.color}99, 0 0 18px ${est.color}66"><span class="gc-i">${est.icono}</span>${esc(gr.nombre.toUpperCase())}</div>
+      <div class="gc-hd"><div class="gc-t"><span class="gc-i">${est.icono}</span>${esc(gr.nombre.toUpperCase())}</div>
         <div class="gc-b ${ceros ? 'mal' : 'bien'}">${ceros ? `${ceros} en cero` : '✓ Todos venden'}</div></div>
       ${conSub ? `<div class="gc-tabs">
         <button class="gc-tab ${elegido === 'TOTAL' ? 'on' : ''}" data-g="${esc(gr.nombre)}" data-id="TOTAL">Total</button>
