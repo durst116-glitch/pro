@@ -105,6 +105,13 @@
   .gc-tot b { color: #1e3a6e; font-weight: 900; }
   .gc-tot-p { display: flex; align-items: center; gap: 8px; }
   .gc-tot-p .lbl { font-size: 11px; color: #5b6b7f; letter-spacing: .06em; }
+  .ge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .ge-t { background: #ffffff; color: #2d3748; border: 1px solid #e3e8f0; border-top: 4px solid #4aa3e8; border-radius: 16px; padding: 12px 14px; box-shadow: 0 4px 12px rgba(30,41,59,.06); }
+  .ge-t.cz { border-top-color: #b0245a; background: #fdf3f6; }
+  .ge-l { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #5b6b7f; }
+  .ge-v { font-size: 30px; font-weight: 900; color: #1e3a6e; margin-top: 2px; }
+  .ge-v span { font-size: 13px; color: #5b6b7f; }
+  .ge-o { font-size: 12px; color: #8a95a8; margin-bottom: 8px; }
   .pill {
     display: inline-block; min-width: 86px; text-align: center; padding: 5px 12px; border-radius: 12px;
     color: #ffffff; font-weight: 900; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,.25); white-space: nowrap;
@@ -1367,7 +1374,57 @@ function renderPanel() {
     <p>Ventas de cada asesor al ${esc(corteTxt)} contra su meta. Arriba de cada lista quedan quienes van en cero (en rojo). En las categorías con varios productos, elige «Total» o un producto (por ejemplo Amigo Kit); el número rojo en cada pestaña es cuántos asesores van en cero en ese producto.</p>
     <div class="gc-grid">${grupos.map(tarjetaCat).join('')}</div></div>`;
 
-  cuerpo.innerHTML = kpis + consulta + `
+  // Encuestas del equipo: promedio ponderado por número de encuestas de cada asesor.
+  const promEnc = xs => {
+    const res = { asesores: 0, base: 0 };
+    ENCUESTAS.forEach(e => {
+      let suma = 0, n = 0;
+      xs.forEach(x => {
+        const r = ppto.encuestas.porUser[x.a.user];
+        if (!r || r[e.id].valor == null || !(r[e.id].base > 0)) return;
+        suma += r[e.id].valor * r[e.id].base; n += r[e.id].base;
+      });
+      res[e.id] = { valor: n ? suma / n : null, base: n };
+    });
+    res.asesores = xs.filter(x => ppto.encuestas.porUser[x.a.user]).length;
+    res.base = res.tnps.base;
+    const cz = calidezAsesor(res.base ? res : null);
+    res.calidez = cz ? cz.total : null;
+    return res;
+  };
+  let encuestasSec = '';
+  if (ppto.encuestas) {
+    const eq = promEnc(g.asesores);
+    const orden = ['tnps', 'satis', 'actit', 'soluc', 'ofrec'];
+    const tile = id => {
+      const e = ENCUESTAS.find(x => x.id === id), v = eq[id].valor;
+      const f = v == null ? null : v / e.objetivo;
+      return `<div class="ge-t"><div class="ge-l">${esc(e.nombre)}</div>
+        <div class="ge-v">${fmtScore(v)}</div>
+        <div class="ge-o">Objetivo ${e.objetivo}</div>
+        ${v == null ? '' : `<span class="pill ${tonoDe(f)}">${tonoDe(f) === 'ok' ? '✓ En objetivo' : tonoDe(f) === 'ritmo' ? '→ Cerca' : '↓ Abajo'}</span>`}</div>`;
+    };
+    const filasEnc = g.porEquipo.map(t => {
+      const r = promEnc(g.asesores.filter(x => x.e === t.e));
+      const celda = id => { const e = ENCUESTAS.find(x => x.id === id); const v = r[id].valor; return `<td>${v == null ? '—' : `<span class="pill ${tonoDe(v / e.objetivo)}">${fmtScore(v)}</span>`}</td>`; };
+      return `<tr><td class="t"><b>${esc(cap(t.e.nombre))}</b><br><span style="color:var(--muted);font-size:12px">${esc(cap(t.e.supervisor))}</span></td>
+        ${orden.map(celda).join('')}<td><b>${r.calidez == null ? '—' : fmtPts(r.calidez)}</b></td><td>${r.base}</td><td>${r.asesores} / ${t.n}</td></tr>`;
+    }).join('');
+    encuestasSec = `<div class="g-sec"><h3>Encuestas del equipo</h3>
+      <p>Promedio ${g.porEquipo.length > 1 ? 'de todos los equipos' : 'del equipo'}, ponderado por el número de encuestas de cada asesor · ${eq.base} encuestas de ${eq.asesores} asesores.</p>
+      <div class="ge-grid">${orden.map(tile).join('')}
+        <div class="ge-t cz"><div class="ge-l">Calidez / Calidad en la atención</div>
+          <div class="ge-v">${eq.calidez == null ? '—' : fmtPts(eq.calidez)}<span> / ${CALIDEZ_MAX} pts</span></div>
+          <div class="ge-o">Amabilidad + Solución + Ofrecimiento</div>
+          ${eq.calidez == null ? '' : `<span class="pill ${tonoDe(eq.calidez / CALIDEZ_MAX)}">${pct2(eq.calidez / CALIDEZ_MAX)}</span>`}</div>
+      </div>
+      ${g.porEquipo.length > 1 ? `<div class="g-scroll" style="margin-top:12px"><table class="g-tabla">
+        <tr><th>Equipo</th>${orden.map(id => `<th>${esc(ENCUESTAS.find(x => x.id === id).nombre)}</th>`).join('')}<th>Calidez (pts)</th><th>Encuestas</th><th>Asesores con encuestas</th></tr>
+        ${filasEnc}</table></div>` : ''}
+    </div>`;
+  }
+
+  cuerpo.innerHTML = kpis + encuestasSec + consulta + `
     ${g.porEquipo.length > 1 ? `<div class="g-sec"><h3>Por equipo</h3>
       <div class="g-scroll"><table class="g-tabla"><tr><th>Equipo</th><th>Asesores</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th><th>Indicadores en cero</th>${ppto.encuestas ? '<th>Calidez (pts)</th>' : ''}</tr>${filasEq}</table></div></div>` : ''}
     <div class="g-sec"><h3>Estimado de ventas al cierre por indicador</h3>
