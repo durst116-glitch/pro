@@ -107,7 +107,6 @@
   .gc-tot-p .lbl { font-size: 11px; color: #5b6b7f; letter-spacing: .06em; }
   .ge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
   .ge-t { background: #ffffff; color: #2d3748; border: 1px solid #e3e8f0; border-top: 4px solid #4aa3e8; border-radius: 16px; padding: 12px 14px; box-shadow: 0 4px 12px rgba(30,41,59,.06); }
-  .ge-t.cz { border-top-color: #b0245a; background: #fdf3f6; }
   .ge-l { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #5b6b7f; }
   .ge-v { font-size: 30px; font-weight: 900; color: #1e3a6e; margin-top: 2px; }
   .ge-v span { font-size: 13px; color: #5b6b7f; }
@@ -1211,7 +1210,6 @@ function datosPanel() {
     const conMeta = inds.filter(i => a.metas[i.id] > 0);
     const prom = f => conMeta.length ? conMeta.reduce((t, i) => t + Math.min(f(i) / a.metas[i.id], 1), 0) / conMeta.length : null;
     const enc = ppto.encuestas ? ppto.encuestas.porUser[a.user] || null : null;
-    const cz = calidezAsesor(enc);
     return {
       a, e,
       cumpl: prom(i => real[i.id] || 0),
@@ -1220,7 +1218,6 @@ function datosPanel() {
       conMeta: conMeta.length,
       real,
       tnps: enc ? enc.tnps.valor : null,
-      calidez: cz ? cz.total : null,
     };
   }));
 
@@ -1242,7 +1239,7 @@ function datosPanel() {
   const porEquipo = equipos.map(e => {
     const xs = asesores.filter(x => x.e === e);
     const avg = f => { const v = xs.map(f).filter(n => n != null); return v.length ? v.reduce((t, n) => t + n, 0) / v.length : null; };
-    return { e, n: xs.length, cumpl: avg(x => x.cumpl), proy: avg(x => x.proy), ceros: xs.reduce((t, x) => t + x.ceros.length, 0), calidez: avg(x => x.calidez) };
+    return { e, n: xs.length, cumpl: avg(x => x.cumpl), proy: avg(x => x.proy), ceros: xs.reduce((t, x) => t + x.ceros.length, 0) };
   });
 
   return { D, dc, quedan, factor, asesores, porInd, porEquipo };
@@ -1272,7 +1269,6 @@ function renderPanel() {
   const indLlegan = g.porInd.filter(x => x.fProy >= 1).length;
   const ceros = g.asesores.reduce((t, x) => t + x.ceros.length, 0);
   const pares = g.asesores.reduce((t, x) => t + x.conMeta, 0);
-  const cz = avg(x => x.calidez);
 
   const kpis = `<div class="g-kpis">
     <div class="g-kpi"><div class="l">Asesores</div><div class="v">${g.asesores.length}</div><div class="s">${g.porEquipo.length} equipo(s)</div></div>
@@ -1280,7 +1276,6 @@ function renderPanel() {
     <div class="g-kpi"><div class="l">Estimado al cierre</div><div class="v" style="color:${semaforo(proy).color}">${pctTxt(proy)}</div><div class="s">${stTxt(proy)} · promedio por asesor</div></div>
     <div class="g-kpi"><div class="l">Indicadores que llegan a la meta</div><div class="v">${indLlegan} <span style="font-size:15px;color:var(--muted)">/ ${g.porInd.length}</span></div><div class="s">Según el estimado al cierre</div></div>
     <div class="g-kpi"><div class="l">Indicadores en cero</div><div class="v" style="color:${ceros ? STATUS.critical : STATUS.good}">${ceros}</div><div class="s">de ${pares} asesor-indicador con meta (${pctTxt(pares ? ceros / pares : null)})</div></div>
-    ${ppto.encuestas ? `<div class="g-kpi"><div class="l">Calidez promedio</div><div class="v">${cz == null ? '—' : fmtPts(cz)} <span style="font-size:15px;color:var(--muted)">/ ${CALIDEZ_MAX} pts</span></div><div class="s">Encuestas</div></div>` : ''}
   </div>`;
 
   let ultimo = null;
@@ -1306,7 +1301,7 @@ function renderPanel() {
       <td class="t"><b>${esc(cap(x.a.nombre))}</b><br><span style="color:var(--muted);font-size:12px">${esc(x.a.user)} · ${esc(cap(x.e.nombre))}</span></td>
       <td>${pctTxt(x.cumpl)}</td>
       <td>${pill(x.proy)}</td>
-      ${ppto.encuestas ? `<td>${x.calidez == null ? '—' : fmtPts(x.calidez)}</td><td>${fmtScore(x.tnps)}</td>` : ''}
+      ${ppto.encuestas ? `<td>${fmtScore(x.tnps)}</td>` : ''}
       <td style="color:${x.ceros.length ? STATUS.critical : STATUS.good};font-weight:700">${x.ceros.length} / ${x.conMeta}</td>
     </tr>`).join('');
 
@@ -1332,7 +1327,6 @@ function renderPanel() {
       <td class="t"><b>${esc(cap(x.e.nombre))}</b><br><span style="color:var(--muted);font-size:12px">${esc(cap(x.e.supervisor))}</span></td>
       <td>${x.n}</td><td>${pctTxt(x.cumpl)}</td><td>${pill(x.proy)}</td>
       <td style="color:${x.ceros ? STATUS.critical : 'inherit'};font-weight:700">${x.ceros}</td>
-      ${ppto.encuestas ? `<td>${x.calidez == null ? '—' : fmtPts(x.calidez)}</td>` : ''}
     </tr>`).join('');
 
   // Tarjetas por categoría: quién va en cero y cuánto lleva cada asesor.
@@ -1388,8 +1382,6 @@ function renderPanel() {
     });
     res.asesores = xs.filter(x => ppto.encuestas.porUser[x.a.user]).length;
     res.base = res.tnps.base;
-    const cz = calidezAsesor(res.base ? res : null);
-    res.calidez = cz ? cz.total : null;
     return res;
   };
   let encuestasSec = '';
@@ -1408,25 +1400,20 @@ function renderPanel() {
       const r = promEnc(g.asesores.filter(x => x.e === t.e));
       const celda = id => { const e = ENCUESTAS.find(x => x.id === id); const v = r[id].valor; return `<td>${v == null ? '—' : `<span class="pill ${tonoDe(v / e.objetivo)}">${fmtScore(v)}</span>`}</td>`; };
       return `<tr><td class="t"><b>${esc(cap(t.e.nombre))}</b><br><span style="color:var(--muted);font-size:12px">${esc(cap(t.e.supervisor))}</span></td>
-        ${orden.map(celda).join('')}<td><b>${r.calidez == null ? '—' : fmtPts(r.calidez)}</b></td><td>${r.base}</td><td>${r.asesores} / ${t.n}</td></tr>`;
+        ${orden.map(celda).join('')}<td>${r.base}</td><td>${r.asesores} / ${t.n}</td></tr>`;
     }).join('');
     encuestasSec = `<div class="g-sec"><h3>Encuestas del equipo</h3>
       <p>Promedio ${g.porEquipo.length > 1 ? 'de todos los equipos' : 'del equipo'}, ponderado por el número de encuestas de cada asesor · ${eq.base} encuestas de ${eq.asesores} asesores.</p>
-      <div class="ge-grid">${orden.map(tile).join('')}
-        <div class="ge-t cz"><div class="ge-l">Calidez / Calidad en la atención</div>
-          <div class="ge-v">${eq.calidez == null ? '—' : fmtPts(eq.calidez)}<span> / ${CALIDEZ_MAX} pts</span></div>
-          <div class="ge-o">Amabilidad + Solución + Ofrecimiento</div>
-          ${eq.calidez == null ? '' : `<span class="pill ${tonoDe(eq.calidez / CALIDEZ_MAX)}">${pct2(eq.calidez / CALIDEZ_MAX)}</span>`}</div>
-      </div>
+      <div class="ge-grid">${orden.map(tile).join('')}</div>
       ${g.porEquipo.length > 1 ? `<div class="g-scroll" style="margin-top:12px"><table class="g-tabla">
-        <tr><th>Equipo</th>${orden.map(id => `<th>${esc(ENCUESTAS.find(x => x.id === id).nombre)}</th>`).join('')}<th>Calidez (pts)</th><th>Encuestas</th><th>Asesores con encuestas</th></tr>
+        <tr><th>Equipo</th>${orden.map(id => `<th>${esc(ENCUESTAS.find(x => x.id === id).nombre)}</th>`).join('')}<th>Encuestas</th><th>Asesores con encuestas</th></tr>
         ${filasEnc}</table></div>` : ''}
     </div>`;
   }
 
   cuerpo.innerHTML = kpis + encuestasSec + consulta + `
     ${g.porEquipo.length > 1 ? `<div class="g-sec"><h3>Por equipo</h3>
-      <div class="g-scroll"><table class="g-tabla"><tr><th>Equipo</th><th>Asesores</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th><th>Indicadores en cero</th>${ppto.encuestas ? '<th>Calidez (pts)</th>' : ''}</tr>${filasEq}</table></div></div>` : ''}
+      <div class="g-scroll"><table class="g-tabla"><tr><th>Equipo</th><th>Asesores</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th><th>Indicadores en cero</th></tr>${filasEq}</table></div></div>` : ''}
     <div class="g-sec"><h3>Estimado de ventas al cierre por indicador</h3>
       <p>Suma de ${g.porEquipo.length > 1 ? 'todos los equipos' : 'el equipo'}. «Brecha» es lo que faltaría al cierre si se mantiene el ritmo; «Necesario por día» es lo que hay que vender cada día restante para llegar a la meta.</p>
       <div class="g-scroll"><table class="g-tabla">
@@ -1440,7 +1427,7 @@ function renderPanel() {
     <div class="g-sec"><h3>Asesores</h3>
       <p>Ordenados de menor a mayor estimado al cierre, para ver primero a quien necesita apoyo.</p>
       <div class="g-scroll"><table class="g-tabla">
-        <tr><th>Asesor</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th>${ppto.encuestas ? '<th>Calidez</th><th>TNPS</th>' : ''}<th>Indicadores en cero</th></tr>
+        <tr><th>Asesor</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th>${ppto.encuestas ? '<th>TNPS</th>' : ''}<th>Indicadores en cero</th></tr>
         ${filasAs}
       </table></div></div>
     <div class="g-sec"><h3>Mapa de cero avance</h3>
@@ -1483,9 +1470,9 @@ document.getElementById('g-export').onclick = () => {
       x.brecha > 0 ? x.brecha : 0, x.porDia == null ? '' : Math.ceil(x.porDia * 10) / 10, x.ceros.length]),
   ]), 'Estimado por indicador');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
-    ['Asesor', 'User', 'Equipo', 'Supervisor', 'Cumplimiento al corte %', 'Estimado al cierre %', 'Calidez (pts)', 'TNPS', 'Indicadores en cero', 'Cuáles'],
+    ['Asesor', 'User', 'Equipo', 'Supervisor', 'Cumplimiento al corte %', 'Estimado al cierre %', 'TNPS', 'Indicadores en cero', 'Cuáles'],
     ...g.asesores.map(x => [cap(x.a.nombre), x.a.user, cap(x.e.nombre), cap(x.e.supervisor), r1(x.cumpl), r1(x.proy),
-      x.calidez == null ? '' : Math.round(x.calidez * 10) / 10, x.tnps == null ? '' : Math.round(x.tnps * 10) / 10,
+      x.tnps == null ? '' : Math.round(x.tnps * 10) / 10,
       x.ceros.length, x.ceros.map(nombreInd).join(', ')]),
   ]), 'Asesores');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
