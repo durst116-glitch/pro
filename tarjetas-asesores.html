@@ -306,7 +306,6 @@ const MAPEO_VENTAS = [
   ['INTERNET EN TU CASA LIBRE CON EQUIPO A PLAZOS', 'WIFI', 'CON EQUIPO'],
   ['INTERNET EN TU CASA LIBRE', 'WIFI', 'SIN EQUIPO'],
   ['INTERNET EN TU CASA PREPAGO', 'WIFI', 'PREPAGO'],
-  ['FINGER PRINT', 'FINGER', ''],
   ['ZEEK MI AUTO', 'ZEEK', ''],
   ['NORTON EQUIPO A PLAZOS', 'NORTON', 'POSPAGO'],
   ['NORTON PREPAGO', 'NORTON', 'PREPAGO'],
@@ -329,6 +328,11 @@ const RUBROS = [
   { nombre: 'Prepago', inds: [['PREPAGO', 'KIT'], ['PREPAGO', 'CHIP']] },
   { nombre: 'Renovación', inds: [['RENOVACION', 'VIP'], ['RENOVACION', 'CON EQUIPO']] },
 ];
+
+// Indicadores del presupuesto que no se evalúan (no aparecen en la tarjeta ni cuentan en los promedios).
+const INDICADORES_EXCLUIDOS = ['FINGER'];
+const indicadoresActivos = () =>
+  state.ppto.indicadores.filter(i => !INDICADORES_EXCLUIDOS.some(g => key(i.grupo).startsWith(g)));
 
 function buscarIndicador(indicadores, grupo, sub) {
   return indicadores.find(i => key(i.grupo).startsWith(grupo) && key(i.sub).includes(sub)) || null;
@@ -429,7 +433,7 @@ function estado(pct, ritmo) {
 
 // Cumplimiento general: promedio del avance de cada indicador con meta, topando cada uno en 100%.
 function resumenAsesor(a, real) {
-  const inds = state.ppto.indicadores.filter(i => a.metas[i.id] > 0);
+  const inds = indicadoresActivos().filter(i => a.metas[i.id] > 0);
   if (!real) return { cumplidos: null, total: inds.length, promedio: null };
   const pcts = inds.map(i => Math.min(real[i.id] / a.metas[i.id], 1));
   return {
@@ -506,7 +510,8 @@ function filaIndicador(a, ind, solo, ritmo, reales) {
 }
 
 function tarjetaHTML(e, a) {
-  const { indicadores, mes } = state.ppto;
+  const { mes } = state.ppto;
+  const indicadores = indicadoresActivos();
   const ritmo = ritmoEsperado();
   const reales = realAsesor(a);
   const res = resumenAsesor(a, reales);
@@ -602,7 +607,7 @@ function renderMapeo() {
   const td = 'style="padding:4px 8px;border-top:1px solid var(--line);text-align:left"';
   document.getElementById('t-mapeo').innerHTML =
     `<tr><th ${td}>Indicador del presupuesto</th><th ${td}>Se suma del registro de ventas</th></tr>` +
-    state.ppto.indicadores.map(i => `<tr><td ${td}>${esc(cap(i.grupo))}${i.sub ? ' · ' + esc(i.sub) : ''}</td>
+    indicadoresActivos().map(i => `<tr><td ${td}>${esc(cap(i.grupo))}${i.sub ? ' · ' + esc(i.sub) : ''}</td>
       <td ${td}>${fuentes[i.id] ? esc(fuentes[i.id].map(cap).join(' + ')) : '<span style="color:#b45309">Sin columna en el registro</span>'}</td></tr>`).join('');
   const extra = Object.entries(v.sinMapear).map(([k, n]) => `${cap(k)} (${n})`);
   document.getElementById('avisos-ventas').textContent = [
