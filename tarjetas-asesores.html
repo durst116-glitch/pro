@@ -53,6 +53,10 @@
   .team .t { font-weight: 700; }
   .team .s { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
   .team .n { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .ind-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .ind-g { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .ind-g b { display: block; font-size: 13px; margin-bottom: 4px; }
+  .ind-g label { display: flex; gap: 6px; align-items: center; font-size: 13px; padding: 2px 0; cursor: pointer; }
   .warn { color: #b45309; font-size: 13px; margin-top: 8px; }
   .empty { color: var(--muted); text-align: center; padding: 32px 8px; }
   .cards { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 16px; }
@@ -146,8 +150,20 @@
     <div class="warn" id="avisos"></div>
   </section>
 
+  <section class="panel" id="p-indicadores" hidden>
+    <details>
+      <summary style="cursor:pointer;font-weight:700">3. Indicadores que se muestran en la tarjeta <span id="ind-cuenta" style="font-weight:400;color:var(--muted);font-size:13px"></span></summary>
+      <p style="margin:8px 0;color:var(--ink-2);font-size:13px">Los indicadores de venta que desmarques tampoco cuentan en «Cumplimiento de ventas» ni en «Indicadores cumplidos». Los rubros se calculan siempre con su regla. La selección se guarda en este navegador y aplica a todos los meses.</p>
+      <div class="controls" style="margin-bottom:8px">
+        <button id="b-ind-todos">Marcar todos</button>
+        <button id="b-ind-ninguno">Desmarcar todos</button>
+      </div>
+      <div class="ind-grid" id="ind-grid"></div>
+    </details>
+  </section>
+
   <section class="panel" id="p-tarjetas" hidden>
-    <h2>3. Tarjetas</h2>
+    <h2>4. Tarjetas</h2>
     <div class="controls">
       <button class="primary" id="b-zip">Descargar todas las del equipo (ZIP)</button>
       <span id="zip-st" style="color:var(--muted);font-size:13px"></span>
@@ -336,6 +352,16 @@ const INDICADORES_EXCLUIDOS = ['FINGER'];
 const indicadoresActivos = () =>
   state.ppto.indicadores.filter(i => !INDICADORES_EXCLUIDOS.some(g => key(i.grupo).startsWith(g)));
 
+// Indicadores que el usuario desmarcó (ids de venta, "ENC|<id>" de encuestas, "RUBROS").
+// Se guardan los ocultos para que un indicador nuevo en el presupuesto aparezca por defecto.
+const PREF_KEY = 'tarjetas-asesores-ocultos';
+let ocultos = new Set();
+try { ocultos = new Set(JSON.parse(localStorage.getItem(PREF_KEY) || '[]')); } catch (_) {}
+function guardarOcultos() { try { localStorage.setItem(PREF_KEY, JSON.stringify([...ocultos])); } catch (_) {} }
+const visible = id => !ocultos.has(id);
+const indicadoresVisibles = () => indicadoresActivos().filter(i => visible(i.id));
+const encuestasVisibles = () => ENCUESTAS.filter(e => visible('ENC|' + e.id));
+
 function buscarIndicador(indicadores, grupo, sub) {
   return indicadores.find(i => key(i.grupo).startsWith(grupo) && key(i.sub).includes(sub)) || null;
 }
@@ -486,7 +512,7 @@ function estado(pct, ritmo) {
 
 // Cumplimiento general: promedio del avance de cada indicador con meta, topando cada uno en 100%.
 function resumenAsesor(a, real) {
-  const inds = indicadoresActivos().filter(i => a.metas[i.id] > 0);
+  const inds = indicadoresVisibles().filter(i => a.metas[i.id] > 0);
   if (!real) return { cumplidos: null, total: inds.length, promedio: null };
   const pcts = inds.map(i => Math.min(real[i.id] / a.metas[i.id], 1));
   return {
@@ -525,7 +551,7 @@ function encuestasHTML(enc) {
   if (!enc) return '<div class="pend">Aún no tienes encuestas registradas este mes.</div>';
   return `<table>
     <tr><th>Indicador</th><th>Objetivo</th><th>Resultado</th><th>Encuestas</th><th></th></tr>
-    ${ENCUESTAS.map(e => {
+    ${encuestasVisibles().map(e => {
       const r = enc[e.id];
       const ok = r.valor != null && r.valor >= e.objetivo;
       const st = r.valor == null ? { color: STATUS.none, icon: '·', txt: 'Sin datos' }
@@ -588,7 +614,7 @@ function filaIndicador(a, ind, solo, ritmo, reales) {
 
 function tarjetaHTML(e, a) {
   const { mes } = state.ppto;
-  const indicadores = indicadoresActivos();
+  const indicadores = indicadoresVisibles();
   const ritmo = ritmoEsperado();
   const reales = realAsesor(a);
   const res = resumenAsesor(a, reales);
@@ -613,18 +639,18 @@ function tarjetaHTML(e, a) {
       <div class="meta">${esc(a.user)} · ${esc(cap(e.nombre))} · Sup. ${esc(cap(e.supervisor))}${a.dias ? ' · ' + a.dias + ' días a trabajar' : ''}</div>
     </div>
     <div class="hero">
-      <div><div class="lbl">Cumplimiento de ventas</div>
+      ${indicadores.length ? `<div><div class="lbl">Cumplimiento de ventas</div>
         <div class="val">${res.promedio == null ? '—' : Math.round(res.promedio * 100) + '%'}</div>
         <div class="sub">${res.promedio == null ? 'Pendiente de cargar ventas' : `Promedio de ${res.total} indicadores`}</div></div>
       <div><div class="lbl">Indicadores cumplidos</div>
         <div class="val">${res.cumplidos == null ? '—' : res.cumplidos} <span style="font-size:15px;color:#6b7280">/ ${res.total}</span></div>
-        <div class="sub">${ritmo == null ? '' : 'Ritmo esperado al corte: ' + Math.round(ritmo * 100) + '%'}</div></div>
-      <div><div class="lbl">TNPS (objetivo ${ENCUESTAS[0].objetivo})</div>
+        <div class="sub">${ritmo == null ? '' : 'Ritmo esperado al corte: ' + Math.round(ritmo * 100) + '%'}</div></div>` : ''}
+      ${visible('ENC|tnps') ? `<div><div class="lbl">TNPS (objetivo ${ENCUESTAS[0].objetivo})</div>
         <div class="val">${enc ? fmtScore(enc.tnps.valor) : '—'}</div>
-        <div class="sub">${!state.ppto.encuestas ? 'Pendiente de cargar encuestas' : enc ? `${enc.tnps.base} encuestas` : 'Sin encuestas'}</div></div>
+        <div class="sub">${!state.ppto.encuestas ? 'Pendiente de cargar encuestas' : enc ? `${enc.tnps.base} encuestas` : 'Sin encuestas'}</div></div>` : ''}
     </div>
-    ${rubrosHTML(rubrosAsesor(a, reales))}
-    <div class="sec">
+    ${visible('RUBROS') ? rubrosHTML(rubrosAsesor(a, reales)) : ''}
+    ${filas ? `<div class="sec">
       <div class="sec-t">Ventas</div>
       <table>
         <tr><th>Indicador</th><th>Meta</th><th>Llevas</th><th>Faltan</th><th>Avance</th><th></th></tr>
@@ -635,13 +661,13 @@ function tarjetaHTML(e, a) {
       <span style="color:${STATUS.good}">✓</span> Cumplido ·
       <span style="color:${STATUS.warning}">→</span> En ritmo ·
       <span style="color:${STATUS.critical}">↓</span> Abajo del ritmo
-    </div>
-    <div class="sec">
+    </div>` : ''}
+    ${encuestasVisibles().length ? `<div class="sec">
       <div class="sec-t">Encuestas</div>
       ${encuestasHTML(enc)}
-    </div>
+    </div>` : ''}
     <div class="ft"><span>${corte ? 'Ventas acumuladas al ' + corte.split('-').reverse().join('/') : ''}</span><span>${esc(a.user)}</span></div>
-  </div>`;
+  </div>`.replace(/<div class="hero">\s*<\/div>/, '');
 }
 
 function renderTarjetas() {
@@ -666,10 +692,12 @@ function render() {
   const ok = !!state.ppto;
   document.getElementById('p-equipos').hidden = !ok;
   document.getElementById('p-tarjetas').hidden = !ok;
+  document.getElementById('p-indicadores').hidden = !ok;
   document.getElementById('vacio').hidden = ok;
   if (!ok) return;
   if (state.equipoSel == null || state.equipoSel >= state.ppto.equipos.length) state.equipoSel = 0;
   renderEquipos();
+  renderSelector();
   renderTarjetas();
 }
 
@@ -692,6 +720,32 @@ function renderMapeo() {
     ...v.avisos,
     extra.length ? `Ventas registradas que no tienen meta en el presupuesto (no cuentan en la tarjeta): ${extra.join(', ')}.` : '',
   ].filter(Boolean).join(' ');
+}
+
+function renderSelector() {
+  const grupos = [];
+  indicadoresActivos().forEach(i => {
+    let g = grupos.find(x => x.nombre === i.grupo);
+    if (!g) grupos.push(g = { nombre: i.grupo, items: [] });
+    g.items.push({ id: i.id, txt: i.sub || cap(i.grupo) });
+  });
+  grupos.push({ nombre: 'Encuestas', items: ENCUESTAS.map(e => ({ id: 'ENC|' + e.id, txt: e.nombre })) });
+  grupos.push({ nombre: 'Otros', items: [{ id: 'RUBROS', txt: 'Bloque de rubros (75%)' }] });
+  const todos = grupos.flatMap(g => g.items);
+  document.getElementById('ind-grid').innerHTML = grupos.map(g => `<div class="ind-g"><b>${esc(cap(g.nombre))}</b>
+    ${g.items.map(it => `<label><input type="checkbox" data-id="${esc(it.id)}" ${visible(it.id) ? 'checked' : ''}> ${esc(it.txt)}</label>`).join('')}
+  </div>`).join('');
+  document.getElementById('ind-cuenta').textContent = `(${todos.filter(it => visible(it.id)).length} de ${todos.length})`;
+  document.querySelectorAll('#ind-grid input').forEach(cb => cb.onchange = () => {
+    cb.checked ? ocultos.delete(cb.dataset.id) : ocultos.add(cb.dataset.id);
+    guardarOcultos(); renderSelector(); renderTarjetas();
+  });
+  document.getElementById('b-ind-todos').onclick = () => {
+    todos.forEach(it => ocultos.delete(it.id)); guardarOcultos(); renderSelector(); renderTarjetas();
+  };
+  document.getElementById('b-ind-ninguno').onclick = () => {
+    todos.forEach(it => ocultos.add(it.id)); guardarOcultos(); renderSelector(); renderTarjetas();
+  };
 }
 
 // ---------- Imágenes ----------
