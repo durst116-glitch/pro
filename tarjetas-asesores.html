@@ -257,6 +257,33 @@
   .card .cz-ov span { font-size: 11px; font-weight: 600; color: #6b7280; }
   .card .cz-os { font-size: 11px; font-weight: 800; }
   .card .cz-vacio { padding: 14px; text-align: center; font-size: 12px; color: #6b7280; }
+  .card .vh { display: grid; grid-template-columns: 150px 1fr 54px 50px 84px; gap: 8px; font-size: 10px; font-weight: 700; color: #8a95a8; text-transform: uppercase; letter-spacing: .05em; padding: 0 6px 4px; }
+  .card .vh span:nth-child(n+3) { text-align: center; }
+  .card .vgrp { margin-bottom: 6px; border-radius: 12px; overflow: hidden; border: 1px solid #edf0f5; }
+  .card .vg { display: flex; align-items: center; gap: 8px; padding: 4px 10px; border-left: 5px solid; }
+  .card .vg-i { font-size: 15px; line-height: 1; }
+  .card .vg-n { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+  .card .vg-t { margin-left: auto; font-size: 12px; font-weight: 700; }
+  .card .vg-t b { font-size: 14px; font-weight: 900; }
+  .card .vr { display: grid; grid-template-columns: 150px 1fr 54px 50px 84px; gap: 8px; align-items: center; padding: 3px 10px 3px 16px; border-top: 1px solid #f1f4f8; background: #ffffff; }
+  .card .vr.solo { border-top: 0; border-left: 5px solid; padding: 5px 10px; }
+  .card .vr.solo .vn { display: flex; align-items: center; gap: 8px; }
+  .card .vr.solo .vn { white-space: normal; overflow: visible; }
+  .card .vr.solo .vg-n { font-size: 11px; line-height: 1.15; }
+  .card .vn { font-size: 12px; font-weight: 600; color: #334155; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .vt { height: 10px; border-radius: 6px; background: #eef1f6; overflow: hidden; }
+  .card .vt i { display: block; height: 10px; border-radius: 6px; }
+  .card .vc { text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .card .vc b { font-size: 15px; font-weight: 900; color: #1e293b; }
+  .card .vc span { font-size: 11px; color: #94a3b8; font-weight: 600; }
+  .card .vp { text-align: center; }
+  .card .vp span { display: inline-block; min-width: 44px; padding: 2px 6px; border-radius: 8px; color: #ffffff; font-size: 11.5px; font-weight: 900; text-shadow: 0 1px 1px rgba(0,0,0,.2); }
+  .card .vs { font-size: 10.5px; font-weight: 800; text-align: center; border-radius: 999px; padding: 2px 6px; white-space: nowrap; }
+  .card .vs.ok { background: #dcfce7; color: #166534; }
+  .card .vs.ritmo { background: #fef3c7; color: #92400e; }
+  .card .vs.bajo { background: #ffe4e6; color: #9f1239; }
+  .card .vs.cero { background: #e0e7ff; color: #3730a3; }
+  .card .lg { display: inline-block; width: 12px; height: 8px; border-radius: 4px; vertical-align: middle; margin-right: 2px; }
   .card .legend { font-size: 10px; color: #6b7280; padding: 4px 16px 0; }
   .card .ft {
     font-size: 11px; color: #ffffff; padding: 10px 16px; margin-top: 12px; display: flex; justify-content: space-between;
@@ -1012,20 +1039,57 @@ function renderEquipos() {
   });
 }
 
-function filaIndicador(a, ind, solo, ritmo, reales) {
+// ---------- Sección de ventas de la tarjeta ----------
+const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+const oscurecer = (hex, f) => { const n = parseInt(hex.slice(1), 16); const c = x => Math.round((x & 255) * (1 - f)); return `rgb(${c(n >> 16)},${c(n >> 8)},${c(n)})`; };
+
+// Nivel de un indicador: logrado, en ritmo, abajo del ritmo o en cero (sin ventas).
+function nivelVenta(real, meta, ritmo) {
+  if (real == null) return 'nd';
+  if (real >= meta) return 'ok';
+  if (real <= 0) return 'cero';
+  return ritmo != null && real / meta >= ritmo ? 'ritmo' : 'bajo';
+}
+const fondoNivel = niv => ({ ok: TONO.ok, ritmo: TONO.ritmo, bajo: TONO.bajo }[niv] || '#cbd5e1');
+
+function filaVenta(a, ind, nombre, ritmo, reales, estiloSolo) {
   const meta = a.metas[ind.id];
   const real = reales ? reales[ind.id] : null;
-  const pct = real != null && meta > 0 ? real / meta : null;
-  const st = estado(pct, ritmo);
-  const w = pct == null ? 0 : Math.min(pct, 1) * 100;
-  return `<tr class="${solo ? 'solo' : ''}">
-    <td class="ind">${esc(solo ? cap(ind.grupo) : ind.sub)}</td>
-    <td class="num">${meta}</td>
-    <td class="num">${real ?? '—'}</td>
-    <td class="num">${real == null ? '—' : Math.max(meta - real, 0)}</td>
-    <td class="pct">${pct == null ? '—' : Math.round(pct * 100) + '%'}<span class="st" style="color:${st.color}">${st.icon}</span></td>
-    <td class="bar"><div class="track"><div class="fill" style="width:${w}%;background:${st.color}"></div></div></td>
-  </tr>`;
+  const niv = nivelVenta(real, meta, ritmo);
+  const pct = real == null ? null : real / meta;
+  const faltan = real == null ? null : Math.max(meta - real, 0);
+  const chip = { ok: '✓ ¡Logrado!', ritmo: `Faltan ${faltan}`, bajo: `Faltan ${faltan}`, cero: '¡Por la 1ª!', nd: '' }[niv];
+  // estiloSolo: categoría de un solo producto, se dibuja como un solo renglón con el color de la categoría.
+  return `<div class="vr${estiloSolo ? ' solo' : ''}"${estiloSolo ? ` style="border-left-color:${estiloSolo.color};background:${hexA(estiloSolo.color, 0.12)}"` : ''}>
+    <div class="vn">${estiloSolo ? `<span class="vg-i">${estiloSolo.icono}</span><span class="vg-n" style="color:${oscurecer(estiloSolo.color, 0.28)}">${esc(nombre)}</span>` : esc(nombre)}</div>
+    <div class="vt"><i style="width:${pct == null ? 0 : Math.min(pct, 1) * 100}%;background:${fondoNivel(niv)}"></i></div>
+    <div class="vc"><b>${real ?? '—'}</b><span>/${meta}</span></div>
+    <div class="vp"><span style="background:${fondoNivel(niv)}">${pct == null ? '—' : Math.round(pct * 100) + '%'}</span></div>
+    <div class="vs ${niv}">${chip}</div>
+  </div>`;
+}
+
+function ventasHTML(a, indicadores, ritmo, reales) {
+  const grupos = [];
+  indicadores.filter(i => a.metas[i.id] > 0).forEach(i => {
+    let g = grupos.find(x => x.nombre === i.grupo);
+    if (!g) grupos.push(g = { nombre: i.grupo, inds: [] });
+    g.inds.push(i);
+  });
+  return grupos.map(g => {
+    const est = estiloCat(g.nombre);
+    const tinta = oscurecer(est.color, 0.28);
+    const meta = g.inds.reduce((t, i) => t + a.metas[i.id], 0);
+    const real = reales ? g.inds.reduce((t, i) => t + (reales[i.id] || 0), 0) : null;
+    const solo = g.inds.length === 1 && !g.inds[0].sub;
+    const cab = `<div class="vg" style="border-left-color:${est.color};background:${hexA(est.color, 0.12)}">
+      <span class="vg-i">${est.icono}</span><span class="vg-n" style="color:${tinta}">${esc(cap(g.nombre))}</span>
+      ${!solo && real != null ? `<span class="vg-t" style="color:${tinta}"><b>${real}</b> / ${meta} · ${Math.round(real / meta * 100)}%</span>` : ''}
+    </div>`;
+    if (solo) return `<div class="vgrp">${filaVenta(a, g.inds[0], cap(g.nombre), ritmo, reales, est)}</div>`;
+    const filas = g.inds.map(i => filaVenta(a, i, i.sub, ritmo, reales)).join('');
+    return `<div class="vgrp">${cab}${filas}</div>`;
+  }).join('');
 }
 
 function tarjetaHTML(e, a) {
@@ -1037,16 +1101,7 @@ function tarjetaHTML(e, a) {
   const enc = state.ppto.encuestas ? state.ppto.encuestas.porUser[a.user] || null : null;
   const corte = document.getElementById('corte').value;
 
-  // Agrupa indicadores respetando el orden del Excel; los que no tienen subindicador van solos.
-  let filas = '', ultimo = null;
-  indicadores.forEach((ind, i) => {
-    if (!(a.metas[ind.id] > 0)) return;
-    const hermanos = indicadores.filter(x => x.grupo === ind.grupo && a.metas[x.id] > 0);
-    const solo = hermanos.length === 1 && !ind.sub;
-    if (!solo && ind.grupo !== ultimo) filas += `<tr class="grp"><td colspan="6">${esc(cap(ind.grupo))}</td></tr>`;
-    ultimo = ind.grupo;
-    filas += filaIndicador(a, ind, solo, ritmo, reales);
-  });
+  const filas = ventasHTML(a, indicadores, ritmo, reales);
 
   const general = res.promedio == null ? STATUS.none : estado(res.promedio, ritmo).color;
   const lugar = reales && indicadores.length ? lugarEnEquipo(e, a) : null;
@@ -1082,15 +1137,14 @@ function tarjetaHTML(e, a) {
     ${visible('RUBROS') ? rubrosHTML(rubrosAsesor(a, reales)) : ''}
     ${filas ? `<div class="sec">
       <div class="sec-t">Ventas</div>
-      <table>
-        <tr><th>Indicador</th><th>Meta</th><th>Llevas</th><th>Faltan</th><th>Avance</th><th></th></tr>
-        ${filas}
-      </table>
+      <div class="vh"><span>Indicador</span><span>Avance</span><span>Llevas</span><span>%</span><span></span></div>
+      ${filas}
     </div>
     <div class="legend">
-      <span style="color:${STATUS.good}">✓</span> Cumplido ·
-      <span style="color:${STATUS.warning}">→</span> En ritmo ·
-      <span style="color:${STATUS.critical}">↓</span> Abajo del ritmo
+      <span class="lg" style="background:${TONO.ok}"></span> ¡Logrado! ·
+      <span class="lg" style="background:${TONO.ritmo}"></span> En ritmo ·
+      <span class="lg" style="background:${TONO.bajo}"></span> Abajo del ritmo${ritmo != null ? ` (${Math.round(ritmo * 100)}% del mes)` : ''} ·
+      <span class="lg" style="background:#cbd5e1"></span> Sin ventas aún
     </div>` : ''}
 
     <div class="ft"><span>${corte ? 'Ventas acumuladas al ' + corte.split('-').reverse().join('/') : ''}${ajustesDe(a).length ? ` · incluye ${ajustesDe(a).reduce((t, j) => t + j.cantidad, 0)} venta(s) capturada(s) a mano` : ''}</span><b>¡Vamos por más!</b></div>
