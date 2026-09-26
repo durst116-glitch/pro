@@ -283,6 +283,13 @@
   .card .vs.ritmo { background: #fef3c7; color: #92400e; }
   .card .vs.bajo { background: #ffe4e6; color: #9f1239; }
   .card .vs.cero { background: #e0e7ff; color: #3730a3; }
+  .card .vh.mh, .card .mr { grid-template-columns: 1fr 80px 110px; }
+  .card .mr { display: grid; gap: 8px; align-items: center; padding: 4px 10px 4px 16px; border-top: 1px solid #f1f4f8; background: #ffffff; }
+  .card .mr.solo { border-top: 0; border-left: 5px solid; padding: 6px 10px; }
+  .card .mr.solo .vn { display: flex; align-items: center; gap: 8px; white-space: normal; }
+  .card .mr.solo .vg-n { font-size: 12px; }
+  .card .mm { text-align: center; font-size: 18px; font-weight: 900; color: #1e3a6e; }
+  .card .md { text-align: center; font-size: 11px; font-weight: 700; color: #64748b; background: #f1f5f9; border-radius: 999px; padding: 2px 8px; }
   .card .lg { display: inline-block; width: 12px; height: 8px; border-radius: 4px; vertical-align: middle; margin-right: 2px; }
   .card .legend { font-size: 10px; color: #6b7280; padding: 4px 16px 0; }
   .card .ft {
@@ -1365,6 +1372,89 @@ function datosPanel() {
   return { D, dc, quedan, factor, asesores, porInd, porEquipo };
 }
 
+// ---------- Tarjeta de metas del supervisor (imagen) ----------
+let gModoMetas = 'metas'; // 'metas' = solo metas del mes · 'avance' = metas con avance
+
+// Suma metas y ventas de un conjunto de asesores como si fuera un solo "asesor".
+function equipoComoAsesor(asesores) {
+  const metas = {}, reales = {};
+  state.ppto.indicadores.forEach(i => { metas[i.id] = 0; reales[i.id] = 0; });
+  let hayVentas = false;
+  asesores.forEach(a => {
+    const r = realAsesor(a);
+    if (r) hayVentas = true;
+    Object.keys(metas).forEach(id => { metas[id] += a.metas[id] || 0; if (r) reales[id] += r[id] || 0; });
+  });
+  return { metas, reales: hayVentas ? reales : null };
+}
+
+function metasSoloHTML(eq, D) {
+  const grupos = [];
+  indicadoresActivos().filter(i => eq.metas[i.id] > 0).forEach(i => {
+    let g = grupos.find(x => x.nombre === i.grupo);
+    if (!g) grupos.push(g = { nombre: i.grupo, inds: [] });
+    g.inds.push(i);
+  });
+  const fila = (i, nombre, est) => `<div class="mr${est ? ' solo' : ''}"${est ? ` style="border-left-color:${est.color};background:${hexA(est.color, 0.12)}"` : ''}>
+      <div class="vn">${est ? `<span class="vg-i">${est.icono}</span><span class="vg-n" style="color:${oscurecer(est.color, 0.28)}">${esc(nombre)}</span>` : esc(nombre)}</div>
+      <div class="mm">${eq.metas[i.id]}</div>
+      <div class="md">≈ ${Math.round(eq.metas[i.id] / D * 10) / 10} al día</div>
+    </div>`;
+  return grupos.map(g => {
+    const est = estiloCat(g.nombre);
+    if (g.inds.length === 1 && !g.inds[0].sub) return `<div class="vgrp">${fila(g.inds[0], cap(g.nombre), est)}</div>`;
+    const total = g.inds.reduce((t, i) => t + eq.metas[i.id], 0);
+    return `<div class="vgrp"><div class="vg" style="border-left-color:${est.color};background:${hexA(est.color, 0.12)}">
+        <span class="vg-i">${est.icono}</span><span class="vg-n" style="color:${oscurecer(est.color, 0.28)}">${esc(cap(g.nombre))}</span>
+        <span class="vg-t" style="color:${oscurecer(est.color, 0.28)}">Meta <b>${total}</b></span></div>
+      ${g.inds.map(i => fila(i, i.sub)).join('')}</div>`;
+  }).join('');
+}
+
+function tarjetaSupervisorHTML(titulo, sub, asesores, g) {
+  const { mes } = state.ppto;
+  const eq = equipoComoAsesor(asesores);
+  const ritmo = g.dc / g.D;
+  const avance = gModoMetas === 'avance' && eq.reales;
+  // Cumplimiento del equipo: promedio del cumplimiento de sus asesores (indicadores elegidos para el %).
+  const datos = g.asesores.filter(x => asesores.includes(x.a));
+  const prom = f => { const v = datos.map(f).filter(n => n != null); return v.length ? v.reduce((t, n) => t + n, 0) / v.length : null; };
+  const cumpl = prom(x => x.cumpl), proy = prom(x => x.proy);
+  const inicial = titulo.replace(/[^A-Za-zÁÉÍÓÚÑ0-9 ]/g, '').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  return `<div class="card">
+    <div class="hd">
+      <div class="deco d1"></div><div class="deco d2"></div>
+      <div class="hd-in">
+        <div class="foto" style="box-shadow:0 0 0 4px ${avance ? semaforo(proy).color : '#93c5fd'}"><div class="ini">${esc(inicial)}</div></div>
+        <div class="hd-txt">
+          <div class="chip">${gModoMetas === 'avance' ? 'Avance' : 'Metas'} ${esc(MESES[mes.idx])} ${mes.anio}</div>
+          <div class="nombre">${esc(titulo)}</div>
+          <div class="meta">${esc(sub)}<br>${asesores.length} asesores · ${g.D} días del mes</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero">
+      ${avance ? `
+        <div><div class="lbl">Cumplimiento del equipo</div>
+          <div class="kring">${anilloHTML(cumpl, semaforo(cumpl / Math.max(ritmo, 0.01)).color)}<div class="val">${pctTxt(cumpl)}</div></div>
+          <div class="sub">${esc(primeraMay(descCumpl()))}</div></div>
+        <div><div class="lbl">Estimado al cierre</div><div class="val">${pctTxt(proy)}</div><div class="sub">Ritmo esperado ${pctTxt(ritmo)}</div></div>
+        <div><div class="lbl">Corte</div><div class="val">Día ${g.dc}</div><div class="sub">Quedan ${g.quedan} días</div></div>`
+      : `
+        <div><div class="lbl">Asesores</div><div class="val">${asesores.length}</div><div class="sub">en el equipo</div></div>
+        <div><div class="lbl">Indicadores con meta</div><div class="val">${indicadoresActivos().filter(i => eq.metas[i.id] > 0).length}</div><div class="sub">este mes</div></div>
+        <div><div class="lbl">Días del mes</div><div class="val">${g.D}</div><div class="sub">${esc(MESES[mes.idx])} ${mes.anio}</div></div>`}
+    </div>
+    <div class="sec">
+      <div class="sec-t">${avance ? 'Metas y avance del equipo' : 'Metas del mes'}</div>
+      ${avance
+        ? `<div class="vh"><span>Indicador</span><span>Avance</span><span>Llevan</span><span>%</span><span></span></div>${ventasHTML(eq, indicadoresActivos(), ritmo, eq.reales)}`
+        : `<div class="vh mh"><span>Indicador</span><span>Meta</span><span>Meta diaria</span></div>${metasSoloHTML(eq, g.D)}`}
+    </div>
+    <div class="ft"><span>${avance ? 'Ventas acumuladas al ' + document.getElementById('corte').value.split('-').reverse().join('/') : 'Metas mensuales · ' + esc(cap(state.ppto.equipos[0].cac || ''))}</span><b>¡Vamos por más!</b></div>
+  </div>`;
+}
+
 function renderPanel() {
   const ppto = state.ppto;
   if (!ppto) return;
@@ -1375,11 +1465,9 @@ function renderPanel() {
   sel.value = gEquipo;
 
   const cuerpo = document.getElementById('g-cuerpo'), nota = document.getElementById('g-nota');
-  if (!ppto.ventas && !(ppto.ajustes || []).length) {
-    nota.textContent = '';
-    cuerpo.innerHTML = '<div class="empty">Carga el registro de ventas del mes para ver el panel.</div>';
-    return;
-  }
+  // Sin registro de ventas solo se muestran las metas del mes (útil al arrancar el mes).
+  const sinVentas = !ppto.ventas && !(ppto.ajustes || []).length;
+  if (sinVentas) gModoMetas = 'metas';
   const g = datosPanel();
   nota.textContent = `${mesTxt(ppto.mes)} · corte al día ${g.dc} de ${g.D} (${g.quedan} días restantes). ` +
     `Estimado al cierre = ventas al corte ÷ ${g.dc} días × ${g.D} días. Incluye ventas capturadas a mano.`;
@@ -1531,7 +1619,29 @@ function renderPanel() {
     </div>`;
   }
 
-  cuerpo.innerHTML = kpis + encuestasSec + consulta + `
+  // Metas del mes por supervisor (tarjetas descargables).
+  const tarjetasSup = [];
+  if (g.porEquipo.length > 1) tarjetasSup.push({ titulo: `CAC ${cap(g.porEquipo[0].e.cac || '')}`.trim(), sub: `${g.porEquipo.length} equipos`, asesores: g.asesores.map(x => x.a), archivo: 'CAC' });
+  g.porEquipo.forEach(t => tarjetasSup.push({ titulo: cap(t.e.nombre), sub: `Sup. ${cap(t.e.supervisor)}`, asesores: t.e.asesores, archivo: `${t.e.nombre} - ${t.e.supervisor}` }));
+  const metasSec = `<div class="g-sec" id="g-metas"><h3>Metas del mes por supervisor</h3>
+    <p>Metas del mes de cada equipo (suma de las metas de sus asesores). Descarga la imagen para compartirla con el supervisor.</p>
+    <div class="controls">
+      <label>Contenido <select id="g-modo">
+        <option value="metas" ${gModoMetas === 'metas' ? 'selected' : ''}>Solo metas del mes</option>
+        <option value="avance" ${gModoMetas === 'avance' ? 'selected' : ''} ${sinVentas ? 'disabled' : ''}>Metas con avance al corte${sinVentas ? ' (carga el registro de ventas)' : ''}</option>
+      </select></label>
+      <button id="g-metas-zip">Descargar todas (ZIP)</button>
+      <span id="g-metas-st" style="color:var(--muted);font-size:13px"></span>
+    </div>
+    <div class="cards">${tarjetasSup.map((t, k) => `<div class="card-wrap">
+      <div class="card-scale" id="msup-${k}">${tarjetaSupervisorHTML(t.titulo, t.sub, t.asesores, g)}</div>
+      <button class="b-msup" data-k="${k}">Descargar imagen</button></div>`).join('')}</div>
+  </div>`;
+
+  if (sinVentas) {
+    nota.textContent = `${mesTxt(ppto.mes)} · aún no hay registro de ventas: por ahora solo se muestran las metas del mes.`;
+  }
+  cuerpo.innerHTML = sinVentas ? metasSec + encuestasSec : kpis + metasSec + encuestasSec + consulta + `
     ${g.porEquipo.length > 1 ? `<div class="g-sec"><h3>Por equipo</h3>
       <div class="g-scroll"><table class="g-tabla"><tr><th>Equipo</th><th>Asesores</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th><th>Indicadores en cero</th></tr>${filasEq}</table></div></div>` : ''}
     <div class="g-sec"><h3>Estimado de ventas al cierre por indicador</h3>
@@ -1559,6 +1669,24 @@ function renderPanel() {
         <span class="ley na">–</span> sin meta. Pasa el cursor sobre una celda para ver el detalle.</p>
       <div class="g-scroll">${mapa}</div></div>`;
 
+  const nombreMsup = t => `Metas ${mesTxt(ppto.mes)} - ${t.archivo}`.replace(/[\\/:*?"<>|]/g, '') + '.png';
+  document.getElementById('g-modo').onchange = ev => { gModoMetas = ev.target.value; renderPanel(); };
+  cuerpo.querySelectorAll('.b-msup').forEach(b => b.onclick = async () => {
+    const t = tarjetasSup[Number(b.dataset.k)];
+    b.disabled = true;
+    try { descargar(await cardBlob(document.querySelector(`#msup-${b.dataset.k} .card`)), nombreMsup(t)); }
+    finally { b.disabled = false; }
+  });
+  document.getElementById('g-metas-zip').onclick = async () => {
+    const st = document.getElementById('g-metas-st');
+    const zip = new JSZip();
+    for (let k = 0; k < tarjetasSup.length; k++) {
+      st.textContent = `Generando ${k + 1} de ${tarjetasSup.length}…`;
+      zip.file(nombreMsup(tarjetasSup[k]), await cardBlob(document.querySelector(`#msup-${k} .card`)));
+    }
+    descargar(await zip.generateAsync({ type: 'blob' }), `Metas ${mesTxt(ppto.mes)} supervisores.zip`);
+    st.textContent = '';
+  };
   cuerpo.querySelectorAll('.gc-n').forEach(el => el.onclick = () => {
     const a = g.asesores.find(x => x.a.user === el.dataset.u).a;
     const nuevo = prompt(`Nombre que se muestra para ${cap(a.nombre)} (déjalo vacío para usar el nombre de pila):`, alias[a.user] || '');
