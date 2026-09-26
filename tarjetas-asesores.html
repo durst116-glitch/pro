@@ -380,6 +380,38 @@
   .card.hoja.carta .banner .ico, .card.hoja.carta .banner .ico svg { width: 42px; height: 42px; }
   .card.hoja .legend { font-size: 9px; padding: 4px 0 0; }
   .card.hoja .ft { margin-top: 8px; font-size: 10px; padding: 7px 16px; }
+  .card .imp { margin: 14px 16px 0; border-radius: 16px; padding: 12px 14px; color: #ffffff;
+    background: linear-gradient(135deg, #6d28d9 0%, #c026d3 55%, #f43f5e 100%); box-shadow: 0 6px 16px rgba(192,38,211,.28); }
+  .card .imp-hd { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .card .imp-ico { font-size: 26px; line-height: 1; background: rgba(255,255,255,.2); border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
+  .card .imp-t { font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
+  .card .imp-s { font-size: 11.5px; font-weight: 600; opacity: .95; }
+  .card .imp-r { background: rgba(255,255,255,.96); color: #1e293b; border-radius: 12px; padding: 8px 12px; margin-top: 7px; }
+  .card .imp-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .card .imp-n { font-size: 14px; font-weight: 900; color: #6d28d9; }
+  .card .imp-v { font-size: 12px; color: #64748b; font-weight: 700; white-space: nowrap; }
+  .card .imp-v b { font-size: 20px; color: #1e293b; font-weight: 900; }
+  .card .imp-bar { height: 10px; border-radius: 5px; background: #ede9fe; overflow: hidden; margin: 5px 0; }
+  .card .imp-bar i { display: block; height: 10px; border-radius: 5px; }
+  .card .imp-f { font-size: 11px; font-weight: 800; color: #9f1239; }
+  .card .imp-f.ok { color: #166534; }
+  .card .imp-f.ritmo { color: #92400e; }
+  .card .imp-f.cero { color: #3730a3; }
+  .card .vr .vn { display: flex; align-items: center; min-width: 0; }
+  .card .vnt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card .vimp { flex: none; }
+  .card .vimp { display: inline-block; margin-left: 4px; font-size: 10px; background: linear-gradient(135deg, #7c3aed, #db2777); color: #ffffff; border-radius: 999px; padding: 0 5px; line-height: 15px; vertical-align: middle; }
+  .card.hoja .imp { margin: 12px 0 0; padding: 10px 12px; }
+  .card.hoja .imp-t { font-size: 14px; }
+  .card.hoja .imp-s { font-size: 10px; }
+  .card.hoja .imp-ico { width: 34px; height: 34px; font-size: 20px; }
+  .card.hoja .imp-r { padding: 4px 10px; margin-top: 5px; }
+  .card.hoja .imp-hd { margin-bottom: 4px; }
+  .card.hoja .imp-bar { height: 8px; margin: 3px 0; }
+  .card.hoja .imp-bar i { height: 8px; }
+  .card.hoja .imp-n { font-size: 12px; }
+  .card.hoja .imp-v b { font-size: 16px; }
+  .card.hoja .imp-f { font-size: 10px; }
   .card .lg { display: inline-block; width: 12px; height: 8px; border-radius: 4px; vertical-align: middle; margin-right: 2px; }
   .card .legend { font-size: 10px; color: #6b7280; padding: 4px 16px 0; }
   .card .ft {
@@ -440,6 +472,15 @@
         <button id="b-cumpl-pp">Solo Pospago y Prepago</button>
       </div>
       <div class="ind-grid" id="cumpl-grid"></div>
+    </details>
+    <details id="d-imp" style="margin-top:10px">
+      <summary style="cursor:pointer;font-weight:700">⚡ Indicadores de impulso del mes: <span id="imp-desc" style="font-weight:400;color:var(--ink-2)"></span></summary>
+      <p style="margin:8px 0;color:var(--ink-2);font-size:13px">Elige los productos que este mes dan mayor calificación al asesor (por ejemplo Amigo Paguitos). Se destacan en un bloque especial de la tarjeta, la imagen y el PDF, y se marcan con ⚡ en la lista de ventas. Se guarda para el mes seleccionado.</p>
+      <div class="controls" style="margin-bottom:8px">
+        <label>Mensaje <input type="text" id="imp-msg" style="width:320px" maxlength="80"></label>
+        <button id="b-imp-ninguno">Quitar todos</button>
+      </div>
+      <div class="ind-grid" id="imp-grid"></div>
     </details>
   </section>
 
@@ -700,6 +741,11 @@ const indicadoresVisibles = () => indicadoresActivos().filter(i => visible(i.id)
 const encuestasVisibles = () => ENCUESTAS.filter(e => !CALIDEZ.some(c => c.enc === e.id) && visible('ENC|' + e.id));
 
 // Indicadores que cuentan para el % de cumplimiento del mes (state.ppto.cumplSel; null = todos).
+// Indicadores de impulso del mes (state.ppto.impulso): se destacan en la tarjeta.
+const MSG_IMPULSO = '¡Estos productos te ayudan a subir tu calificación!';
+const indicadoresImpulso = () => { const sel = state.ppto.impulso || []; return indicadoresActivos().filter(i => sel.includes(i.id)); };
+const esImpulso = id => (state.ppto.impulso || []).includes(id);
+
 function indicadoresCumpl() {
   const act = indicadoresActivos(), sel = state.ppto.cumplSel;
   return sel ? act.filter(i => sel.includes(i.id)) : act;
@@ -1162,11 +1208,34 @@ function filaVenta(a, ind, nombre, ritmo, reales, estiloSolo) {
   const chip = { ok: '✓ ¡Logrado!', ritmo: `Faltan ${faltan}`, bajo: `Faltan ${faltan}`, cero: '¡Por la 1ª!', nd: '' }[niv];
   // estiloSolo: categoría de un solo producto, se dibuja como un solo renglón con el color de la categoría.
   return `<div class="vr${estiloSolo ? ' solo' : ''}"${estiloSolo ? ` style="border-left-color:${estiloSolo.color};background:${hexA(estiloSolo.color, 0.12)}"` : ''}>
-    <div class="vn">${estiloSolo ? `<span class="vg-i">${estiloSolo.icono}</span><span class="vg-n" style="color:${oscurecer(estiloSolo.color, 0.28)}">${esc(nombre)}</span>` : esc(nombre)}</div>
+    <div class="vn">${estiloSolo ? `<span class="vg-i">${estiloSolo.icono}</span><span class="vg-n" style="color:${oscurecer(estiloSolo.color, 0.28)}">${esc(nombre)}</span>` : `<span class="vnt">${esc(nombre)}</span>`}${esImpulso(ind.id) ? '<span class="vimp">⚡</span>' : ''}</div>
     <div class="vt"><i style="width:${pct == null ? 0 : Math.min(pct, 1) * 100}%;background:${fondoNivel(niv)}"></i></div>
     <div class="vc"><b>${real ?? '—'}</b><span>/${meta}</span></div>
     <div class="vp"><span style="background:${fondoNivel(niv)}">${pct == null ? '—' : Math.round(pct * 100) + '%'}</span></div>
     <div class="vs ${niv}">${chip}</div>
+  </div>`;
+}
+
+function impulsoHTML(a, reales, ritmo) {
+  const inds = indicadoresImpulso().filter(i => a.metas[i.id] > 0);
+  if (!inds.length) return '';
+  const quedan = Math.max(diasDelMes(state.ppto.mes) - (diaCorte() ?? 0), 0);
+  return `<div class="imp">
+    <div class="imp-hd"><span class="imp-ico">⚡</span><div>
+      <div class="imp-t">Impulso del mes</div>
+      <div class="imp-s">${esc(state.ppto.impulsoMsg || MSG_IMPULSO)}</div></div></div>
+    ${inds.map(i => {
+      const meta = a.metas[i.id], real = reales ? reales[i.id] : null;
+      const niv = nivelVenta(real, meta, ritmo), faltan = real == null ? null : Math.max(meta - real, 0);
+      const pie = real == null ? `Meta del mes: ${meta}` : niv === 'ok' ? '✓ ¡Logrado! Sigue sumando'
+        : `Faltan ${faltan}${quedan ? ` · ≈ ${Math.ceil(faltan / quedan * 10) / 10} al día` : ''}`;
+      return `<div class="imp-r">
+        <div class="imp-top"><span class="imp-n">${esc(i.sub ? `${cap(i.grupo)} ${i.sub}` : cap(i.grupo))}</span>
+          <span class="imp-v"><b>${real ?? '—'}</b> / ${meta}</span></div>
+        <div class="imp-bar"><i style="width:${real == null ? 0 : Math.min(real / meta, 1) * 100}%;background:${fondoNivel(niv)}"></i></div>
+        <div class="imp-f ${niv}">${pie}</div>
+      </div>`;
+    }).join('')}
   </div>`;
 }
 
@@ -1177,10 +1246,13 @@ function logrosHTML(a, indicadores, reales) {
   const conMeta = indicadores.filter(i => a.metas[i.id] > 0);
   const nombre = i => i.sub ? `${cap(i.grupo)} ${i.sub}` : cap(i.grupo);
   const logrados = conMeta.filter(i => reales[i.id] >= a.metas[i.id]);
-  const pendientes = conMeta.filter(i => reales[i.id] < a.metas[i.id])
+  // Los de impulso ya tienen su propio bloque; el espacio que dejan se usa para más pendientes.
+  const nImp = indicadoresImpulso().filter(i => a.metas[i.id] > 0).length;
+  const maxPend = Math.max((formatoHoja === 'letter' ? 5 : 6) - nImp, 2);
+  const pendientes = conMeta.filter(i => reales[i.id] < a.metas[i.id] && !esImpulso(i.id))
     .map(i => ({ i, faltan: a.metas[i.id] - reales[i.id] }))
-    .sort((x, y) => y.faltan - x.faltan).slice(0, formatoHoja === 'letter' ? 3 : 4);
-  const maxChips = formatoHoja === 'letter' ? 5 : 7;
+    .sort((x, y) => y.faltan - x.faltan).slice(0, maxPend);
+  const maxChips = Math.max((formatoHoja === 'letter' ? 6 : 8) - nImp, 3);
   return `<div class="logros">
     <div class="lg-b ok"><div class="lg-t">🏆 Tus logros del mes</div>
       ${logrados.length ? `<div class="lg-chips">${logrados.slice(0, maxChips).map(i => `<span>✓ ${esc(nombre(i))}</span>`).join('')}${logrados.length > maxChips ? `<span>+${logrados.length - maxChips} más</span>` : ''}</div>`
@@ -1277,11 +1349,11 @@ function tarjetaHTML(e, a, hoja = false) {
     return `<div class="card hoja${formatoHoja === 'letter' ? ' carta' : ''}" style="width:${w}px;min-height:${h}px">${partes.hd}
     <div class="hoja-top">${partes.banner}</div>
     <div class="hoja-body">
-      <div class="hoja-izq">${partes.hero}${partes.enc}${logrosHTML(a, indicadores, reales)}${partes.rubros}</div>
+      <div class="hoja-izq">${impulsoHTML(a, reales, ritmo)}${partes.enc}${logrosHTML(a, indicadores, reales)}</div>
       <div class="hoja-der">${partes.ventas}</div>
     </div>${partes.ft}</div>`;
   }
-  return `<div class="card">${partes.hd}${partes.banner}${partes.hero}${partes.enc}${partes.rubros}${partes.ventas}${partes.ft}</div>`;
+  return `<div class="card">${partes.hd}${partes.banner}${impulsoHTML(a, reales, ritmo)}${partes.hero}${partes.enc}${partes.rubros}${partes.ventas}${partes.ft}</div>`;
 }
 
 // Vista previa de la hoja, reducida para que quepa en pantalla (la descarga se genera a tamaño completo).
@@ -1348,6 +1420,7 @@ function render() {
   renderEquipos();
   renderSelector();
   renderCumpl();
+  renderImpulso();
   renderAjustes();
   renderTarjetas();
 }
@@ -1935,6 +2008,30 @@ function renderCumpl() {
     guardarSel(act.filter(i => ['POSPAGO', 'PREPAGO'].includes(key(i.grupo))).map(i => i.id));
 }
 
+function renderImpulso() {
+  const act = indicadoresActivos(), sel = indicadoresImpulso();
+  document.getElementById('imp-desc').textContent = sel.length
+    ? sel.map(i => i.sub ? `${cap(i.grupo)} ${i.sub.toLowerCase()}` : cap(i.grupo)).join(', ') : 'ninguno';
+  const msg = document.getElementById('imp-msg');
+  msg.placeholder = MSG_IMPULSO;
+  msg.value = state.ppto.impulsoMsg || '';
+  const grupos = [...new Set(act.map(i => i.grupo))];
+  document.getElementById('imp-grid').innerHTML = grupos.map(g => {
+    const items = act.filter(i => i.grupo === g);
+    return `<div class="ind-g"><b>${esc(cap(g))}</b>
+      ${items.map(i => `<label><input type="checkbox" data-id="${esc(i.id)}" ${sel.includes(i) ? 'checked' : ''}> ${esc(i.sub || cap(g))}</label>`).join('')}
+    </div>`;
+  }).join('');
+  const guardarImp = ids => { state.ppto.impulso = ids.length ? ids : null; guardar(); renderImpulso(); renderTarjetas(); };
+  document.querySelectorAll('#imp-grid input').forEach(cb => cb.onchange = () => {
+    const ids = new Set(indicadoresImpulso().map(i => i.id));
+    cb.checked ? ids.add(cb.dataset.id) : ids.delete(cb.dataset.id);
+    guardarImp(act.map(i => i.id).filter(id => ids.has(id)));
+  });
+  document.getElementById('b-imp-ninguno').onclick = () => guardarImp([]);
+  msg.onchange = () => { state.ppto.impulsoMsg = msg.value.trim() || null; guardar(); renderTarjetas(); };
+}
+
 function renderSelector() {
   const grupos = [];
   indicadoresActivos().forEach(i => {
@@ -2107,6 +2204,8 @@ document.getElementById('f-ppto').onchange = async ev => {
     if (previo && previo.encuestas) ppto.encuestas = previo.encuestas;
     if (previo && previo.ajustes) ppto.ajustes = previo.ajustes;
     if (previo && previo.cumplSel) ppto.cumplSel = previo.cumplSel.filter(id => ppto.indicadores.some(i => i.id === id));
+    if (previo && previo.impulso) ppto.impulso = previo.impulso.filter(id => ppto.indicadores.some(i => i.id === id));
+    if (previo && previo.impulsoMsg) ppto.impulsoMsg = previo.impulsoMsg;
     state.meses[k] = ppto;
     seleccionarMes(k);
   } catch (err) {
