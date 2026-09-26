@@ -307,6 +307,15 @@
       <label>Fecha de corte <input type="date" id="corte"></label>
       <button id="b-borrar">Eliminar este mes</button>
     </div>
+    <details id="d-cumpl" style="margin-top:10px">
+      <summary style="cursor:pointer;font-weight:700">% de cumplimiento de ventas: <span id="cumpl-desc" style="font-weight:400;color:var(--ink-2)"></span></summary>
+      <p style="margin:8px 0;color:var(--ink-2);font-size:13px">Elige qué indicadores se toman en cuenta para el «Cumplimiento de ventas», «Indicadores cumplidos», la medalla del equipo y el estimado al cierre del Panel supervisor. Se guarda para el mes seleccionado. Los demás indicadores se siguen mostrando en la tarjeta, pero no suman al porcentaje.</p>
+      <div class="controls" style="margin-bottom:8px">
+        <button id="b-cumpl-todos">Todos los indicadores</button>
+        <button id="b-cumpl-pp">Solo Pospago y Prepago</button>
+      </div>
+      <div class="ind-grid" id="cumpl-grid"></div>
+    </details>
   </section>
 
   <div id="tab-tarjetas">
@@ -336,7 +345,7 @@
   <section class="panel" id="p-indicadores" hidden>
     <details>
       <summary style="cursor:pointer;font-weight:700">3. Indicadores que se muestran en la tarjeta <span id="ind-cuenta" style="font-weight:400;color:var(--muted);font-size:13px"></span></summary>
-      <p style="margin:8px 0;color:var(--ink-2);font-size:13px">Los indicadores de venta que desmarques tampoco cuentan en «Cumplimiento de ventas» ni en «Indicadores cumplidos». Los rubros se calculan siempre con su regla. La selección se guarda en este navegador y aplica a todos los meses.</p>
+      <p style="margin:8px 0;color:var(--ink-2);font-size:13px">Solo controla qué se muestra en la tarjeta. Qué indicadores cuentan para el % de cumplimiento se elige arriba, en «% de cumplimiento de ventas». Los rubros se calculan siempre con su regla. La selección se guarda en este navegador y aplica a todos los meses.</p>
       <div class="controls" style="margin-bottom:8px">
         <button id="b-ind-todos">Marcar todos</button>
         <button id="b-ind-ninguno">Desmarcar todos</button>
@@ -562,6 +571,23 @@ const indicadoresVisibles = () => indicadoresActivos().filter(i => visible(i.id)
 // Las encuestas que forman la calidez van en su propio bloque; la tabla de encuestas muestra el resto.
 const encuestasVisibles = () => ENCUESTAS.filter(e => !CALIDEZ.some(c => c.enc === e.id) && visible('ENC|' + e.id));
 
+// Indicadores que cuentan para el % de cumplimiento del mes (state.ppto.cumplSel; null = todos).
+function indicadoresCumpl() {
+  const act = indicadoresActivos(), sel = state.ppto.cumplSel;
+  return sel ? act.filter(i => sel.includes(i.id)) : act;
+}
+const primeraMay = t => t ? t[0].toUpperCase() + t.slice(1) : t;
+function descCumpl() {
+  const act = indicadoresActivos(), sel = indicadoresCumpl();
+  if (sel.length === act.length) return `todos los indicadores (${act.length})`;
+  if (!sel.length) return 'ningún indicador seleccionado';
+  const grupos = [...new Set(act.map(i => i.grupo))];
+  const completos = grupos.filter(g => act.filter(i => i.grupo === g).every(i => sel.includes(i)));
+  const sueltos = sel.filter(i => !completos.includes(i.grupo));
+  const partes = [...completos.map(cap), ...sueltos.map(i => cap(i.grupo) + (i.sub ? ' ' + i.sub.toLowerCase() : ''))];
+  return partes.length <= 4 ? partes.join(', ').replace(/, ([^,]*)$/, ' y $1') : `${sel.length} indicadores`;
+}
+
 function buscarIndicador(indicadores, grupo, sub) {
   return indicadores.find(i => key(i.grupo).startsWith(grupo) && key(i.sub).includes(sub)) || null;
 }
@@ -740,7 +766,7 @@ function estado(pct, ritmo) {
 
 // Cumplimiento general: promedio del avance de cada indicador con meta, topando cada uno en 100%.
 function resumenAsesor(a, real) {
-  const inds = indicadoresVisibles().filter(i => a.metas[i.id] > 0);
+  const inds = indicadoresCumpl().filter(i => a.metas[i.id] > 0);
   if (!real) return { cumplidos: null, total: inds.length, promedio: null };
   const pcts = inds.map(i => Math.min(real[i.id] / a.metas[i.id], 1));
   return {
@@ -1004,10 +1030,10 @@ function tarjetaHTML(e, a) {
     </div>
     ${reales ? mensajeHTML(a, res, ritmo, reales, indicadores) : ''}
     <div class="hero">
-      ${indicadores.length ? `<div><div class="lbl">Cumplimiento de ventas</div>
+      ${indicadoresCumpl().length ? `<div><div class="lbl">Cumplimiento de ventas</div>
         <div class="kring">${anilloHTML(res.promedio, general)}
           <div class="val">${res.promedio == null ? '—' : Math.round(res.promedio * 100) + '%'}</div></div>
-        <div class="sub">${res.promedio == null ? 'Pendiente de cargar ventas' : `Promedio de ${res.total} indicadores`}</div></div>
+        <div class="sub">${res.promedio == null ? (reales ? 'Sin metas en los indicadores elegidos' : 'Pendiente de cargar ventas') : indicadoresCumpl().length === indicadoresActivos().length ? `Promedio de ${res.total} indicadores` : esc(primeraMay(descCumpl()))}</div></div>
       <div><div class="lbl">Indicadores cumplidos</div>
         <div class="val">${res.cumplidos == null ? '—' : res.cumplidos} <span style="font-size:15px;color:#6b7280">/ ${res.total}</span></div>
         <div class="sub">${ritmo == null ? '' : 'Ritmo esperado al corte: ' + Math.round(ritmo * 100) + '%'}</div></div>` : ''}
@@ -1083,6 +1109,7 @@ function render() {
   if (state.equipoSel == null || state.equipoSel >= state.ppto.equipos.length) state.equipoSel = 0;
   renderEquipos();
   renderSelector();
+  renderCumpl();
   renderAjustes();
   renderTarjetas();
 }
@@ -1208,7 +1235,9 @@ function datosPanel() {
   const asesores = equipos.flatMap(e => e.asesores.map(a => {
     const real = realAsesor(a) || {};
     const conMeta = inds.filter(i => a.metas[i.id] > 0);
-    const prom = f => conMeta.length ? conMeta.reduce((t, i) => t + Math.min(f(i) / a.metas[i.id], 1), 0) / conMeta.length : null;
+    // El cumplimiento y el estimado usan solo los indicadores elegidos para el % de cumplimiento.
+    const cuentan = indicadoresCumpl().filter(i => a.metas[i.id] > 0);
+    const prom = f => cuentan.length ? cuentan.reduce((t, i) => t + Math.min(f(i) / a.metas[i.id], 1), 0) / cuentan.length : null;
     const enc = ppto.encuestas ? ppto.encuestas.porUser[a.user] || null : null;
     return {
       a, e,
@@ -1272,7 +1301,7 @@ function renderPanel() {
 
   const kpis = `<div class="g-kpis">
     <div class="g-kpi"><div class="l">Asesores</div><div class="v">${g.asesores.length}</div><div class="s">${g.porEquipo.length} equipo(s)</div></div>
-    <div class="g-kpi"><div class="l">Cumplimiento al corte</div><div class="v">${pctTxt(cumpl)}</div><div class="s">Ritmo esperado ${pctTxt(g.dc / g.D)}</div></div>
+    <div class="g-kpi"><div class="l">Cumplimiento al corte</div><div class="v">${pctTxt(cumpl)}</div><div class="s">Ritmo esperado ${pctTxt(g.dc / g.D)} · ${esc(descCumpl())}</div></div>
     <div class="g-kpi"><div class="l">Estimado al cierre</div><div class="v" style="color:${semaforo(proy).color}">${pctTxt(proy)}</div><div class="s">${stTxt(proy)} · promedio por asesor</div></div>
     <div class="g-kpi"><div class="l">Indicadores que llegan a la meta</div><div class="v">${indLlegan} <span style="font-size:15px;color:var(--muted)">/ ${g.porInd.length}</span></div><div class="s">Según el estimado al cierre</div></div>
     <div class="g-kpi"><div class="l">Indicadores en cero</div><div class="v" style="color:${ceros ? STATUS.critical : STATUS.good}">${ceros}</div><div class="s">de ${pares} asesor-indicador con meta (${pctTxt(pares ? ceros / pares : null)})</div></div>
@@ -1512,6 +1541,38 @@ function renderMapeo() {
   ].filter(Boolean).join(' ');
 }
 
+function renderCumpl() {
+  const act = indicadoresActivos(), sel = indicadoresCumpl();
+  document.getElementById('cumpl-desc').textContent = primeraMay(descCumpl());
+  const grupos = [...new Set(act.map(i => i.grupo))];
+  document.getElementById('cumpl-grid').innerHTML = grupos.map(g => {
+    const items = act.filter(i => i.grupo === g);
+    const todos = items.every(i => sel.includes(i)), alguno = items.some(i => sel.includes(i));
+    return `<div class="ind-g"><label style="font-weight:700"><input type="checkbox" class="cg" data-g="${esc(g)}" ${todos ? 'checked' : ''} ${!todos && alguno ? 'data-mixto="1"' : ''}> ${esc(cap(g))}</label>
+      ${items.length > 1 || items[0].sub ? items.map(i => `<label style="padding-left:18px"><input type="checkbox" class="ci" data-id="${esc(i.id)}" ${sel.includes(i) ? 'checked' : ''}> ${esc(i.sub || cap(g))}</label>`).join('') : ''}
+    </div>`;
+  }).join('');
+  document.querySelectorAll('#cumpl-grid .cg[data-mixto]').forEach(cb => cb.indeterminate = true);
+  const guardarSel = ids => {
+    state.ppto.cumplSel = ids.length === act.length ? null : ids;
+    guardar(); renderCumpl(); renderTarjetas();
+  };
+  const actuales = () => indicadoresCumpl().map(i => i.id);
+  document.querySelectorAll('#cumpl-grid .ci').forEach(cb => cb.onchange = () => {
+    const ids = new Set(actuales());
+    cb.checked ? ids.add(cb.dataset.id) : ids.delete(cb.dataset.id);
+    guardarSel(act.map(i => i.id).filter(id => ids.has(id)));
+  });
+  document.querySelectorAll('#cumpl-grid .cg').forEach(cb => cb.onchange = () => {
+    const ids = new Set(actuales());
+    act.filter(i => i.grupo === cb.dataset.g).forEach(i => cb.checked ? ids.add(i.id) : ids.delete(i.id));
+    guardarSel(act.map(i => i.id).filter(id => ids.has(id)));
+  });
+  document.getElementById('b-cumpl-todos').onclick = () => guardarSel(act.map(i => i.id));
+  document.getElementById('b-cumpl-pp').onclick = () =>
+    guardarSel(act.filter(i => ['POSPAGO', 'PREPAGO'].includes(key(i.grupo))).map(i => i.id));
+}
+
 function renderSelector() {
   const grupos = [];
   indicadoresActivos().forEach(i => {
@@ -1617,6 +1678,7 @@ document.getElementById('f-ppto').onchange = async ev => {
     if (previo && previo.ventas) ppto.ventas = previo.ventas;
     if (previo && previo.encuestas) ppto.encuestas = previo.encuestas;
     if (previo && previo.ajustes) ppto.ajustes = previo.ajustes;
+    if (previo && previo.cumplSel) ppto.cumplSel = previo.cumplSel.filter(id => ppto.indicadores.some(i => i.id === id));
     state.meses[k] = ppto;
     seleccionarMes(k);
   } catch (err) {
