@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root {
     --bg: #f4f5f7; --panel: #ffffff; --ink: #1c1f24; --ink-2: #555b66; --muted: #8a909b;
@@ -290,6 +291,69 @@
   .card .mr.solo .vg-n { font-size: 12px; }
   .card .mm { text-align: center; font-size: 18px; font-weight: 900; color: #1e3a6e; }
   .card .md { text-align: center; font-size: 11px; font-weight: 700; color: #64748b; background: #f1f5f9; border-radius: 999px; padding: 2px 8px; }
+  /* ---------- Versión hoja (PDF carta / A4): dos columnas ---------- */
+  .card.hoja { width: 816px; border-radius: 0; box-shadow: none; display: flex; flex-direction: column; }
+  .card.hoja .hoja-body { flex: 1; }
+  .card.hoja .hoja-izq, .card.hoja .hoja-der { align-self: stretch; display: flex; flex-direction: column; justify-content: space-between; }
+  .card.hoja .hoja-der > .sec { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+  .card.hoja .hd { padding: 16px 22px; }
+  .card.hoja .foto { width: 92px; height: 92px; }
+  .card.hoja .foto img, .card.hoja .foto .ini { width: 84px; height: 84px; }
+  .card.hoja .foto .ini { line-height: 84px; font-size: 32px; }
+  .card.hoja .hd .nombre { font-size: 22px; margin-top: 6px; }
+  .card.hoja .medal { margin-top: 6px; }
+  .card.hoja .hoja-body { display: flex; gap: 14px; padding: 0 16px 6px; }
+  .card.hoja .hoja-izq { width: 340px; flex: none; }
+  .card.hoja .hoja-der { flex: 1; min-width: 0; }
+  .card.hoja .banner { margin: 12px 0 0; padding: 8px 10px; gap: 8px; }
+  .card.hoja .banner .ico { width: 48px; height: 48px; }
+  .card.hoja .banner .ico svg { width: 48px; height: 48px; }
+  .card.hoja .banner .bt { font-size: 13px; }
+  .card.hoja .banner .bs { font-size: 10.5px; }
+  .card.hoja .hero { padding: 10px 0 0; gap: 6px; }
+  .card.hoja .hero > div { padding: 8px; border-radius: 10px; }
+  .card.hoja .hero .lbl, .card.hoja .hero .sub { font-size: 9.5px; }
+  .card.hoja .hero .val { font-size: 19px; }
+  .card.hoja .hero .kring svg { width: 40px; height: 40px; }
+  .card.hoja .hero .kring { gap: 4px; }
+  .card.hoja .calidez { margin: 10px 0 0; border-radius: 12px; }
+  .card.hoja .cz-hd { padding: 8px 10px; }
+  .card.hoja .cz-t { font-size: 12px; }
+  .card.hoja .cz-s { font-size: 9px; }
+  .card.hoja .cz-tot { font-size: 22px; }
+  .card.hoja .cz-fila { padding: 5px 10px; gap: 6px; }
+  .card.hoja .cz-n { width: 92px; font-size: 11px; }
+  .card.hoja .cz-n span { display: none; }
+  .card.hoja .cz-r { width: 56px; font-size: 12px; }
+  .card.hoja .cz-p { width: 64px; font-size: 14px; }
+  .card.hoja .cz-otras { padding: 6px 10px 8px; gap: 6px; }
+  .card.hoja .cz-ov { font-size: 16px; }
+  .card.hoja .sec { padding: 10px 0 2px; }
+  .card.hoja .sec-t { font-size: 11px; margin-bottom: 5px; }
+  .card.hoja .rubros { gap: 6px; }
+  .card.hoja .rubro { padding: 7px; }
+  .card.hoja .rv { font-size: 16px; }
+  .card.hoja .rn, .card.hoja .rs, .card.hoja .rf { font-size: 9.5px; }
+  .card.hoja .hoja-der .sec { padding-top: 12px; }
+  .card.hoja .vh, .card.hoja .vr { grid-template-columns: 128px 1fr 48px 44px 74px; gap: 6px; }
+  .card.hoja .vh { font-size: 8.5px; padding: 0 6px 2px; }
+  .card.hoja .vgrp { margin-bottom: 4px; border-radius: 9px; }
+  .card.hoja .vg { padding: 2px 8px; }
+  .card.hoja .vg-i { font-size: 12px; }
+  .card.hoja .vg-n { font-size: 10.5px; }
+  .card.hoja .vg-t { font-size: 10px; }
+  .card.hoja .vg-t b { font-size: 11px; }
+  .card.hoja .vr { padding: 1px 8px 1px 12px; }
+  .card.hoja .vr.solo { padding: 2px 8px; }
+  .card.hoja .vr.solo .vg-n { font-size: 9.5px; }
+  .card.hoja .vn { font-size: 10.5px; }
+  .card.hoja .vt, .card.hoja .vt i { height: 8px; }
+  .card.hoja .vc b { font-size: 12px; }
+  .card.hoja .vc span { font-size: 9px; }
+  .card.hoja .vp span { font-size: 9.5px; min-width: 36px; padding: 1px 4px; }
+  .card.hoja .vs { font-size: 9px; padding: 1px 4px; }
+  .card.hoja .legend { font-size: 9px; padding: 4px 0 0; }
+  .card.hoja .ft { margin-top: 8px; font-size: 10px; padding: 7px 16px; }
   .card .lg { display: inline-block; width: 12px; height: 8px; border-radius: 4px; vertical-align: middle; margin-right: 2px; }
   .card .legend { font-size: 10px; color: #6b7280; padding: 4px 16px 0; }
   .card .ft {
@@ -392,6 +456,8 @@
     <h2>4. Tarjetas</h2>
     <div class="controls">
       <button class="primary" id="b-zip">Descargar todas las del equipo (ZIP)</button>
+      <button id="b-pdf-eq">PDF del equipo (una hoja por asesor)</button>
+      <label>Hoja <select id="hoja-fmt"><option value="letter">Carta</option><option value="a4">A4</option></select></label>
       <label class="upload-btn" style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);cursor:pointer">Cargar varias fotos
         <input type="file" id="f-fotos" accept="image/*" multiple hidden></label>
       <span id="zip-st" style="color:var(--muted);font-size:13px"></span>
@@ -1099,7 +1165,8 @@ function ventasHTML(a, indicadores, ritmo, reales) {
   }).join('');
 }
 
-function tarjetaHTML(e, a) {
+// hoja = true: versión a dos columnas para imprimir en una hoja (PDF carta / A4).
+function tarjetaHTML(e, a, hoja = false) {
   const { mes } = state.ppto;
   const indicadores = indicadoresVisibles();
   const ritmo = ritmoEsperado();
@@ -1114,8 +1181,8 @@ function tarjetaHTML(e, a) {
   const lugar = reales && indicadores.length ? lugarEnEquipo(e, a) : null;
   const MEDALLAS = { 1: '🥇 1er lugar del equipo', 2: '🥈 2º lugar del equipo', 3: '🥉 3er lugar del equipo' };
 
-  return `<div class="card">
-    <div class="hd">
+  const partes = {};
+  partes.hd = `<div class="hd">
       <div class="deco d1"></div><div class="deco d2"></div>
       <div class="hd-in">
         ${avatarHTML(a, general)}
@@ -1126,9 +1193,9 @@ function tarjetaHTML(e, a) {
           ${lugar ? `<div class="medal">${MEDALLAS[lugar]}</div>` : ''}
         </div>
       </div>
-    </div>
-    ${reales ? mensajeHTML(a, res, ritmo, reales, indicadores) : ''}
-    <div class="hero">
+    </div>`;
+  partes.banner = reales ? mensajeHTML(a, res, ritmo, reales, indicadores) : '';
+  partes.hero = `<div class="hero">
       ${indicadoresCumpl().length ? `<div><div class="lbl">Cumplimiento de ventas</div>
         <div class="kring">${anilloHTML(res.promedio, general)}
           <div class="val">${res.promedio == null ? '—' : Math.round(res.promedio * 100) + '%'}</div></div>
@@ -1139,10 +1206,10 @@ function tarjetaHTML(e, a) {
       ${visible('ENC|tnps') ? `<div><div class="lbl">TNPS (objetivo ${ENCUESTAS[0].objetivo})</div>
         <div class="val">${enc ? fmtScore(enc.tnps.valor) : '—'}</div>
         <div class="sub">${!state.ppto.encuestas ? 'Pendiente de cargar encuestas' : enc ? `${enc.tnps.base} encuestas` : 'Sin encuestas'}</div></div>` : ''}
-    </div>
-    ${encuestasBloqueHTML(enc)}
-    ${visible('RUBROS') ? rubrosHTML(rubrosAsesor(a, reales)) : ''}
-    ${filas ? `<div class="sec">
+    </div>`.replace(/<div class="hero">\s*<\/div>/, '');
+  partes.enc = encuestasBloqueHTML(enc);
+  partes.rubros = visible('RUBROS') ? rubrosHTML(rubrosAsesor(a, reales)) : '';
+  partes.ventas = filas ? `<div class="sec">
       <div class="sec-t">Ventas</div>
       <div class="vh"><span>Indicador</span><span>Avance</span><span>Llevas</span><span>%</span><span></span></div>
       ${filas}
@@ -1152,10 +1219,17 @@ function tarjetaHTML(e, a) {
       <span class="lg" style="background:${TONO.ritmo}"></span> En ritmo ·
       <span class="lg" style="background:${TONO.bajo}"></span> Abajo del ritmo${ritmo != null ? ` (${Math.round(ritmo * 100)}% del mes)` : ''} ·
       <span class="lg" style="background:#cbd5e1"></span> Sin ventas aún
-    </div>` : ''}
+    </div>` : '';
+  partes.ft = `<div class="ft"><span>${corte ? 'Ventas acumuladas al ' + corte.split('-').reverse().join('/') : ''}${ajustesDe(a).length ? ` · incluye ${ajustesDe(a).reduce((t, j) => t + j.cantidad, 0)} venta(s) capturada(s) a mano` : ''}</span><b>¡Vamos por más!</b></div>`;
 
-    <div class="ft"><span>${corte ? 'Ventas acumuladas al ' + corte.split('-').reverse().join('/') : ''}${ajustesDe(a).length ? ` · incluye ${ajustesDe(a).reduce((t, j) => t + j.cantidad, 0)} venta(s) capturada(s) a mano` : ''}</span><b>¡Vamos por más!</b></div>
-  </div>`.replace(/<div class="hero">\s*<\/div>/, '');
+  // La hoja toma la proporción del papel elegido (carta 8.5×11, A4 210×297) y reparte el contenido a lo alto.
+  const altoHoja = Math.round(816 * (formatoHoja === 'a4' ? 297 / 210 : 11 / 8.5));
+  if (hoja) return `<div class="card hoja" style="min-height:${altoHoja}px">${partes.hd}
+    <div class="hoja-body">
+      <div class="hoja-izq">${partes.banner}${partes.hero}${partes.enc}${partes.rubros}</div>
+      <div class="hoja-der">${partes.ventas}</div>
+    </div>${partes.ft}</div>`;
+  return `<div class="card">${partes.hd}${partes.banner}${partes.hero}${partes.enc}${partes.rubros}${partes.ventas}${partes.ft}</div>`;
 }
 
 function renderTarjetas() {
@@ -1166,10 +1240,17 @@ function renderTarjetas() {
       <div class="card-scale" id="card-${i}">${tarjetaHTML(e, a)}</div>
       <div class="foto-ctl">
         <button data-i="${i}" class="b-png">Descargar imagen</button>
+        <button data-i="${i}" class="b-pdf">PDF</button>
         <label>${fotos[a.user] ? 'Cambiar foto' : 'Agregar foto'}<input type="file" accept="image/*" data-u="${esc(a.user)}" class="f-foto" hidden></label>
         ${fotos[a.user] ? `<button data-u="${esc(a.user)}" class="b-quitar">Quitar foto</button>` : ''}
       </div>
     </div>`).join('');
+  document.querySelectorAll('.b-pdf').forEach(b => b.onclick = async () => {
+    const a = e.asesores[Number(b.dataset.i)];
+    b.disabled = true;
+    try { await pdfAsesores([{ e, a }], nombreArchivo(e, a).replace(/\.png$/, '.pdf')); }
+    finally { b.disabled = false; }
+  });
   document.querySelectorAll('.f-foto').forEach(inp => inp.onchange = async () => {
     const file = inp.files[0];
     if (!file) return;
@@ -1825,6 +1906,36 @@ function renderSelector() {
 }
 
 // ---------- Imágenes ----------
+// ---------- PDF (una hoja por asesor, carta o A4) ----------
+const HOJA_KEY = 'tarjetas-asesores-hoja';
+let formatoHoja = 'letter';
+try { formatoHoja = localStorage.getItem(HOJA_KEY) === 'a4' ? 'a4' : 'letter'; } catch (_) {}
+
+async function pdfAsesores(lista, nombre, st) {
+  if (!window.jspdf) { alert('No se pudo cargar la librería de PDF. Revisa tu conexión a internet.'); return; }
+  const doc = new window.jspdf.jsPDF({ unit: 'pt', format: formatoHoja, orientation: 'portrait' });
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 22;
+  const caja = document.createElement('div');
+  caja.style.cssText = 'position:fixed;left:-10000px;top:0;';
+  document.body.appendChild(caja);
+  try {
+    for (let k = 0; k < lista.length; k++) {
+      if (st) st.textContent = `Generando PDF ${k + 1} de ${lista.length}…`;
+      caja.innerHTML = tarjetaHTML(lista[k].e, lista[k].a, true);
+      const canvas = await html2canvas(caja.firstElementChild, { scale: 2.2, backgroundColor: '#ffffff', logging: false });
+      // Se ajusta a la hoja sin deformar: el lado que más limite define la escala.
+      const r = Math.min((W - 2 * M) / canvas.width, (H - 2 * M) / canvas.height);
+      const w = canvas.width * r, h = canvas.height * r;
+      if (k) doc.addPage();
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', (W - w) / 2, (H - h) / 2, w, h);
+    }
+    doc.save(nombre);
+  } finally {
+    caja.remove();
+    if (st) st.textContent = '';
+  }
+}
+
 async function cardBlob(el) {
   const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', logging: false });
   return new Promise(res => canvas.toBlob(res, 'image/png'));
@@ -1839,6 +1950,19 @@ function descargar(blob, name) {
   document.body.appendChild(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+document.getElementById('hoja-fmt').value = formatoHoja;
+document.getElementById('hoja-fmt').onchange = ev => {
+  formatoHoja = ev.target.value;
+  try { localStorage.setItem(HOJA_KEY, formatoHoja); } catch (_) {}
+};
+document.getElementById('b-pdf-eq').onclick = async () => {
+  const e = state.ppto.equipos[state.equipoSel];
+  const btn = document.getElementById('b-pdf-eq');
+  btn.disabled = true;
+  try { await pdfAsesores(e.asesores.map(a => ({ e, a })), `${e.nombre} - ${mesTxt(state.ppto.mes)}.pdf`, document.getElementById('zip-st')); }
+  finally { btn.disabled = false; }
+};
 
 document.getElementById('b-zip').onclick = async () => {
   const e = state.ppto.equipos[state.equipoSel];
