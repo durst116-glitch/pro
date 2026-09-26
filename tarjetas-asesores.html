@@ -191,7 +191,7 @@
   .card .banner {
     margin: 14px 16px 0; border-radius: 14px; padding: 12px 14px; display: flex; gap: 12px; align-items: center;
   }
-  .card .banner .ico { font-size: 28px; line-height: 1; }
+  .card .banner .ico { width: 64px; height: 64px; flex: none; line-height: 0; }
   .card .banner .bt { font-size: 15px; font-weight: 800; }
   .card .banner .bs { font-size: 12px; margin-top: 2px; line-height: 1.35; }
   .card .hero { display: flex; gap: 10px; padding: 14px 16px 0; }
@@ -867,6 +867,41 @@ function anilloHTML(pct, color) {
   </svg>`;
 }
 
+// Ilustraciones del mensaje motivacional: carita feliz + insignia según el nivel.
+// Íconos de insignia basados en Material Icons (Apache 2.0).
+const ICONOS_BADGE = {
+  trofeo: 'M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z',
+  like: 'M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z',
+  sube: 'M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z',
+};
+const ESTRELLA = 'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z';
+
+function carita(tipo) {
+  const cfg = {
+    cumplida: { badge: 'trofeo', color: '#f59e0b', ojos: 'estrella', boca: 'abierta' },
+    ritmo: { badge: 'like', color: '#16a34a', ojos: 'felices', boca: 'abierta' },
+    cerca: { badge: 'sube', color: '#f59e0b', ojos: 'normales', boca: 'sonrisa' },
+    puedes: { badge: 'like', color: '#2563eb', ojos: 'guino', boca: 'sonrisa' },
+  }[tipo];
+  const ojo = (x) => cfg.ojos === 'estrella'
+    ? `<path d="${ESTRELLA}" fill="#e11d48" transform="translate(${x - 5.5},18) scale(0.46)"/>`
+    : cfg.ojos === 'felices' ? `<path d="M${x - 4} 25 q4 -5 8 0" stroke="#3f2a00" stroke-width="2.6" fill="none" stroke-linecap="round"/>`
+    : `<ellipse cx="${x}" cy="24" rx="2.6" ry="3.4" fill="#3f2a00"/>`;
+  const ojos = cfg.ojos === 'guino'
+    ? `${ojo(20)}<path d="M32 24.5 q4 -3.5 8 0" stroke="#3f2a00" stroke-width="2.6" fill="none" stroke-linecap="round"/>`
+    : ojo(20) + ojo(36);
+  const boca = cfg.boca === 'abierta'
+    ? '<path d="M17 34 q11 14 22 0 z" fill="#7c2d12"/><path d="M21 39.5 q7 4 14 0 q-7 -2 -14 0z" fill="#fb7185"/>'
+    : '<path d="M18 34 q10 9 20 0" stroke="#3f2a00" stroke-width="3" fill="none" stroke-linecap="round"/>';
+  return `<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+    <circle cx="28" cy="29" r="24" fill="#ffd43b" stroke="#f0a500" stroke-width="2"/>
+    <circle cx="13" cy="33" r="3.5" fill="#ff8fa3" opacity=".55"/><circle cx="43" cy="33" r="3.5" fill="#ff8fa3" opacity=".55"/>
+    ${ojos}${boca}
+    <circle cx="49" cy="48" r="14" fill="${cfg.color}" stroke="#ffffff" stroke-width="3"/>
+    <path d="${ICONOS_BADGE[cfg.badge]}" fill="#ffffff" transform="translate(41.5,40.5) scale(0.62)"/>
+  </svg>`;
+}
+
 // Mensaje motivacional según el avance contra el ritmo del mes.
 function mensajeHTML(a, res, ritmo, reales, indicadores) {
   if (res.promedio == null) return '';
@@ -884,10 +919,10 @@ function mensajeHTML(a, res, ritmo, reales, indicadores) {
     ? `Destacas en ${mejor.i.sub ? `${cap(mejor.i.grupo)} ${mejor.i.sub}` : cap(mejor.i.grupo)} (${Math.round(mejor.pct * 100)}%). ` : '';
   const dias = quedan ? ` Quedan ${quedan} días.` : '';
   let m;
-  if (res.promedio >= 1) m = { ico: '🏆', t: '¡Meta del mes cumplida!', s: 'Gracias por tu gran trabajo, eres ejemplo para tu equipo.', bg: '#dcfce7', fg: '#14532d' };
-  else if (ritmo != null && res.promedio >= ritmo) m = { ico: '🚀', t: '¡Vas en ritmo, sigue así!', s: `Mantén el paso para cerrar el mes arriba.${dias}`, bg: '#dbeafe', fg: '#1e3a8a' };
-  else if (ritmo != null && res.promedio >= ritmo * 0.8) m = { ico: '💪', t: '¡Estás muy cerca del ritmo!', s: `${destaca}${foco}${dias}`, bg: '#fef3c7', fg: '#78350f' };
-  else m = { ico: '🔥', t: '¡Tú puedes lograrlo!', s: `${destaca}${foco}${dias} Cada venta cuenta.`, bg: '#ffe4e6', fg: '#881337' };
+  if (res.promedio >= 1) m = { ico: carita('cumplida'), t: '¡Meta del mes cumplida!', s: 'Gracias por tu gran trabajo, eres ejemplo para tu equipo.', bg: '#dcfce7', fg: '#14532d' };
+  else if (ritmo != null && res.promedio >= ritmo) m = { ico: carita('ritmo'), t: '¡Vas en ritmo, sigue así!', s: `Mantén el paso para cerrar el mes arriba.${dias}`, bg: '#dbeafe', fg: '#1e3a8a' };
+  else if (ritmo != null && res.promedio >= ritmo * 0.8) m = { ico: carita('cerca'), t: '¡Estás muy cerca del ritmo!', s: `${destaca}${foco}${dias}`, bg: '#fef3c7', fg: '#78350f' };
+  else m = { ico: carita('puedes'), t: '¡Tú puedes lograrlo!', s: `${destaca}${foco}${dias} Cada venta cuenta.`, bg: '#ffe4e6', fg: '#881337' };
   return `<div class="banner" style="background:${m.bg};color:${m.fg}">
     <div class="ico">${m.ico}</div><div><div class="bt">${m.t}</div><div class="bs">${esc(m.s.trim())}</div></div></div>`;
 }
