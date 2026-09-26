@@ -551,6 +551,10 @@
   .ef-r span { font-weight: 700; min-width: 200px; }
   .ef-r input { width: 80px; }
   @media (max-width: 800px) { .c-res, .c-grid { grid-template-columns: 1fr; } }
+  .borrado { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); font-size: 13px; color: var(--ink-2); }
+  .borrado button { font-size: 13px; }
+  .peligro { color: #b42318; border-color: #f3b4ae; }
+  .chk-cal { display: flex; align-items: center; gap: 6px; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -585,6 +589,12 @@
         <input type="file" id="f-enc" accept=".csv,.xlsx,.xls" disabled>
         <div class="status" id="st-enc">Primero carga el presupuesto del mes.</div>
       </div>
+    </div>
+    <div class="controls borrado">
+      <span>Borrar para cargar otros archivos y comparar:</span>
+      <button id="b-quitar-ventas" hidden>Quitar registro de ventas del mes</button>
+      <button id="b-quitar-enc" hidden>Quitar encuestas del mes</button>
+      <button id="b-reset" class="peligro" hidden>Borrar toda la información</button>
     </div>
   </section>
 
@@ -657,6 +667,7 @@
       <button class="primary" id="b-zip">Descargar todas las del equipo (ZIP)</button>
       <button id="b-pdf-eq">PDF del equipo (una hoja por asesor)</button>
       <label>Hoja <select id="hoja-fmt"><option value="a4">A4</option><option value="letter">Carta</option></select></label>
+      <label class="chk-cal"><input type="checkbox" id="ver-calif"> Mostrar calificación estimada en la tarjeta</label>
       <label>Imagen <select id="img-fmt"><option value="hoja">Como hoja (A4 / Carta)</option><option value="vertical">Vertical (celular)</option></select></label>
       <label class="upload-btn" style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);cursor:pointer">Cargar varias fotos
         <input type="file" id="f-fotos" accept="image/*" multiple hidden></label>
@@ -1528,6 +1539,9 @@ function renderEquipos() {
   document.getElementById('st-enc').textContent = en
     ? `✓ ${en.archivo} · ${mesTxt(mes)} · ${Object.keys(en.porUser).length} users` + (en.avisos.length ? ' · ⚠ ' + en.avisos.join(' ') : '')
     : `Sin cargar para ${mesTxt(mes)}.`;
+  document.getElementById('b-quitar-ventas').hidden = !v;
+  document.getElementById('b-quitar-enc').hidden = !en;
+  document.getElementById('ver-calif').checked = visible('CALIF');
   renderMapeo();
   document.querySelectorAll('.team').forEach(el => el.onclick = () => {
     state.equipoSel = Number(el.dataset.i); renderEquipos(); renderTarjetas();
@@ -1808,6 +1822,7 @@ function render() {
   document.getElementById('p-supervisor').hidden = !ok;
   document.getElementById('p-calc').hidden = !ok;
   document.getElementById('vacio').hidden = ok;
+  document.getElementById('b-reset').hidden = !Object.keys(state.meses).length;
   if (!ok) return;
   if (state.equipoSel == null || state.equipoSel >= state.ppto.equipos.length) state.equipoSel = 0;
   renderEquipos();
@@ -2501,6 +2516,7 @@ function renderSelector() {
     ${g.items.map(it => `<label><input type="checkbox" data-id="${esc(it.id)}" ${visible(it.id) ? 'checked' : ''}> ${esc(it.txt)}</label>`).join('')}
   </div>`).join('');
   document.getElementById('ind-cuenta').textContent = `(${todos.filter(it => visible(it.id)).length} de ${todos.length})`;
+  document.getElementById('ver-calif').checked = visible('CALIF');
   document.querySelectorAll('#ind-grid input').forEach(cb => cb.onchange = () => {
     cb.checked ? ocultos.delete(cb.dataset.id) : ocultos.add(cb.dataset.id);
     guardarOcultos(); renderSelector(); renderTarjetas();
@@ -2931,14 +2947,42 @@ document.getElementById('b-borrar').onclick = () => {
   delete state.meses[state.mesSel];
   const resto = Object.keys(state.meses).sort().pop();
   if (resto) return seleccionarMes(resto);
+  sinPresupuesto();
+};
+
+function sinPresupuesto() {
   state.mesSel = null;
   document.getElementById('st-ppto').textContent = 'Sin cargar';
   document.getElementById('st-ventas').textContent = 'Primero carga el presupuesto del mes.';
   document.getElementById('f-ventas').disabled = true;
   document.getElementById('st-enc').textContent = 'Primero carga el presupuesto del mes.';
   document.getElementById('f-enc').disabled = true;
+  document.getElementById('b-quitar-ventas').hidden = true;
+  document.getElementById('b-quitar-enc').hidden = true;
   guardar();
   render();
+}
+
+// Borrado para cargar otros archivos y comparar. Las fotos, los nombres cortos y las preferencias se conservan.
+document.getElementById('b-quitar-ventas').onclick = () => {
+  if (!state.ppto || !confirm(`¿Quitar el registro de ventas de ${mesTxt(state.ppto.mes)}? El presupuesto, las encuestas y las capturas se conservan.`)) return;
+  delete state.ppto.ventas;
+  guardar(); render();
+};
+document.getElementById('b-quitar-enc').onclick = () => {
+  if (!state.ppto || !confirm(`¿Quitar las encuestas de ${mesTxt(state.ppto.mes)}? El presupuesto, las ventas y las capturas se conservan.`)) return;
+  delete state.ppto.encuestas;
+  guardar(); render();
+};
+document.getElementById('b-reset').onclick = () => {
+  const n = Object.keys(state.meses).length;
+  if (!n || !confirm(`¿Borrar toda la información cargada (${n} mes(es): presupuestos, ventas, encuestas, ventas capturadas a mano, capturas del supervisor y configuración de cada mes)?\n\nSe conservan las fotos y las preferencias de la tarjeta. No se puede deshacer.`)) return;
+  state.meses = {};
+  sinPresupuesto();
+};
+document.getElementById('ver-calif').onchange = ev => {
+  ev.target.checked ? ocultos.delete('CALIF') : ocultos.add('CALIF');
+  guardarOcultos(); renderSelector(); renderTarjetas();
 };
 
 const hoy = new Date();
