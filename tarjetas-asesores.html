@@ -475,6 +475,20 @@
   .card.hoja.carta .hoja-der .sec { padding-top: 8px; }
   .card.hoja.carta .sec-t { margin-bottom: 3px; }
   .card.hoja.carta .vh { padding-bottom: 0; }
+  /* «Por arrancar»: productos sin ventas aún, en un recuadro compacto al final de la lista de ventas. */
+  .card.hoja .arr { margin-top: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 10px 12px; }
+  .card.hoja .arr-t { font-size: 13.5px; font-weight: 900; color: #1e3a6e; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 8px; }
+  .card.hoja .arr-t span { text-transform: none; letter-spacing: 0; font-weight: 700; color: #64748b; font-size: 12px; }
+  .card.hoja .arr-l { display: flex; flex-wrap: wrap; gap: 6px; }
+  .card.hoja .arr-l span { font-size: 12.5px; font-weight: 800; background: #fff; border: 1px solid; border-left-width: 4px; border-radius: 8px; padding: 3px 8px; }
+  .card.hoja .arr-l em { font-style: normal; font-weight: 700; }
+  .card.hoja .arr-l i { font-style: normal; font-weight: 600; color: #64748b; font-size: 11px; }
+  .card.hoja .vgrp { margin-bottom: 7px; }
+  .card.hoja .vr { padding-top: 2px; padding-bottom: 2px; }
+  .card.hoja .vg, .card.hoja .vr.solo { padding-top: 4px; padding-bottom: 4px; }
+  .card.hoja .logros { margin-top: 14px; }
+  .card.hoja .lg-f { padding: 7px 0; }
+  .card.hoja.compacta .arr { margin-top: 6px; padding: 6px 10px; }
   .card.hoja.compacta .vgrp { margin-bottom: 2px; }
   .card.hoja.compacta .vg, .card.hoja.compacta .vr.solo { padding-top: 1px; padding-bottom: 1px; }
   .card.hoja.compacta .banner { margin-top: 8px; padding: 6px 12px; }
@@ -1300,32 +1314,31 @@ function impulsoHTML(a, reales, ritmo) {
   </div>`;
 }
 
-// Solo en la hoja: logros del mes y en qué enfocarse para cerrar (usa el espacio libre de la columna izquierda).
+// Solo en la hoja: en qué enfocarse para cerrar el mes (usa el espacio libre de la columna izquierda).
 function logrosHTML(a, indicadores, reales) {
   if (!reales) return '';
   const quedan = Math.max(diasDelMes(state.ppto.mes) - (diaCorte() ?? 0), 0);
   const conMeta = indicadores.filter(i => a.metas[i.id] > 0);
   const nombre = i => i.sub ? `${cap(i.grupo)} ${i.sub}` : cap(i.grupo);
-  const logrados = conMeta.filter(i => reales[i.id] >= a.metas[i.id]);
   // Los de impulso ya tienen su propio bloque; el espacio que dejan se usa para más pendientes.
   const nImp = indicadoresImpulso().filter(i => a.metas[i.id] > 0).length;
   const maxPend = Math.max((formatoHoja === 'letter' ? 5 : 6) - nImp, 2);
   const pendientes = conMeta.filter(i => reales[i.id] < a.metas[i.id] && !esImpulso(i.id))
     .map(i => ({ i, faltan: a.metas[i.id] - reales[i.id] }))
     .sort((x, y) => y.faltan - x.faltan).slice(0, maxPend);
-  const maxChips = Math.max((formatoHoja === 'letter' ? 6 : 8) - nImp, 3);
   return `<div class="logros">
-    <div class="lg-b ok"><div class="lg-t">🏆 Tus logros del mes</div>
-      ${logrados.length ? `<div class="lg-chips">${logrados.slice(0, maxChips).map(i => `<span>✓ ${esc(nombre(i))}</span>`).join('')}${logrados.length > maxChips ? `<span class="mas" data-n="${logrados.length - maxChips}">+${logrados.length - maxChips} más</span>` : ''}</div>`
-        : '<div class="lg-v">Aún sin indicadores cumplidos: ¡el primero está muy cerca!</div>'}</div>
     ${pendientes.length ? `<div class="lg-b foco"><div class="lg-t">🎯 Para cerrar el mes${quedan ? ` · quedan ${quedan} días` : ''}</div>
       ${pendientes.map(x => `<div class="lg-f"><span>${esc(nombre(x.i))}</span><b>Faltan ${x.faltan}</b>${quedan ? `<em>≈ ${Math.ceil(x.faltan / quedan * 10) / 10} al día</em>` : ''}</div>`).join('')}</div>` : ''}
   </div>`;
 }
 
-function ventasHTML(a, indicadores, ritmo, reales) {
+// enHoja: en la hoja solo se listan los productos con ventas (o de impulso); los que siguen en cero
+// se juntan en el recuadro compacto «Por arrancar» para que la hoja no se vea amontonada.
+function ventasHTML(a, indicadores, ritmo, reales, enHoja = false) {
+  const conMeta = indicadores.filter(i => a.metas[i.id] > 0);
+  const lista = enHoja && reales ? conMeta.filter(i => reales[i.id] > 0 || esImpulso(i.id)) : conMeta;
   const grupos = [];
-  indicadores.filter(i => a.metas[i.id] > 0).forEach(i => {
+  lista.forEach(i => {
     let g = grupos.find(x => x.nombre === i.grupo);
     if (!g) grupos.push(g = { nombre: i.grupo, inds: [] });
     g.inds.push(i);
@@ -1333,17 +1346,39 @@ function ventasHTML(a, indicadores, ritmo, reales) {
   return grupos.map(g => {
     const est = estiloCat(g.nombre);
     const tinta = oscurecer(est.color, 0.28);
-    const meta = g.inds.reduce((t, i) => t + a.metas[i.id], 0);
-    const real = reales ? g.inds.reduce((t, i) => t + (reales[i.id] || 0), 0) : null;
-    const solo = g.inds.length === 1 && !g.inds[0].sub;
+    // Subtotal con todos los productos de la categoría (también los que siguen en cero).
+    const todos = conMeta.filter(i => i.grupo === g.nombre);
+    const meta = todos.reduce((t, i) => t + a.metas[i.id], 0);
+    const real = reales ? todos.reduce((t, i) => t + (reales[i.id] || 0), 0) : null;
+    const solo = g.inds.length === 1 && !g.inds[0].sub && todos.length === 1;
     const cab = `<div class="vg" style="border-left-color:${est.color}">
       <span class="vg-i">${est.icono}</span><span class="vg-n" style="color:${tinta}">${esc(cap(g.nombre))}</span>
       ${!solo && real != null ? `<span class="vg-t" style="color:${tinta}"><b>${real}</b> / ${meta} · ${Math.round(real / meta * 100)}%</span>` : ''}
     </div>`;
     if (solo) return `<div class="vgrp">${filaVenta(a, g.inds[0], cap(g.nombre), ritmo, reales, est)}</div>`;
-    const filas = g.inds.map(i => filaVenta(a, i, i.sub, ritmo, reales)).join('');
+    const filas = g.inds.map(i => filaVenta(a, i, i.sub || cap(g.nombre), ritmo, reales)).join('');
     return `<div class="vgrp">${cab}${filas}</div>`;
   }).join('');
+}
+
+// Solo en la hoja: productos con meta que aún no tienen ventas, agrupados por categoría.
+function porArrancarHTML(a, indicadores, reales) {
+  if (!reales) return '';
+  const cero = indicadores.filter(i => a.metas[i.id] > 0 && !(reales[i.id] > 0) && !esImpulso(i.id));
+  if (!cero.length) return '';
+  const grupos = [];
+  cero.forEach(i => {
+    let g = grupos.find(x => x.nombre === i.grupo);
+    if (!g) grupos.push(g = { nombre: i.grupo, n: 0, meta: 0, sub: i.sub });
+    g.n++; g.meta += a.metas[i.id];
+  });
+  return `<div class="arr">
+    <div class="arr-t">🚀 Por arrancar <span>· ${cero.length} producto${cero.length === 1 ? '' : 's'} sin ventas aún: ¡ve por la primera!</span></div>
+    <div class="arr-l">${grupos.map(g => {
+      const est = estiloCat(g.nombre);
+      return `<span style="border-color:${est.color};color:${oscurecer(est.color, 0.3)}">${est.icono} ${esc(g.n === 1 && g.sub ? `${cap(g.nombre)} ${g.sub}` : cap(g.nombre))}${g.n > 1 ? ` <em>(${g.n})</em>` : ''} <i>meta ${g.meta}</i></span>`;
+    }).join('')}</div>
+  </div>`;
 }
 
 // hoja = true: versión a dos columnas para imprimir en una hoja (PDF carta / A4).
@@ -1356,7 +1391,7 @@ function tarjetaHTML(e, a, hoja = false) {
   const enc = state.ppto.encuestas ? state.ppto.encuestas.porUser[a.user] || null : null;
   const corte = document.getElementById('corte').value;
 
-  const filas = ventasHTML(a, indicadores, ritmo, reales);
+  const filas = ventasHTML(a, indicadores, ritmo, reales, hoja);
 
   const general = res.promedio == null ? STATUS.none : estado(res.promedio, ritmo).color;
   const lugar = reales && indicadores.length ? lugarEnEquipo(e, a) : null;
@@ -1394,12 +1429,13 @@ function tarjetaHTML(e, a, hoja = false) {
       <div class="sec-t">Ventas</div>
       <div class="vh"><span>Indicador</span><span>Avance</span><span>Llevas</span><span>%</span><span></span></div>
       ${filas}
+      ${hoja ? porArrancarHTML(a, indicadores, reales) : ''}
     </div>
     <div class="legend">
       <span class="lg" style="background:${SUAVE.ok}"></span> ¡Logrado! ·
       <span class="lg" style="background:${SUAVE.ritmo}"></span> En ritmo ·
-      <span class="lg" style="background:${SUAVE.bajo}"></span> Abajo del ritmo${ritmo != null ? ` (${Math.round(ritmo * 100)}% del mes)` : ''} ·
-      <span class="lg" style="background:#cbd5e1"></span> Sin ventas aún
+      <span class="lg" style="background:${SUAVE.bajo}"></span> Abajo del ritmo${ritmo != null ? ` (${Math.round(ritmo * 100)}% del mes)` : ''}${hoja && reales ? '' : ` ·
+      <span class="lg" style="background:#cbd5e1"></span> Sin ventas aún`}
     </div>` : '';
   partes.ft = `<div class="ft"><span>${corte ? 'Ventas acumuladas al ' + corte.split('-').reverse().join('/') : ''}${ajustesDe(a).length ? ` · incluye ${ajustesDe(a).reduce((t, j) => t + j.cantidad, 0)} venta(s) capturada(s) a mano` : ''}</span><b>¡Vamos por más!</b></div>`;
 
@@ -2137,7 +2173,7 @@ let formatoImg = 'hoja';
 try { formatoImg = localStorage.getItem(IMG_KEY) === 'vertical' ? 'vertical' : 'hoja'; } catch (_) {}
 
 // Si la hoja se pasa del alto del papel (ya dibujada en pantalla): primero se compactan los espacios;
-// después se quitan renglones de «Para cerrar el mes» y logros sobrantes (resumidos en «+N más»),
+// después se quitan renglones de «Para cerrar el mes»,
 // pero solo si quitarlos realmente baja el alto (si lo que se pasa es la columna de ventas, no se tocan).
 function ajustarHoja(el) {
   const alto = parseInt(el.style.minHeight, 10);
@@ -2154,19 +2190,6 @@ function ajustarHoja(el) {
   };
   const filas = () => el.querySelectorAll('.lg-f');
   while (pasa() && filas().length > 2 && quitarSiAyuda(filas()[filas().length - 1]));
-  const chips = el.querySelector('.lg-chips');
-  if (chips) {
-    const reales = () => chips.querySelectorAll('span:not(.mas)');
-    while (pasa() && reales().length > 2) {
-      const mas = chips.querySelector('.mas');
-      const n = (mas ? parseInt(mas.dataset.n, 10) || 0 : 0) + 1;
-      const ultimo = reales()[reales().length - 1];
-      if (!quitarSiAyuda(ultimo)) break;
-      let m = mas;
-      if (!m) { m = document.createElement('span'); m.className = 'mas'; chips.appendChild(m); }
-      m.dataset.n = n; m.textContent = `+${n} más`;
-    }
-  }
   if (pasa()) { const foco = el.querySelector('.lg-b.foco'); if (foco) quitarSiAyuda(foco); }
 }
 
