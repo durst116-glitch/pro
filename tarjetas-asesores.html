@@ -495,6 +495,62 @@
   .card.hoja.compacta .imp, .card.hoja.compacta .calidez, .card.hoja.compacta .logros { margin-top: 8px; }
   .card.hoja.compacta .cz-fila { padding: 3px 10px; }
   .card.hoja.compacta .imp-r { padding: 3px 10px; margin-top: 4px; }
+  /* ---------- Calificación estimada (tarjeta) ---------- */
+  .card .cal { margin: 14px 16px 0; border-radius: 14px; padding: 12px 14px; background: #f5f8ff; border: 1.5px solid #c7d6fb; color: #1e3a6e; }
+  .card .cal-hd { display: flex; align-items: center; gap: 10px; }
+  .card .cal-ico { font-size: 20px; background: #e0e9ff; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .card .cal-t { font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; color: #1e40af; }
+  .card .cal-s { font-size: 11px; font-weight: 600; color: #64748b; }
+  .card .cal-nums { display: flex; gap: 10px; margin-top: 8px; }
+  .card .cal-n { flex: 1; background: #fff; border: 1px solid #dbe4fb; border-radius: 10px; padding: 6px 10px; }
+  .card .cal-n b { display: block; font-size: 28px; font-weight: 900; line-height: 1.1; color: #1e3a6e; }
+  .card .cal-n b.ok { color: #2f8a55; } .card .cal-n b.ritmo { color: #b7791f; } .card .cal-n b.bajo { color: #c24141; }
+  .card .cal-n.hoy b { font-size: 20px; color: #475569; }
+  .card .cal-n span { font-size: 11px; font-weight: 700; color: #64748b; }
+  .card .cal-sug { margin-top: 8px; font-size: 12px; font-weight: 700; color: #334155; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .card .cal-sug em { font-style: normal; background: #fff; border: 1px solid #dbe4fb; border-radius: 999px; padding: 2px 9px; }
+  .card .cal-sug em b { color: #2f8a55; }
+  .card.hoja .cal { margin: 12px 0 0; padding: 10px 12px; }
+  .card.hoja .cal-t { font-size: 15px; }
+  .card.hoja .cal-s { font-size: 11.5px; }
+  .card.hoja .cal-n b { font-size: 30px; }
+  .card.hoja .cal-n.hoy b { font-size: 21px; }
+  .card.hoja .cal-n span { font-size: 11.5px; }
+  .card.hoja .cal-sug { font-size: 12.5px; }
+  .card.hoja.compacta .cal { margin-top: 8px; padding: 8px 10px; }
+  .card.hoja.compacta .cal-nums { margin-top: 5px; }
+  /* ---------- Calculadora de productividad ---------- */
+  .c-res { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; margin-top: 14px; }
+  .c-big, .c-form, .c-box { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .c-big .l { font-size: 12px; color: var(--ink-2); font-weight: 700; }
+  .c-big .v { margin: 6px 0; } .c-big .v .pill { font-size: 26px; min-width: 130px; }
+  .c-big .s, .c-nota { font-size: 12px; color: var(--muted); }
+  .c-form { font-size: 14px; line-height: 1.9; color: var(--ink-2); }
+  .c-form b { color: var(--ink); font-size: 16px; }
+  .c-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; margin-top: 14px; align-items: start; }
+  .c-grid > div { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .c-tabla td.t { white-space: normal; }
+  .c-box h3 { font-size: 15px; margin: 0 0 4px; }
+  .c-box p { font-size: 13px; color: var(--ink-2); margin: 0 0 8px; }
+  .c-chk { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; border-top: 1px dashed var(--line); font-size: 14px; }
+  .c-chk span { color: #b42318; font-weight: 600; } .c-chk.ok span { color: #2f8a55; } .c-chk.plan span { color: var(--ink); }
+  .c-in { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 5px 0; border-top: 1px dashed var(--line); }
+  .c-in input[type=number] { width: 80px; margin-left: auto; }
+  .c-sim { display: grid; grid-template-columns: 1fr auto 32px 36px 32px; align-items: center; gap: 6px; padding: 4px 0; border-top: 1px dashed var(--line); font-size: 14px; }
+  .c-sim em { font-style: normal; font-size: 12px; color: #2f8a55; font-weight: 700; }
+  .c-sim b { text-align: center; }
+  .c-sim button { padding: 2px 0; font-weight: 900; }
+  .c-simres { margin-top: 8px; padding: 8px 10px; background: var(--soft); border-radius: 10px; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .c-simres b { font-size: 20px; } .c-simres b.ok { color: #2f8a55; } .c-simres b.ritmo { color: #b7791f; } .c-simres b.bajo { color: #c24141; }
+  .c-simres button { margin-left: auto; }
+  .c-ya { color: #2f8a55 !important; font-weight: 700; margin-top: 8px !important; }
+  .c-no { color: #b42318 !important; font-weight: 700; margin-top: 8px !important; }
+  .ef-box { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .ef-box p { margin: 4px 0 8px; color: var(--ink-2); font-size: 13px; }
+  .ef-r { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px dashed var(--line); font-size: 14px; }
+  .ef-r span { font-weight: 700; min-width: 200px; }
+  .ef-r input { width: 80px; }
+  @media (max-width: 800px) { .c-res, .c-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -505,6 +561,7 @@
 <nav class="tabs" id="tabs">
   <button data-tab="tarjetas" class="tab">Tarjetas de asesores</button>
   <button data-tab="supervisor" class="tab">Panel supervisor</button>
+  <button data-tab="calculadora" class="tab">Calculadora de productividad</button>
 </nav>
 <main>
   <section class="panel">
@@ -554,6 +611,7 @@
         <button id="b-imp-ninguno">Quitar todos</button>
       </div>
       <div class="ind-grid" id="imp-grid"></div>
+      <div id="imp-efic"></div>
     </details>
   </section>
 
@@ -624,6 +682,21 @@
     </div>
     <p class="g-nota" id="g-nota"></p>
     <div id="g-cuerpo"></div>
+  </section>
+  </div>
+  <div id="tab-calculadora" hidden>
+  <section class="panel" id="p-calc" hidden>
+    <h2>Calculadora de productividad</h2>
+    <p class="g-nota">Calificación estimada con el Esquema de Productividad Asesores CAC R9: ventas, permanencia y calidad en la atención,
+      menos incidencias, más los puntos extra (eficiencias del mes, ARPU y Qualtrics) multiplicados por el % de la calificación base.</p>
+    <div class="controls" style="margin-top:10px">
+      <label>Asesor <select id="c-asesor"></select></label>
+      <label>Calcular con <select id="c-modo">
+        <option value="cierre">Ventas proyectadas al cierre</option>
+        <option value="hoy">Ventas al corte (lo que lleva hoy)</option>
+      </select></label>
+    </div>
+    <div id="c-cuerpo"></div>
   </section>
   </div>
   <div class="empty" id="vacio">Carga el presupuesto inicial para ver a tu equipo.</div>
@@ -854,7 +927,7 @@ function parseVentas(wb, fileName, ppto) {
   const porUser = {}, sinMapear = {}, usadas = {};
   const usersPpto = new Set(ppto.equipos.flatMap(e => e.asesores.map(a => a.user)));
   const desconocidos = new Set();
-  let ultimoDia = 0;
+  let ultimoDia = 0, conBajas = false;
 
   hojas.forEach(h => {
     const dia = Number(h);
@@ -866,7 +939,10 @@ function parseVentas(wb, fileName, ppto) {
     const cols = [];
     head.forEach((h, j) => {
       if (j <= cUser || !norm(h)) return;
-      cols.push({ j, nombre: norm(h), id: indicadorDestino(ppto.indicadores, h) });
+      // Cancelaciones y migraciones a prepago: no son ventas, se guardan para calcular la retención.
+      const baja = key(h).startsWith('CANCELACION') ? 'BAJA|CANCEL' : key(h).startsWith('MIGRACION') ? 'BAJA|MIGRA' : null;
+      if (baja) conBajas = true;
+      cols.push({ j, nombre: norm(h), id: baja || indicadorDestino(ppto.indicadores, h) });
     });
     for (let r = hr + 1; r < rows.length; r++) {
       const row = rows[r] || [];
@@ -882,14 +958,14 @@ function parseVentas(wb, fileName, ppto) {
         const u = porUser[user] = porUser[user] || {};
         const d = u[dia] = u[dia] || {};
         d[c.id] = (d[c.id] || 0) + n;
-        ultimoDia = Math.max(ultimoDia, dia);
+        if (!c.id.startsWith('BAJA|')) ultimoDia = Math.max(ultimoDia, dia);
       });
     }
   });
 
   const avisos = [];
   if (desconocidos.size) avisos.push(`Users con ventas que no están en el presupuesto: ${[...desconocidos].join(', ')}.`);
-  return { archivo: fileName, porUser, ultimoDia, sinMapear, avisos };
+  return { archivo: fileName, porUser, ultimoDia, sinMapear, avisos, conBajas };
 }
 
 // ---------- Lectura de encuestas ----------
@@ -1005,6 +1081,167 @@ function realAsesor(a) {
 }
 
 const ajustesDe = a => (state.ppto.ajustes || []).filter(j => j.user === a.user && j.dia <= (diaCorte() ?? 31));
+
+// ---------- Calificación de productividad (Esquema de Productividad Asesores CAC R9) ----------
+// Cada variable da puntos en proporción al avance contra su meta, topado en 100%.
+// con = con venta estratégica 360 (máximo 100) · sin = sin venta estratégica (máximo 86.5).
+const ESQUEMA = [
+  { bloque: 'ventas', nombre: 'Pospago con equipo', ind: ['POSPAGO', 'CON EQUIPO'], con: 18, sin: 12 },
+  { bloque: 'ventas', nombre: 'Pospago libre sin equipo', ind: ['POSPAGO', 'LIBRE'], con: 2, sin: 1 },
+  { bloque: 'ventas', nombre: 'VIP pospago', ind: ['POSPAGO', 'VIP'], con: 2, sin: 1 },
+  { bloque: 'ventas', nombre: 'VIP renovación', ind: ['RENOVACION', 'VIP'], con: 1, sin: 0.5 },
+  { bloque: 'ventas', nombre: 'Amigo Kit', ind: ['PREPAGO', 'KIT'], con: 5, sin: 5 },
+  { bloque: 'ventas', nombre: 'Amigo Chip', ind: ['PREPAGO', 'CHIP'], con: 5, sin: 5 },
+  { bloque: 'ventas', nombre: 'Amigo Paguitos', ind: ['PREPAGO', 'PAGUITOS'], con: 5, sin: 5 },
+  { bloque: 'ventas', nombre: 'Portabilidad con equipo', ind: ['PORTABILIDAD', 'CON EQUIPO'], con: 10, sin: 10 },
+  { bloque: 'ventas', nombre: 'Portabilidad sin equipo', ind: ['PORTABILIDAD', 'LIBRE'], con: 2, sin: 2 },
+  { bloque: 'ventas', nombre: 'Portabilidad prepago', ind: ['PORTABILIDAD', 'PREPAGO'], con: 3, sin: 3 },
+  { bloque: 'ventas', nombre: 'Telcel Up pospago', ind: ['TELCEL UP', 'POSPAGO'], con: 1, sin: 1 },
+  { bloque: 'ventas', nombre: 'Telcel Up prepago', ind: ['TELCEL UP', 'PREPAGO'], con: 1, sin: 1 },
+  { bloque: 'perm', nombre: 'Renovación con equipo', ind: ['RENOVACION', 'CON EQUIPO'], con: 15, sin: 10 },
+  { bloque: 'perm', nombre: 'Renuévate', ind: ['RENOVACION', 'RENUEVATE'], con: 4, sin: 4 },
+];
+// Retención pospago: renovaciones (con equipo + VIP) ÷ (renovaciones + cancelaciones + migraciones a prepago).
+// 95% o más = 8 pts; de 85% a 95% proporcional (8 × retención ÷ 95%); menos de 85% = 0.
+const RETENCION = { pts: 8, inds: [['RENOVACION', 'CON EQUIPO'], ['RENOVACION', 'VIP']], total: 0.95, minimo: 0.85 };
+// Calidez: Amabilidad, Solución y Ofrecimiento salen de las encuestas (CALIDEZ); estos dos se capturan a mano.
+const CALIDAD_MANUAL = [
+  { id: 'tiempo', nombre: 'Tiempo de atención por usuario', pts: 1.5 },
+  { id: 'rechazos', nombre: '% de rechazos SIMAEC', pts: 1.5 },
+];
+// Venta estratégica 360: cada rubro al 100% (ventas del rubro ÷ metas del rubro) + 2 Role Play + 4 Sumarios.
+const ESTRATEGICA = [
+  { nombre: 'Pospago', inds: [['POSPAGO', 'CON EQUIPO'], ['POSPAGO', 'LIBRE'], ['POSPAGO', 'VIP'], ['PORTABILIDAD', 'CON EQUIPO'], ['PORTABILIDAD', 'LIBRE']] },
+  { nombre: 'Prepago', inds: [['PREPAGO', 'KIT'], ['PREPAGO', 'CHIP'], ['PREPAGO', 'PAGUITOS']] },
+  { nombre: 'Renovación', inds: [['RENOVACION', 'CON EQUIPO'], ['RENOVACION', 'VIP']] },
+  { nombre: 'Renuévate', inds: [['RENOVACION', 'RENUEVATE']] },
+];
+const ROLE_PLAY = 2, SUMARIOS = 4;
+const DESC_RH = 8, DESC_SIMAEC = 6;
+const MAX_CALIDAD = CALIDEZ_MAX + CALIDAD_MANUAL.reduce((t, c) => t + c.pts, 0);
+const MAX_CON = ESQUEMA.reduce((t, e) => t + e.con, 0) + RETENCION.pts + MAX_CALIDAD;
+const MAX_SIN = ESQUEMA.reduce((t, e) => t + e.sin, 0) + RETENCION.pts + MAX_CALIDAD;
+// Límites del esquema: 79.99 o menos = carta de realimentación · 69.99 o menos = bajo desempeño.
+const nivelCalif = v => v == null ? 'nd' : v >= 80 ? 'ok' : v >= 70 ? 'ritmo' : 'bajo';
+const fmtCal = v => v == null ? '—' : (Math.round(v * 100) / 100).toFixed(2);
+const fmtMax = v => String(Math.round(v * 10) / 10);
+
+// Lo que captura el supervisor por asesor (se guarda por mes). Tiempo de atención y rechazos: se asume que cumple.
+const CAPTURA_DEF = { tiempo: true, rechazos: true, rh: false, simaec: 0, actitud: false, rolePlay: 0, sumarios: 0, arpu: 0, qualtrics: 0 };
+const capturaDe = a => ({ ...CAPTURA_DEF, ...((state.ppto.captura || {})[a.user] || {}) });
+// Puntos de eficiencia del mes: van ligados a los indicadores de impulso y cambian cada mes.
+// modo 'meta' = puntos × avance contra la meta (topado en 100%) · 'venta' = puntos por cada venta.
+const eficienciaDe = id => (state.ppto.eficiencia || {})[id] || { pts: 0, modo: 'meta' };
+
+function bajasAsesor(a, hasta) {
+  const v = state.ppto.ventas;
+  let n = 0;
+  Object.entries((v && v.porUser[a.user]) || {}).forEach(([dia, c]) => {
+    if (Number(dia) <= hasta) n += (c['BAJA|CANCEL'] || 0) + (c['BAJA|MIGRA'] || 0);
+  });
+  return n;
+}
+
+const nombreEsquema = id => {
+  const e = ESQUEMA.find(x => { const i = buscarIndicador(state.ppto.indicadores, ...x.ind); return i && i.id === id; });
+  if (e) return e.nombre;
+  const i = state.ppto.indicadores.find(x => x.id === id);
+  return i ? (i.sub ? `${cap(i.grupo)} ${i.sub.toLowerCase()}` : cap(i.grupo)) : id;
+};
+
+// Calificación estimada del asesor. proy: ventas proyectadas al cierre (al corte ÷ días transcurridos × días del mes).
+// mas: ventas adicionales por indicador (simulador). null si no hay ventas cargadas.
+function califAsesor(a, { proy = false, mas = {} } = {}) {
+  const actual = realAsesor(a);
+  if (!actual) return null;
+  const inds = state.ppto.indicadores;
+  const D = diasDelMes(state.ppto.mes), dc = diaCorte() ?? D;
+  const f = proy && dc > 0 ? D / dc : 1;
+  const real = {};
+  Object.keys(actual).forEach(id => real[id] = Math.max(actual[id], 0) * f + (mas[id] || 0));
+  const cap_ = capturaDe(a);
+  const meta = id => a.metas[id] || 0;
+  const idDe = ([g, sub]) => { const i = buscarIndicador(inds, g, sub); return i ? i.id : null; };
+
+  const rubros = ESTRATEGICA.map(r => {
+    const ids = r.inds.map(idDe).filter(Boolean);
+    const m = ids.reduce((t, id) => t + meta(id), 0), v = ids.reduce((t, id) => t + real[id], 0);
+    return { nombre: r.nombre, meta: m, real: v, f: m ? v / m : null, ok: !m || v >= m };
+  });
+  const estr = rubros.every(r => r.ok) && cap_.rolePlay >= ROLE_PLAY && cap_.sumarios >= SUMARIOS;
+  const k = estr ? 'con' : 'sin';
+
+  // Sin meta en el presupuesto la variable no aplica y se otorgan sus puntos.
+  const filas = ESQUEMA.map(e => {
+    const id = idDe(e.ind), m = id ? meta(id) : 0, max = e[k];
+    const fr = m > 0 ? Math.min(real[id] / m, 1) : null;
+    return { bloque: e.bloque, nombre: e.nombre, id, meta: m, real: id ? real[id] : 0, max, pts: fr == null ? max : max * fr, sinMeta: fr == null };
+  });
+
+  const renov = RETENCION.inds.map(idDe).filter(Boolean).reduce((t, id) => t + real[id], 0);
+  const bajas = bajasAsesor(a, dc) * f;
+  const ret = renov + bajas > 0 ? renov / (renov + bajas) : null;
+  const retPts = ret == null || ret >= RETENCION.total ? RETENCION.pts : ret >= RETENCION.minimo ? RETENCION.pts * ret / RETENCION.total : 0;
+
+  const enc = state.ppto.encuestas ? state.ppto.encuestas.porUser[a.user] || null : null;
+  const cz = calidezAsesor(enc);
+  const calidez = CALIDEZ.map((c, j) => ({
+    nombre: c.nombre, max: c.pts, valor: cz ? cz.filas[j].valor : null,
+    pts: !cz || (c.enc === 'actit' && cap_.actitud) ? 0 : cz.filas[j].puntos,
+  }));
+  CALIDAD_MANUAL.forEach(c => calidez.push({ nombre: c.nombre, max: c.pts, pts: cap_[c.id] ? c.pts : 0, manual: true }));
+
+  const efic = indicadoresImpulso().map(i => {
+    const c = eficienciaDe(i.id);
+    if (!(c.pts > 0)) return null;
+    const m = meta(i.id);
+    const pts = c.modo === 'venta' ? c.pts * real[i.id] : m > 0 ? c.pts * Math.min(real[i.id] / m, 1) : 0;
+    return { id: i.id, nombre: nombreEsquema(i.id), pts, cfg: c, meta: m, real: real[i.id] };
+  }).filter(Boolean);
+
+  const suma = xs => xs.reduce((t, x) => t + x.pts, 0);
+  const ventas = suma(filas.filter(x => x.bloque === 'ventas'));
+  const perm = suma(filas.filter(x => x.bloque === 'perm')) + retPts;
+  const calid = suma(calidez);
+  const descRH = cap_.rh ? DESC_RH : 0;
+  const descSim = Math.min(Math.max(Number(cap_.simaec) || 0, 0), DESC_SIMAEC);
+  const base = ventas + perm + calid - descRH - descSim;
+  const arpu = Number(cap_.arpu) || 0, qualtrics = cap_.actitud ? 0 : Number(cap_.qualtrics) || 0;
+  const extras = suma(efic) + arpu + qualtrics;
+  // Los puntos extra se otorgan en proporción a la calificación base, con un máximo de 100%.
+  const factor = Math.min(Math.max(base, 0) / 100, 1);
+  return {
+    estr, max: estr ? MAX_CON : MAX_SIN, rubros, captura: cap_, filas,
+    ret: { pct: ret, renov, bajas, pts: retPts }, calidez, sinEnc: !cz,
+    descRH, descSim, ventas, perm, calid, base, efic, arpu, qualtrics, extras, factor,
+    final: base + extras * factor,
+    conBajas: !!(state.ppto.ventas && state.ppto.ventas.conBajas),
+  };
+}
+
+// Cuánto sube la calificación final con una venta más de cada producto (lo demás igual), de mayor a menor.
+function ventasQueSuman(a, opts = {}) {
+  const c0 = califAsesor(a, opts);
+  if (!c0) return [];
+  const ids = [...new Set([...c0.filas.filter(x => x.id && x.meta > 0).map(x => x.id), ...c0.efic.map(x => x.id)])];
+  const mas = opts.mas || {};
+  return ids.map(id => ({ id, gana: califAsesor(a, { ...opts, mas: { ...mas, [id]: (mas[id] || 0) + 1 } }).final - c0.final }))
+    .filter(x => x.gana > 0.005).sort((x, y) => y.gana - x.gana);
+}
+
+// Ventas mínimas para llegar a una calificación: se agrega, una a una, la venta que más sube la calificación.
+function planParaLlegar(a, objetivo, opts = {}) {
+  const mas = { ...(opts.mas || {}) }, plan = {};
+  let c = califAsesor(a, { ...opts, mas });
+  for (let n = 0; c && n < 200 && c.final < objetivo; n++) {
+    const top = ventasQueSuman(a, { ...opts, mas })[0];
+    if (!top) break;
+    mas[top.id] = (mas[top.id] || 0) + 1;
+    plan[top.id] = (plan[top.id] || 0) + 1;
+    c = califAsesor(a, { ...opts, mas });
+  }
+  return { plan, final: c ? c.final : null, llega: !!c && c.final >= objetivo, total: Object.values(plan).reduce((t, n) => t + n, 0) };
+}
 
 function estado(pct, ritmo) {
   if (pct == null) return { color: STATUS.none, icon: '·', txt: 'Sin datos' };
@@ -1291,6 +1528,23 @@ function filaVenta(a, ind, nombre, ritmo, reales, estiloSolo) {
   </div>`;
 }
 
+// Recuadro de la tarjeta: calificación estimada al cierre y hoy, y las ventas que más la suben.
+function califCardHTML(a) {
+  const hoy = califAsesor(a), cierre = califAsesor(a, { proy: true });
+  if (!hoy) return '';
+  const top = ventasQueSuman(a).slice(0, 2);
+  return `<div class="cal">
+    <div class="cal-hd"><span class="cal-ico">📊</span><div>
+      <div class="cal-t">Tu calificación estimada</div>
+      <div class="cal-s">Esquema de productividad · sobre ${fmtMax(cierre.max)}${cierre.estr ? ' (con venta estratégica)' : ' (sin venta estratégica)'}</div></div></div>
+    <div class="cal-nums">
+      <div class="cal-n"><b class="${nivelCalif(cierre.final)}">${fmtCal(cierre.final)}</b><span>al cierre, a tu ritmo actual</span></div>
+      <div class="cal-n hoy"><b>${fmtCal(hoy.final)}</b><span>con lo que llevas hoy</span></div>
+    </div>
+    ${top.length ? `<div class="cal-sug"><span>Lo que más te suma:</span>${top.map(x => `<em>${esc(nombreEsquema(x.id))} <b>+${x.gana.toFixed(2)}</b></em>`).join('')}</div>` : ''}
+  </div>`;
+}
+
 function impulsoHTML(a, reales, ritmo) {
   const inds = indicadoresImpulso().filter(i => a.metas[i.id] > 0);
   if (!inds.length) return '';
@@ -1424,6 +1678,7 @@ function tarjetaHTML(e, a, hoja = false) {
         <div class="sub">${!state.ppto.encuestas ? 'Pendiente de cargar encuestas' : enc ? `${enc.tnps.base} encuestas` : 'Sin encuestas'}</div></div>` : ''}
     </div>`.replace(/<div class="hero">\s*<\/div>/, '');
   partes.enc = encuestasBloqueHTML(enc);
+  partes.calif = visible('CALIF') ? califCardHTML(a) : '';
   partes.rubros = visible('RUBROS') ? rubrosHTML(rubrosAsesor(a, reales)) : '';
   partes.ventas = filas ? `<div class="sec">
       <div class="sec-t">Ventas</div>
@@ -1446,11 +1701,11 @@ function tarjetaHTML(e, a, hoja = false) {
     return `<div class="card hoja${formatoHoja === 'letter' ? ' carta' : ''}" style="width:${w}px;min-height:${h}px">${partes.hd}
     <div class="hoja-top">${partes.banner}</div>
     <div class="hoja-body">
-      <div class="hoja-izq">${impulsoHTML(a, reales, ritmo)}${partes.enc}${logrosHTML(a, indicadores, reales)}</div>
+      <div class="hoja-izq">${partes.calif}${impulsoHTML(a, reales, ritmo)}${partes.enc}${logrosHTML(a, indicadores, reales)}</div>
       <div class="hoja-der">${partes.ventas}</div>
     </div>${partes.ft}</div>`;
   }
-  return `<div class="card">${partes.hd}${partes.banner}${impulsoHTML(a, reales, ritmo)}${partes.hero}${partes.enc}${partes.rubros}${partes.ventas}${partes.ft}</div>`;
+  return `<div class="card">${partes.hd}${partes.banner}${partes.calif}${impulsoHTML(a, reales, ritmo)}${partes.hero}${partes.enc}${partes.rubros}${partes.ventas}${partes.ft}</div>`;
 }
 
 // Vista previa de la hoja, reducida para que quepa en pantalla (la descarga se genera a tamaño completo).
@@ -1462,6 +1717,7 @@ function vistaHoja(e, a, i) {
 
 function renderTarjetas() {
   renderPanel();
+  renderCalc();
   const e = state.ppto.equipos[state.equipoSel];
   setTimeout(() => document.querySelectorAll('#cards .hoja-prev .card.hoja').forEach(ajustarHoja), 0);
   document.getElementById('cards').innerHTML = e.asesores.map((a, i) => `
@@ -1512,6 +1768,7 @@ function render() {
   document.getElementById('p-ajustes').hidden = !ok;
   document.getElementById('p-periodo').hidden = !ok;
   document.getElementById('p-supervisor').hidden = !ok;
+  document.getElementById('p-calc').hidden = !ok;
   document.getElementById('vacio').hidden = ok;
   if (!ok) return;
   if (state.equipoSel == null || state.equipoSel >= state.ppto.equipos.length) state.equipoSel = 0;
@@ -1930,6 +2187,28 @@ function renderPanel() {
     </div>`;
   }
 
+  // Calificación estimada con el esquema de productividad, de mayor a menor al cierre.
+  const califs = g.asesores.map(x => ({ x, hoy: califAsesor(x.a), cierre: califAsesor(x.a, { proy: true }) }))
+    .filter(c => c.hoy).sort((p, q) => q.cierre.final - p.cierre.final);
+  const pillCal = v => `<span class="pill ${nivelCalif(v)}">${fmtCal(v)}</span>`;
+  const promCal = f => califs.length ? califs.reduce((t, c) => t + f(c), 0) / califs.length : null;
+  const califSec = califs.length ? `<div class="g-sec" id="g-calif"><h3>Calificación estimada (esquema de productividad)</h3>
+    <p>Ranking al cierre si cada asesor mantiene su ritmo. Promedio ${g.porEquipo.length > 1 ? 'de todos los equipos' : 'del equipo'}: hoy ${fmtCal(promCal(c => c.hoy.final))} · al cierre ${fmtCal(promCal(c => c.cierre.final))}.
+      Verde 80 o más · amarillo 70 a 79.99 (carta de realimentación) · rojo 69.99 o menos (bajo desempeño). Incidencias, Role Play, ARPU y demás capturas se registran en la Calculadora de productividad.</p>
+    <div class="g-scroll"><table class="g-tabla">
+      <tr><th>#</th><th class="t">Asesor</th><th>Ventas</th><th>Permanencia</th><th>Calidad</th><th>Incidencias</th><th>Extras</th><th>Hoy</th><th>Al cierre</th><th class="t">Venta estratégica</th><th class="t">Lo que más le suma</th><th></th></tr>
+      ${califs.map((c, k) => { const top = ventasQueSuman(c.x.a)[0]; const d = c.cierre.descRH + c.cierre.descSim; return `<tr>
+        <td>${k + 1}</td>
+        <td class="t"><b>${esc(cap(c.x.a.nombre))}</b><br><span style="color:var(--muted);font-size:12px">${esc(c.x.a.user)} · ${esc(cap(c.x.e.nombre))}</span></td>
+        <td>${fmtCal(c.cierre.ventas)}</td><td>${fmtCal(c.cierre.perm)}</td><td>${fmtCal(c.cierre.calid)}</td>
+        <td>${d ? '−' + fmtCal(d) : '—'}</td><td>${c.cierre.extras ? fmtCal(c.cierre.extras * c.cierre.factor) : '—'}</td>
+        <td>${fmtCal(c.hoy.final)}</td><td>${pillCal(c.cierre.final)}</td>
+        <td class="t">${c.cierre.estr ? '✓ Cumple' : 'Falta: ' + esc(c.cierre.rubros.filter(r => !r.ok).map(r => r.nombre).join(', ') || 'Role Play / Sumarios')}</td>
+        <td class="t">${top ? `${esc(nombreEsquema(top.id))} +${top.gana.toFixed(2)}` : '—'}</td>
+        <td><button class="g-link c-ir" data-u="${esc(c.x.a.user)}">Calculadora</button></td>
+      </tr>`; }).join('')}
+    </table></div></div>` : '';
+
   // Metas del mes por supervisor (tarjetas descargables).
   const tarjetasSup = [];
   if (g.porEquipo.length > 1) tarjetasSup.push({ titulo: `CAC ${cap(g.porEquipo[0].e.cac || '')}`.trim(), sub: `${g.porEquipo.length} equipos`, asesores: g.asesores.map(x => x.a), archivo: 'CAC' });
@@ -1952,7 +2231,7 @@ function renderPanel() {
   if (sinVentas) {
     nota.textContent = `${mesTxt(ppto.mes)} · aún no hay registro de ventas: por ahora solo se muestran las metas del mes.`;
   }
-  cuerpo.innerHTML = sinVentas ? metasSec + encuestasSec : kpis + metasSec + encuestasSec + consulta + `
+  cuerpo.innerHTML = sinVentas ? metasSec + encuestasSec : kpis + califSec + metasSec + encuestasSec + consulta + `
     ${g.porEquipo.length > 1 ? `<div class="g-sec"><h3>Por equipo</h3>
       <div class="g-scroll"><table class="g-tabla"><tr><th>Equipo</th><th>Asesores</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th><th>Indicadores en cero</th></tr>${filasEq}</table></div></div>` : ''}
     <div class="g-sec"><h3>Estimado de ventas al cierre por indicador</h3>
@@ -2007,6 +2286,9 @@ function renderPanel() {
     renderPanel();
   });
   cuerpo.querySelectorAll('.gc-tab').forEach(b => b.onclick = () => { gSub[b.dataset.g] = b.dataset.id; renderPanel(); });
+  cuerpo.querySelectorAll('.c-ir').forEach(b => b.onclick = () => {
+    calcUser = b.dataset.u; calcMas = {}; renderCalc(); mostrarTab('calculadora'); window.scrollTo(0, 0);
+  });
   cuerpo.querySelectorAll('.g-link').forEach(b => b.onclick = () => {
     const i = state.ppto.indicadores.find(x => x.id === b.dataset.ind);
     const k = grupos.findIndex(gr => gr.nombre === i.grupo);
@@ -2037,6 +2319,13 @@ document.getElementById('g-export').onclick = () => {
   // TNPS (columna G) siempre con 2 decimales.
   Object.keys(hojaAs).filter(k => /^G\d+$/.test(k) && typeof hojaAs[k].v === 'number').forEach(k => hojaAs[k].z = '0.00');
   XLSX.utils.book_append_sheet(wb, hojaAs, 'Asesores');
+  const r2 = v => Math.round(v * 100) / 100;
+  const cal = g.asesores.map(x => ({ x, hoy: califAsesor(x.a), c: califAsesor(x.a, { proy: true }) })).filter(y => y.hoy);
+  if (cal.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+    ['Asesor', 'User', 'Equipo', 'Ventas', 'Permanencia', 'Calidad', 'Incidencias', 'Calificación base', 'Extras', 'Calificación hoy', 'Calificación al cierre', 'Venta estratégica'],
+    ...cal.sort((p, q) => q.c.final - p.c.final).map(y => [cap(y.x.a.nombre), y.x.a.user, cap(y.x.e.nombre), r2(y.c.ventas), r2(y.c.perm), r2(y.c.calid),
+      r2(-(y.c.descRH + y.c.descSim)), r2(y.c.base), r2(y.c.extras * y.c.factor), r2(y.hoy.final), r2(y.c.final), y.c.estr ? 'Sí' : 'No']),
+  ]), 'Calificación');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
     ['Asesor', 'User', 'Equipo', 'Indicador en cero', 'Meta'],
     ...g.asesores.flatMap(x => x.ceros.map(i => [cap(x.a.nombre), x.a.user, cap(x.e.nombre), nombreInd(i), x.a.metas[i.id]])),
@@ -2044,14 +2333,14 @@ document.getElementById('g-export').onclick = () => {
   XLSX.writeFile(wb, `Panel supervisor ${mesTxt(state.ppto.mes)} corte ${g.dc}.xlsx`);
 };
 
+const TABS = ['tarjetas', 'supervisor', 'calculadora'];
 function mostrarTab(t) {
-  document.getElementById('tab-tarjetas').hidden = t !== 'tarjetas';
-  document.getElementById('tab-supervisor').hidden = t !== 'supervisor';
+  TABS.forEach(x => document.getElementById('tab-' + x).hidden = t !== x);
   document.querySelectorAll('#tabs .tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
   try { localStorage.setItem(TAB_KEY, t); } catch (_) {}
 }
 document.querySelectorAll('#tabs .tab').forEach(b => b.onclick = () => mostrarTab(b.dataset.tab));
-try { mostrarTab(['supervisor', 'gerente'].includes(localStorage.getItem(TAB_KEY)) ? 'supervisor' : 'tarjetas'); } catch (_) { mostrarTab('tarjetas'); }
+try { const t = localStorage.getItem(TAB_KEY); mostrarTab(t === 'gerente' ? 'supervisor' : TABS.includes(t) ? t : 'tarjetas'); } catch (_) { mostrarTab('tarjetas'); }
 
 function renderMapeo() {
   const v = state.ppto.ventas;
@@ -2127,6 +2416,23 @@ function renderImpulso() {
     guardarImp(act.map(i => i.id).filter(id => ids.has(id)));
   });
   document.getElementById('b-imp-ninguno').onclick = () => guardarImp([]);
+  // Puntos de eficiencia de cada indicador de impulso (cambian cada mes, según lo indique la Dirección).
+  const ef = document.getElementById('imp-efic');
+  ef.innerHTML = sel.length ? `<div class="ef-box"><b>Puntos de eficiencia del mes</b>
+    <p>Puntos extra que da cada indicador de impulso en la calificación. Se suman a los extras y se multiplican por el % de la calificación base del asesor.</p>
+    ${sel.map(i => { const c = eficienciaDe(i.id); return `<div class="ef-r"><span>${esc(nombreEsquema(i.id))}</span>
+      <label><input type="number" class="ef-pts" data-id="${esc(i.id)}" min="0" step="0.1" value="${c.pts || ''}" placeholder="0"> pts</label>
+      <select class="ef-modo" data-id="${esc(i.id)}">
+        <option value="meta" ${c.modo !== 'venta' ? 'selected' : ''}>al llegar a la meta (proporcional al avance)</option>
+        <option value="venta" ${c.modo === 'venta' ? 'selected' : ''}>por cada venta</option>
+      </select></div>`; }).join('')}</div>` : '';
+  const guardarEf = id => {
+    const pts = Number(ef.querySelector(`.ef-pts[data-id="${CSS.escape(id)}"]`).value) || 0;
+    const modo = ef.querySelector(`.ef-modo[data-id="${CSS.escape(id)}"]`).value;
+    state.ppto.eficiencia = { ...(state.ppto.eficiencia || {}), [id]: { pts, modo } };
+    guardar(); renderTarjetas();
+  };
+  ef.querySelectorAll('.ef-pts, .ef-modo').forEach(el => el.onchange = () => guardarEf(el.dataset.id));
   msg.onchange = () => { state.ppto.impulsoMsg = msg.value.trim() || null; guardar(); renderTarjetas(); };
 }
 
@@ -2141,7 +2447,7 @@ function renderSelector() {
     { id: 'CALIDEZ', txt: `Puntos de calidez (${CALIDEZ_MAX} pts)` },
     ...ENCUESTAS.filter(e => !CALIDEZ.some(c => c.enc === e.id)).map(e => ({ id: 'ENC|' + e.id, txt: e.nombre })),
   ] });
-  grupos.push({ nombre: 'Otros', items: [{ id: 'RUBROS', txt: 'Bloque de rubros (75%)' }] });
+  grupos.push({ nombre: 'Otros', items: [{ id: 'CALIF', txt: 'Calificación estimada (esquema de productividad)' }, { id: 'RUBROS', txt: 'Bloque de rubros (75%)' }] });
   const todos = grupos.flatMap(g => g.items);
   document.getElementById('ind-grid').innerHTML = grupos.map(g => `<div class="ind-g"><b>${esc(cap(g.nombre))}</b>
     ${g.items.map(it => `<label><input type="checkbox" data-id="${esc(it.id)}" ${visible(it.id) ? 'checked' : ''}> ${esc(it.txt)}</label>`).join('')}
@@ -2158,6 +2464,140 @@ function renderSelector() {
     todos.forEach(it => ocultos.add(it.id)); guardarOcultos(); renderSelector(); renderTarjetas();
   };
 }
+
+// ---------- Calculadora de productividad ----------
+let calcUser = null, calcModo = 'cierre', calcObj = 80, calcMas = {};
+
+function renderCalc() {
+  const ppto = state.ppto;
+  if (!ppto) return;
+  const lista = ppto.equipos.flatMap(e => e.asesores.map(a => ({ a, e })));
+  if (!lista.some(x => x.a.user === calcUser)) { calcUser = lista.length ? lista[0].a.user : null; calcMas = {}; }
+  const sel = document.getElementById('c-asesor');
+  sel.innerHTML = ppto.equipos.map(e => `<optgroup label="${esc(cap(e.nombre))} · ${esc(cap(e.supervisor))}">
+    ${e.asesores.map(a => `<option value="${esc(a.user)}">${esc(cap(a.nombre))} · ${esc(a.user)}</option>`).join('')}</optgroup>`).join('');
+  sel.value = calcUser;
+  document.getElementById('c-modo').value = calcModo;
+  const cuerpo = document.getElementById('c-cuerpo');
+  const { a } = lista.find(x => x.a.user === calcUser) || {};
+  if (!a) { cuerpo.innerHTML = ''; return; }
+  const opts = { proy: calcModo === 'cierre' };
+  const c = califAsesor(a, opts);
+  if (!c) { cuerpo.innerHTML = '<p class="warn">Carga el registro de ventas para calcular la calificación.</p>'; return; }
+  const simulado = Object.values(calcMas).some(n => n);
+  const cs = simulado ? califAsesor(a, { ...opts, mas: calcMas }) : null;
+  const D = diasDelMes(ppto.mes), dc = diaCorte() ?? D;
+  const n1 = v => (Math.round(v * 10) / 10).toLocaleString('es-MX');
+  const num = v => v == null ? '—' : Number.isInteger(v) ? v : n1(v);
+
+  const avisos = [
+    !c.conBajas ? 'El registro de ventas cargado no trae cancelaciones ni migraciones: la retención se calcula sin bajas. Vuelve a subir el registro para leerlas.' : '',
+    c.sinEnc ? 'Sin encuestas para este asesor: Amabilidad, Solución y Ofrecimiento cuentan 0 puntos.' : '',
+  ].filter(Boolean);
+
+  const fila = (nombre, llevas, meta, pts, max, nota = '') => `<tr><td class="t">${nombre}${nota ? `<br><span class="c-nota">${nota}</span>` : ''}</td>
+    <td>${llevas}</td><td>${meta}</td><td><b>${fmtCal(pts)}</b></td><td>${fmtMax(max)}</td></tr>`;
+  const grp = (t, pts, max) => `<tr class="grp"><td>${t}</td><td></td><td></td><td>${fmtCal(pts)}</td><td>${max == null ? '' : fmtMax(max)}</td></tr>`;
+  const fr = x => x.sinMeta ? '<span class="c-nota">sin meta: puntos completos</span>' : `${Math.round(Math.min(x.real / x.meta, 9.99) * 100)}% de avance`;
+  const maxBloque = b => c.filas.filter(x => x.bloque === b).reduce((t, x) => t + x.max, 0);
+  const retTxt = c.ret.pct == null ? 'sin renovaciones ni bajas' : `${n1(c.ret.renov)} renovaciones ÷ (${n1(c.ret.renov)} + ${n1(c.ret.bajas)} bajas) = ${(Math.round(c.ret.pct * 10000) / 100).toFixed(2)}%`;
+  const desglose = `<div class="g-scroll" style="max-height:none"><table class="g-tabla c-tabla">
+    <tr><th>Variable</th><th>Llevas</th><th>Meta</th><th>Puntos</th><th>Máx.</th></tr>
+    ${grp('Ventas', c.ventas, maxBloque('ventas'))}
+    ${c.filas.filter(x => x.bloque === 'ventas').map(x => fila(esc(x.nombre), num(x.real), x.meta || '—', x.pts, x.max, fr(x))).join('')}
+    ${grp('Permanencia', c.perm, maxBloque('perm') + RETENCION.pts)}
+    ${c.filas.filter(x => x.bloque === 'perm').map(x => fila(esc(x.nombre), num(x.real), x.meta || '—', x.pts, x.max, fr(x))).join('')}
+    ${fila('Retención pospago', c.ret.pct == null ? '—' : (Math.round(c.ret.pct * 10000) / 100).toFixed(2) + '%', '95%', c.ret.pts, RETENCION.pts, retTxt)}
+    ${grp('Calidad en la atención', c.calid, MAX_CALIDAD)}
+    ${c.calidez.map(x => fila(esc(x.nombre), x.manual ? (x.pts ? 'Cumple' : 'No cumple') : fmtScore(x.valor), x.manual ? 'captura' : 'encuesta', x.pts, x.max)).join('')}
+    ${c.descRH || c.descSim ? `${grp('Descuentos por incidencias', -(c.descRH + c.descSim), null)}
+      ${c.descRH ? fila('Incidencia de Recursos Humanos', '', '', -c.descRH, 0) : ''}
+      ${c.descSim ? fila('Registros SIMAEC', '', '', -c.descSim, 0) : ''}` : ''}
+    <tr class="tot"><td class="t">Calificación base</td><td></td><td></td><td>${fmtCal(c.base)}</td><td>${fmtMax(c.max)}</td></tr>
+    ${grp('Puntos extra', c.extras, null)}
+    ${c.efic.map(x => fila(`⚡ ${esc(x.nombre)}`, num(x.real), x.cfg.modo === 'venta' ? 'por venta' : x.meta || '—', x.pts, x.cfg.modo === 'venta' ? 0 : x.cfg.pts,
+      x.cfg.modo === 'venta' ? `${x.cfg.pts} pts por venta` : `${x.cfg.pts} pts al llegar a la meta`)).join('')}
+    ${fila('Puntos ARPU', 'captura', '', c.arpu, 0)}
+    ${fila('Puntos eficiencia Qualtrics', 'captura', '', c.qualtrics, 0)}
+    <tr><td class="t">Extras × ${(Math.round(c.factor * 10000) / 100).toFixed(2)}% de la calificación base</td><td></td><td></td><td><b>${fmtCal(c.extras * c.factor)}</b></td><td></td></tr>
+    <tr class="tot"><td class="t">Calificación final estimada</td><td></td><td></td><td>${fmtCal(c.final)}</td><td></td></tr>
+  </table></div>`;
+
+  const cap_ = c.captura;
+  const estr = `<div class="c-box"><h3>Venta estratégica 360</h3>
+    <p>${c.estr ? '✓ Cumple: se califica sobre 100.' : `No cumple: se califica sobre ${fmtMax(MAX_SIN)}. Si cumple todo, la base sube a 100.`}</p>
+    ${c.rubros.map(r => `<div class="c-chk ${r.ok ? 'ok' : ''}"><span>${r.ok ? '✓' : '✗'} ${esc(r.nombre)} al 100%</span><b>${num(r.real)} / ${r.meta}${r.meta ? ` · ${Math.round(r.f * 100)}%` : ''}</b></div>`).join('')}
+    <div class="c-chk ${cap_.rolePlay >= ROLE_PLAY ? 'ok' : ''}"><span>${cap_.rolePlay >= ROLE_PLAY ? '✓' : '✗'} ${ROLE_PLAY} Role Play</span><b>${cap_.rolePlay} / ${ROLE_PLAY}</b></div>
+    <div class="c-chk ${cap_.sumarios >= SUMARIOS ? 'ok' : ''}"><span>${cap_.sumarios >= SUMARIOS ? '✓' : '✗'} ${SUMARIOS} Sumarios de habilidades</span><b>${cap_.sumarios} / ${SUMARIOS}</b></div>
+  </div>`;
+
+  const chk = (k, txt) => `<label class="c-in"><input type="checkbox" data-k="${k}" ${cap_[k] ? 'checked' : ''}> ${txt}</label>`;
+  const nin = (k, txt, max, step = 1) => `<label class="c-in">${txt} <input type="number" data-k="${k}" min="0" ${max != null ? `max="${max}"` : ''} step="${step}" value="${cap_[k] || 0}"></label>`;
+  const captura = `<div class="c-box"><h3>Captura del supervisor · ${esc(mesTxt(ppto.mes))}</h3>
+    <p>Datos que no vienen en los archivos. Se guardan por asesor en el mes seleccionado.</p>
+    ${chk('tiempo', 'Cumple tiempo de atención por usuario (1.5 pts)')}
+    ${chk('rechazos', 'Cumple % de rechazos SIMAEC (1.5 pts)')}
+    ${chk('rh', `Incidencia de Recursos Humanos: falta injustificada, retardo mayor, suspensión o salida no justificada (−${DESC_RH})`)}
+    ${nin('simaec', `Descuento por registros SIMAEC (0 a −${DESC_SIMAEC})`, DESC_SIMAEC, 0.5)}
+    ${chk('actitud', 'Carta de RH por actitud (Amabilidad = 0 y sin puntos Qualtrics)')}
+    ${nin('rolePlay', 'Role Play aplicados', ROLE_PLAY)}
+    ${nin('sumarios', 'Sumarios de habilidades aplicados', SUMARIOS)}
+    ${nin('arpu', 'Puntos ARPU', null, 0.01)}
+    ${nin('qualtrics', 'Puntos eficiencia Qualtrics', null, 0.01)}
+  </div>`;
+
+  const suman = ventasQueSuman(a, { ...opts, mas: calcMas });
+  const gana = Object.fromEntries(suman.map(x => [x.id, x.gana]));
+  const simIds = [...c.filas.filter(x => x.id && x.meta > 0).map(x => x.id), ...c.efic.map(x => x.id).filter(id => !c.filas.some(x => x.id === id))];
+  const simulador = `<div class="c-box"><h3>Simulador: ¿y si vende más?</h3>
+    <p>Suma ventas y mira cómo cambia la calificación. «Vale» es lo que sube con una venta más.</p>
+    ${simIds.map(id => `<div class="c-sim"><span>${esc(nombreEsquema(id))}</span>
+      <em>${gana[id] ? `vale +${gana[id].toFixed(2)}` : 'ya topado'}</em>
+      <button class="c-menos" data-id="${esc(id)}">−</button><b>${calcMas[id] || 0}</b><button class="c-mas" data-id="${esc(id)}">+</button></div>`).join('')}
+    ${simulado ? `<div class="c-simres">Con estas ventas: <b class="${nivelCalif(cs.final)}">${fmtCal(cs.final)}</b> (${cs.final >= c.final ? '+' : ''}${fmtCal(cs.final - c.final)})
+      <button id="c-limpiar">Limpiar</button></div>` : ''}
+  </div>`;
+
+  const plan = planParaLlegar(a, calcObj);
+  const hoy = califAsesor(a);
+  const planHTML = `<div class="c-box"><h3>¿Qué le falta para llegar a
+      <select id="c-obj">${[70, 80, 88, 90, 95, 100].map(v => `<option ${v === calcObj ? 'selected' : ''}>${v}</option>`).join('')}</select>?</h3>
+    <p>Ventas adicionales a las que lleva hoy (${fmtCal(hoy.final)}), eligiendo siempre la que más sube la calificación. Quedan ${Math.max(D - dc, 0)} días.</p>
+    ${hoy.final >= calcObj ? '<p class="c-ya">✓ Ya llega con lo que lleva hoy.</p>'
+      : plan.total ? `${Object.entries(plan.plan).sort((x, y) => y[1] - x[1]).map(([id, n]) => `<div class="c-chk plan"><span>${esc(nombreEsquema(id))}</span><b>${n}</b></div>`).join('')}
+        <p class="${plan.llega ? 'c-ya' : 'c-no'}">${plan.total} venta(s) → ${fmtCal(plan.final)}${plan.llega ? '' : ` · con ventas no alcanza ${calcObj}: revisa venta estratégica, calidad o extras`}</p>`
+      : `<p class="c-no">Con ventas ya no sube más: revisa venta estratégica, calidad o extras.</p>`}
+  </div>`;
+
+  cuerpo.innerHTML = `${avisos.length ? `<div class="warn">${avisos.map(esc).join('<br>')}</div>` : ''}
+    <div class="c-res">
+      <div class="c-big"><div class="l">Calificación final estimada · ${calcModo === 'cierre' ? 'al cierre del mes' : `al corte (día ${dc})`}</div>
+        <div class="v"><span class="pill ${nivelCalif(c.final)}">${fmtCal(c.final)}</span></div>
+        <div class="s">Sobre ${fmtMax(c.max)} ${c.estr ? '(con venta estratégica)' : '(sin venta estratégica)'}, más puntos extra. 79.99 o menos = carta de realimentación; 69.99 o menos = bajo desempeño.</div></div>
+      <div class="c-form">Base <b>${fmtCal(c.base)}</b> = Ventas ${fmtCal(c.ventas)} + Permanencia ${fmtCal(c.perm)} + Calidad ${fmtCal(c.calid)}${c.descRH + c.descSim ? ` − Incidencias ${fmtCal(c.descRH + c.descSim)}` : ''}
+        <br>Final <b>${fmtCal(c.final)}</b> = ${fmtCal(c.base)} + Extras ${fmtCal(c.extras)} × ${(Math.round(c.factor * 10000) / 100).toFixed(2)}%</div>
+    </div>
+    <div class="c-grid"><div>${desglose}</div><div>${estr}${simulador}${planHTML}${captura}</div></div>`;
+
+  cuerpo.querySelectorAll('.c-mas, .c-menos').forEach(b => b.onclick = () => {
+    const id = b.dataset.id;
+    calcMas[id] = Math.max((calcMas[id] || 0) + (b.classList.contains('c-mas') ? 1 : -1), 0);
+    renderCalc();
+  });
+  const limpiar = document.getElementById('c-limpiar');
+  if (limpiar) limpiar.onclick = () => { calcMas = {}; renderCalc(); };
+  document.getElementById('c-obj').onchange = ev => { calcObj = Number(ev.target.value); renderCalc(); };
+  cuerpo.querySelectorAll('.c-box [data-k]').forEach(inp => inp.onchange = () => {
+    const k = inp.dataset.k;
+    let v = inp.type === 'checkbox' ? inp.checked : Math.max(Number(inp.value) || 0, 0);
+    if (inp.max) v = Math.min(v, Number(inp.max));
+    state.ppto.captura = state.ppto.captura || {};
+    state.ppto.captura[a.user] = { ...capturaDe(a), [k]: v };
+    guardar(); renderTarjetas();
+  });
+}
+document.getElementById('c-asesor').onchange = ev => { calcUser = ev.target.value; calcMas = {}; renderCalc(); };
+document.getElementById('c-modo').onchange = ev => { calcModo = ev.target.value; renderCalc(); };
 
 // ---------- Imágenes ----------
 // ---------- PDF (una hoja por asesor, carta o A4) ----------
@@ -2191,6 +2631,7 @@ function ajustarHoja(el) {
   const filas = () => el.querySelectorAll('.lg-f');
   while (pasa() && filas().length > 2 && quitarSiAyuda(filas()[filas().length - 1]));
   if (pasa()) { const foco = el.querySelector('.lg-b.foco'); if (foco) quitarSiAyuda(foco); }
+  if (pasa()) { const sug = el.querySelector('.cal-sug'); if (sug) quitarSiAyuda(sug); }
 }
 
 // Dibuja la tarjeta del asesor fuera de pantalla y regresa el canvas.
@@ -2326,6 +2767,8 @@ document.getElementById('f-ppto').onchange = async ev => {
     if (previo && previo.cumplSel) ppto.cumplSel = previo.cumplSel.filter(id => ppto.indicadores.some(i => i.id === id));
     if (previo && previo.impulso) ppto.impulso = previo.impulso.filter(id => ppto.indicadores.some(i => i.id === id));
     if (previo && previo.impulsoMsg) ppto.impulsoMsg = previo.impulsoMsg;
+    if (previo && previo.eficiencia) ppto.eficiencia = previo.eficiencia;
+    if (previo && previo.captura) ppto.captura = previo.captura;
     state.meses[k] = ppto;
     seleccionarMes(k);
   } catch (err) {
