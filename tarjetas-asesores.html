@@ -292,31 +292,45 @@
   .card .mm { text-align: center; font-size: 18px; font-weight: 900; color: #1e3a6e; }
   .card .md { text-align: center; font-size: 11px; font-weight: 700; color: #64748b; background: #f1f5f9; border-radius: 999px; padding: 2px 8px; }
   /* ---------- Versión hoja (PDF carta / A4): dos columnas ---------- */
-  .card.hoja { width: 816px; border-radius: 0; box-shadow: none; display: flex; flex-direction: column; }
+  .card.hoja { width: 794px; border-radius: 0; box-shadow: none; display: flex; flex-direction: column; }
+  .card.hoja .hoja-top { padding: 0 16px; }
   .card.hoja .hoja-body { flex: 1; }
-  .card.hoja .hoja-izq, .card.hoja .hoja-der { align-self: stretch; display: flex; flex-direction: column; justify-content: space-between; }
+  .card.hoja .hoja-izq, .card.hoja .hoja-der { align-self: stretch; display: flex; flex-direction: column; }
+  .card.hoja .logros { flex: 1; display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .card.hoja .lg-b { border-radius: 12px; padding: 10px 12px; }
+  .card.hoja .lg-b.ok { background: #ecfdf3; border: 1px solid #bbf7d0; }
+  .card.hoja .lg-b.foco { flex: 1; background: #eff6ff; border: 1px solid #bfdbfe; display: flex; flex-direction: column; justify-content: space-around; }
+  .card.hoja .lg-t { font-size: 12px; font-weight: 900; color: #1e3a6e; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+  .card.hoja .lg-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .card.hoja .lg-chips span { font-size: 10.5px; font-weight: 800; color: #166534; background: #dcfce7; border-radius: 999px; padding: 3px 8px; }
+  .card.hoja .lg-v { font-size: 11px; color: #166534; font-weight: 700; }
+  .card.hoja .lg-f { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; font-size: 11px; padding: 4px 0; border-top: 1px dashed #bfdbfe; }
+  .card.hoja .lg-f span { color: #1e293b; font-weight: 700; }
+  .card.hoja .lg-f b { color: #9f1239; background: #ffe4e6; border-radius: 999px; padding: 2px 8px; font-size: 10.5px; }
+  .card.hoja .lg-f em { font-style: normal; color: #1e40af; font-weight: 800; font-size: 10.5px; }
   .card.hoja .hoja-der > .sec { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-  .card.hoja .hd { padding: 16px 22px; }
+  .card.hoja .hd { padding: 12px 22px; }
   .card.hoja .foto { width: 92px; height: 92px; }
   .card.hoja .foto img, .card.hoja .foto .ini { width: 84px; height: 84px; }
   .card.hoja .foto .ini { line-height: 84px; font-size: 32px; }
   .card.hoja .hd .nombre { font-size: 22px; margin-top: 6px; }
   .card.hoja .medal { margin-top: 6px; }
   .card.hoja .hoja-body { display: flex; gap: 14px; padding: 0 16px 6px; }
-  .card.hoja .hoja-izq { width: 340px; flex: none; }
+  .card.hoja .hoja-izq { width: 318px; flex: none; }
   .card.hoja .hoja-der { flex: 1; min-width: 0; }
-  .card.hoja .banner { margin: 12px 0 0; padding: 8px 10px; gap: 8px; }
+  .card.hoja .banner { margin: 12px 0 0; padding: 8px 12px; gap: 10px; }
   .card.hoja .banner .ico { width: 48px; height: 48px; }
   .card.hoja .banner .ico svg { width: 48px; height: 48px; }
-  .card.hoja .banner .bt { font-size: 13px; }
-  .card.hoja .banner .bs { font-size: 10.5px; }
+  .card.hoja .banner .bt { font-size: 15px; }
+  .card.hoja .banner .bs { font-size: 11.5px; }
   .card.hoja .hero { padding: 10px 0 0; gap: 6px; }
+  .card.hoja .hero { gap: 6px; }
   .card.hoja .hero > div { padding: 8px; border-radius: 10px; }
   .card.hoja .hero .lbl, .card.hoja .hero .sub { font-size: 9.5px; }
   .card.hoja .hero .val { font-size: 19px; }
   .card.hoja .hero .kring svg { width: 40px; height: 40px; }
   .card.hoja .hero .kring { gap: 4px; }
-  .card.hoja .calidez { margin: 10px 0 0; border-radius: 12px; }
+  .card.hoja .calidez { margin: 12px 0 0; border-radius: 12px; }
   .card.hoja .cz-hd { padding: 8px 10px; }
   .card.hoja .cz-t { font-size: 12px; }
   .card.hoja .cz-s { font-size: 9px; }
@@ -329,13 +343,14 @@
   .card.hoja .cz-otras { padding: 6px 10px 8px; gap: 6px; }
   .card.hoja .cz-ov { font-size: 16px; }
   .card.hoja .sec { padding: 10px 0 2px; }
-  .card.hoja .sec-t { font-size: 11px; margin-bottom: 5px; }
+  .card.hoja .sec-t { font-size: 11px; margin-bottom: 5px; white-space: nowrap; overflow: hidden; }
+  .card.hoja .hoja-izq .sec-t { font-size: 10px; letter-spacing: .03em; }
   .card.hoja .rubros { gap: 6px; }
   .card.hoja .rubro { padding: 7px; }
   .card.hoja .rv { font-size: 16px; }
   .card.hoja .rn, .card.hoja .rs, .card.hoja .rf { font-size: 9.5px; }
   .card.hoja .hoja-der .sec { padding-top: 12px; }
-  .card.hoja .vh, .card.hoja .vr { grid-template-columns: 128px 1fr 48px 44px 74px; gap: 6px; }
+  .card.hoja .vh, .card.hoja .vr { grid-template-columns: 124px 1fr 48px 44px 74px; gap: 6px; }
   .card.hoja .vh { font-size: 8.5px; padding: 0 6px 2px; }
   .card.hoja .vgrp { margin-bottom: 4px; border-radius: 9px; }
   .card.hoja .vg { padding: 2px 8px; }
@@ -343,7 +358,7 @@
   .card.hoja .vg-n { font-size: 10.5px; }
   .card.hoja .vg-t { font-size: 10px; }
   .card.hoja .vg-t b { font-size: 11px; }
-  .card.hoja .vr { padding: 1px 8px 1px 12px; }
+  .card.hoja .vr { padding: 0 8px 0 12px; }
   .card.hoja .vr.solo { padding: 2px 8px; }
   .card.hoja .vr.solo .vg-n { font-size: 9.5px; }
   .card.hoja .vn { font-size: 10.5px; }
@@ -352,6 +367,17 @@
   .card.hoja .vc span { font-size: 9px; }
   .card.hoja .vp span { font-size: 9.5px; min-width: 36px; padding: 1px 4px; }
   .card.hoja .vs { font-size: 9px; padding: 1px 4px; }
+  /* Carta es más corta que A4: ventas un poco más compactas. */
+  .card.hoja.carta .vgrp { margin-bottom: 2px; }
+  .card.hoja.carta .cz-fila { padding: 3px 10px; }
+  .card.hoja.carta .calidez, .card.hoja.carta .hero { margin-top: 8px; padding-top: 0; }
+  .card.hoja.carta .logros { gap: 6px; margin-top: 8px; }
+  .card.hoja.carta .lg-b { padding: 7px 10px; }
+  .card.hoja.carta .hoja-izq .sec { padding-top: 6px; }
+  .card.hoja.carta .vg { padding: 1px 8px; }
+  .card.hoja.carta .vr.solo { padding: 1px 8px; }
+  .card.hoja.carta .banner { margin-top: 8px; padding: 6px 12px; }
+  .card.hoja.carta .banner .ico, .card.hoja.carta .banner .ico svg { width: 42px; height: 42px; }
   .card.hoja .legend { font-size: 9px; padding: 4px 0 0; }
   .card.hoja .ft { margin-top: 8px; font-size: 10px; padding: 7px 16px; }
   .card .lg { display: inline-block; width: 12px; height: 8px; border-radius: 4px; vertical-align: middle; margin-right: 2px; }
@@ -361,6 +387,7 @@
     background: linear-gradient(90deg, #0b1f4b, #1e40af);
   }
   .card .ft b { font-weight: 800; }
+  .card-scale.hoja-prev { overflow: hidden; box-shadow: 0 2px 10px rgba(15,23,42,.15); background: #ffffff; }
   .foto-ctl { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
   .foto-ctl label { font: inherit; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; }
 </style>
@@ -457,7 +484,8 @@
     <div class="controls">
       <button class="primary" id="b-zip">Descargar todas las del equipo (ZIP)</button>
       <button id="b-pdf-eq">PDF del equipo (una hoja por asesor)</button>
-      <label>Hoja <select id="hoja-fmt"><option value="letter">Carta</option><option value="a4">A4</option></select></label>
+      <label>Hoja <select id="hoja-fmt"><option value="a4">A4</option><option value="letter">Carta</option></select></label>
+      <label>Imagen <select id="img-fmt"><option value="hoja">Como hoja (A4 / Carta)</option><option value="vertical">Vertical (celular)</option></select></label>
       <label class="upload-btn" style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);cursor:pointer">Cargar varias fotos
         <input type="file" id="f-fotos" accept="image/*" multiple hidden></label>
       <span id="zip-st" style="color:var(--muted);font-size:13px"></span>
@@ -1142,6 +1170,26 @@ function filaVenta(a, ind, nombre, ritmo, reales, estiloSolo) {
   </div>`;
 }
 
+// Solo en la hoja: logros del mes y en qué enfocarse para cerrar (usa el espacio libre de la columna izquierda).
+function logrosHTML(a, indicadores, reales) {
+  if (!reales) return '';
+  const quedan = Math.max(diasDelMes(state.ppto.mes) - (diaCorte() ?? 0), 0);
+  const conMeta = indicadores.filter(i => a.metas[i.id] > 0);
+  const nombre = i => i.sub ? `${cap(i.grupo)} ${i.sub}` : cap(i.grupo);
+  const logrados = conMeta.filter(i => reales[i.id] >= a.metas[i.id]);
+  const pendientes = conMeta.filter(i => reales[i.id] < a.metas[i.id])
+    .map(i => ({ i, faltan: a.metas[i.id] - reales[i.id] }))
+    .sort((x, y) => y.faltan - x.faltan).slice(0, formatoHoja === 'letter' ? 3 : 4);
+  const maxChips = formatoHoja === 'letter' ? 5 : 7;
+  return `<div class="logros">
+    <div class="lg-b ok"><div class="lg-t">🏆 Tus logros del mes</div>
+      ${logrados.length ? `<div class="lg-chips">${logrados.slice(0, maxChips).map(i => `<span>✓ ${esc(nombre(i))}</span>`).join('')}${logrados.length > maxChips ? `<span>+${logrados.length - maxChips} más</span>` : ''}</div>`
+        : '<div class="lg-v">Aún sin indicadores cumplidos: ¡el primero está muy cerca!</div>'}</div>
+    ${pendientes.length ? `<div class="lg-b foco"><div class="lg-t">🎯 Para cerrar el mes${quedan ? ` · quedan ${quedan} días` : ''}</div>
+      ${pendientes.map(x => `<div class="lg-f"><span>${esc(nombre(x.i))}</span><b>Faltan ${x.faltan}</b>${quedan ? `<em>≈ ${Math.ceil(x.faltan / quedan * 10) / 10} al día</em>` : ''}</div>`).join('')}</div>` : ''}
+  </div>`;
+}
+
 function ventasHTML(a, indicadores, ritmo, reales) {
   const grupos = [];
   indicadores.filter(i => a.metas[i.id] > 0).forEach(i => {
@@ -1222,14 +1270,25 @@ function tarjetaHTML(e, a, hoja = false) {
     </div>` : '';
   partes.ft = `<div class="ft"><span>${corte ? 'Ventas acumuladas al ' + corte.split('-').reverse().join('/') : ''}${ajustesDe(a).length ? ` · incluye ${ajustesDe(a).reduce((t, j) => t + j.cantidad, 0)} venta(s) capturada(s) a mano` : ''}</span><b>¡Vamos por más!</b></div>`;
 
-  // La hoja toma la proporción del papel elegido (carta 8.5×11, A4 210×297) y reparte el contenido a lo alto.
-  const altoHoja = Math.round(816 * (formatoHoja === 'a4' ? 297 / 210 : 11 / 8.5));
-  if (hoja) return `<div class="card hoja" style="min-height:${altoHoja}px">${partes.hd}
+  // Hoja con las medidas del papel (a 96 ppp): A4 794×1123, carta 816×1056. El mensaje y los indicadores
+  // van a lo ancho; abajo, encuestas y rubros a la izquierda y ventas a la derecha, repartidos a lo alto.
+  if (hoja) {
+    const { w, h } = medidasHoja();
+    return `<div class="card hoja${formatoHoja === 'letter' ? ' carta' : ''}" style="width:${w}px;min-height:${h}px">${partes.hd}
+    <div class="hoja-top">${partes.banner}</div>
     <div class="hoja-body">
-      <div class="hoja-izq">${partes.banner}${partes.hero}${partes.enc}${partes.rubros}</div>
+      <div class="hoja-izq">${partes.hero}${partes.enc}${logrosHTML(a, indicadores, reales)}${partes.rubros}</div>
       <div class="hoja-der">${partes.ventas}</div>
     </div>${partes.ft}</div>`;
+  }
   return `<div class="card">${partes.hd}${partes.banner}${partes.hero}${partes.enc}${partes.rubros}${partes.ventas}${partes.ft}</div>`;
+}
+
+// Vista previa de la hoja, reducida para que quepa en pantalla (la descarga se genera a tamaño completo).
+function vistaHoja(e, a, i) {
+  const { w, h } = medidasHoja(), k = 540 / w;
+  return `<div class="card-scale hoja-prev" id="card-${i}" style="height:${Math.ceil(h * k)}px">
+    <div style="width:${w}px;transform:scale(${k});transform-origin:top left">${tarjetaHTML(e, a, true)}</div></div>`;
 }
 
 function renderTarjetas() {
@@ -1237,7 +1296,7 @@ function renderTarjetas() {
   const e = state.ppto.equipos[state.equipoSel];
   document.getElementById('cards').innerHTML = e.asesores.map((a, i) => `
     <div class="card-wrap">
-      <div class="card-scale" id="card-${i}">${tarjetaHTML(e, a)}</div>
+      ${formatoImg === 'hoja' ? vistaHoja(e, a, i) : `<div class="card-scale" id="card-${i}">${tarjetaHTML(e, a)}</div>`}
       <div class="foto-ctl">
         <button data-i="${i}" class="b-png">Descargar imagen</button>
         <button data-i="${i}" class="b-pdf">PDF</button>
@@ -1268,7 +1327,7 @@ function renderTarjetas() {
     const i = Number(b.dataset.i);
     b.disabled = true;
     try {
-      const blob = await cardBlob(document.querySelector(`#card-${i} .card`));
+      const blob = await blobAsesor(e, e.asesores[i]);
       descargar(blob, nombreArchivo(e, e.asesores[i]));
     } finally { b.disabled = false; }
   });
@@ -1908,21 +1967,38 @@ function renderSelector() {
 // ---------- Imágenes ----------
 // ---------- PDF (una hoja por asesor, carta o A4) ----------
 const HOJA_KEY = 'tarjetas-asesores-hoja';
-let formatoHoja = 'letter';
-try { formatoHoja = localStorage.getItem(HOJA_KEY) === 'a4' ? 'a4' : 'letter'; } catch (_) {}
+let formatoHoja = 'a4';
+try { formatoHoja = localStorage.getItem(HOJA_KEY) === 'letter' ? 'letter' : 'a4'; } catch (_) {}
+
+function medidasHoja() { return formatoHoja === 'a4' ? { w: 794, h: 1123 } : { w: 816, h: 1056 }; }
+
+// Formato de las imágenes PNG: 'hoja' (como una hoja carta / A4) o 'vertical' (para celular).
+const IMG_KEY = 'tarjetas-asesores-img';
+let formatoImg = 'hoja';
+try { formatoImg = localStorage.getItem(IMG_KEY) === 'vertical' ? 'vertical' : 'hoja'; } catch (_) {}
+
+// Dibuja la tarjeta del asesor fuera de pantalla y regresa el canvas.
+async function canvasAsesor(e, a, hoja, escala = 2) {
+  const caja = document.createElement('div');
+  caja.style.cssText = 'position:fixed;left:-10000px;top:0;';
+  caja.innerHTML = tarjetaHTML(e, a, hoja);
+  document.body.appendChild(caja);
+  try { return await html2canvas(caja.firstElementChild, { scale: escala, backgroundColor: '#ffffff', logging: false }); }
+  finally { caja.remove(); }
+}
+async function blobAsesor(e, a) {
+  const canvas = await canvasAsesor(e, a, formatoImg === 'hoja');
+  return new Promise(res => canvas.toBlob(res, 'image/png'));
+}
 
 async function pdfAsesores(lista, nombre, st) {
   if (!window.jspdf) { alert('No se pudo cargar la librería de PDF. Revisa tu conexión a internet.'); return; }
   const doc = new window.jspdf.jsPDF({ unit: 'pt', format: formatoHoja, orientation: 'portrait' });
   const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 22;
-  const caja = document.createElement('div');
-  caja.style.cssText = 'position:fixed;left:-10000px;top:0;';
-  document.body.appendChild(caja);
   try {
     for (let k = 0; k < lista.length; k++) {
       if (st) st.textContent = `Generando PDF ${k + 1} de ${lista.length}…`;
-      caja.innerHTML = tarjetaHTML(lista[k].e, lista[k].a, true);
-      const canvas = await html2canvas(caja.firstElementChild, { scale: 2.2, backgroundColor: '#ffffff', logging: false });
+      const canvas = await canvasAsesor(lista[k].e, lista[k].a, true, 2.2);
       // Se ajusta a la hoja sin deformar: el lado que más limite define la escala.
       const r = Math.min((W - 2 * M) / canvas.width, (H - 2 * M) / canvas.height);
       const w = canvas.width * r, h = canvas.height * r;
@@ -1931,7 +2007,6 @@ async function pdfAsesores(lista, nombre, st) {
     }
     doc.save(nombre);
   } finally {
-    caja.remove();
     if (st) st.textContent = '';
   }
 }
@@ -1955,6 +2030,13 @@ document.getElementById('hoja-fmt').value = formatoHoja;
 document.getElementById('hoja-fmt').onchange = ev => {
   formatoHoja = ev.target.value;
   try { localStorage.setItem(HOJA_KEY, formatoHoja); } catch (_) {}
+  if (state.ppto) renderTarjetas();
+};
+document.getElementById('img-fmt').value = formatoImg;
+document.getElementById('img-fmt').onchange = ev => {
+  formatoImg = ev.target.value;
+  try { localStorage.setItem(IMG_KEY, formatoImg); } catch (_) {}
+  if (state.ppto) renderTarjetas();
 };
 document.getElementById('b-pdf-eq').onclick = async () => {
   const e = state.ppto.equipos[state.equipoSel];
@@ -1972,7 +2054,7 @@ document.getElementById('b-zip').onclick = async () => {
     const zip = new JSZip();
     for (let i = 0; i < e.asesores.length; i++) {
       st.textContent = `Generando ${i + 1} de ${e.asesores.length}…`;
-      zip.file(nombreArchivo(e, e.asesores[i]), await cardBlob(document.querySelector(`#card-${i} .card`)));
+      zip.file(nombreArchivo(e, e.asesores[i]), await blobAsesor(e, e.asesores[i]));
     }
     descargar(await zip.generateAsync({ type: 'blob' }), `${e.nombre}.zip`);
     st.textContent = '';
