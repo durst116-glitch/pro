@@ -423,6 +423,64 @@
   .card-scale.hoja-prev { overflow: hidden; box-shadow: 0 2px 10px rgba(15,23,42,.15); background: #ffffff; }
   .foto-ctl { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
   .foto-ctl label { font: inherit; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; }
+  /* ---------- Hoja: letra más grande para leerse bien impresa ---------- */
+  .card.hoja .hd .nombre { font-size: 26px; }
+  .card.hoja .hd .meta { font-size: 13.5px; }
+  .card.hoja .banner .bt { font-size: 17px; }
+  .card.hoja .banner .bs { font-size: 13px; }
+  .card.hoja .sec-t { font-size: 13px; }
+  .card.hoja .vh { font-size: 10.5px; }
+  .card.hoja .vh, .card.hoja .vr { grid-template-columns: 150px 1fr 52px 48px 84px; gap: 6px; }
+  .card.hoja .vg-i { font-size: 14px; }
+  .card.hoja .vg-n { font-size: 13px; }
+  .card.hoja .vg-t { font-size: 12px; }
+  .card.hoja .vg-t b { font-size: 13.5px; }
+  .card.hoja .vr.solo .vg-n { font-size: 12px; }
+  .card.hoja .vn { font-size: 13px; }
+  .card.hoja .vc b { font-size: 15px; }
+  .card.hoja .vc span { font-size: 11px; }
+  .card.hoja .vp span { font-size: 12px; min-width: 42px; }
+  .card.hoja .vs { font-size: 11.5px; }
+  .card.hoja .vt, .card.hoja .vt i { height: 9px; }
+  .card.hoja .legend { font-size: 11px; }
+  .card.hoja .ft { font-size: 12px; }
+  .card.hoja .imp-t { font-size: 16px; }
+  .card.hoja .imp-s { font-size: 12px; }
+  .card.hoja .imp-n { font-size: 14px; }
+  .card.hoja .imp-v { font-size: 13px; }
+  .card.hoja .imp-v b { font-size: 19px; }
+  .card.hoja .imp-f { font-size: 12px; }
+  .card.hoja .cz-t { font-size: 15px; }
+  .card.hoja .cz-s { font-size: 11px; }
+  .card.hoja .cz-tot { font-size: 26px; }
+  .card.hoja .cz-n { width: 104px; font-size: 13.5px; }
+  .card.hoja .cz-r { width: 62px; font-size: 14.5px; }
+  .card.hoja .cz-p { width: 74px; font-size: 17px; }
+  .card.hoja .cz-on { font-size: 12.5px; }
+  .card.hoja .cz-ov { font-size: 20px; }
+  .card.hoja .cz-os { font-size: 12px; }
+  .card.hoja .lg-t { font-size: 13.5px; }
+  .card.hoja .lg-chips span { font-size: 12.5px; }
+  .card.hoja .lg-v { font-size: 13px; }
+  .card.hoja .lg-f { font-size: 13px; }
+  .card.hoja .lg-f b, .card.hoja .lg-f em { font-size: 12.5px; }
+  /* Carta (más corta): ventas un punto más chicas que en A4, pero más grandes que antes. */
+  .card.hoja.carta .vn, .card.hoja.carta .vg-n { font-size: 12px; }
+  .card.hoja.carta .vr.solo .vg-n { font-size: 11px; }
+  .card.hoja.carta .vc b { font-size: 13.5px; }
+  .card.hoja.carta .vp span, .card.hoja.carta .vs { font-size: 11px; }
+  .card.hoja.carta .vp span { padding: 0 4px; }
+  .card.hoja.carta .vt, .card.hoja.carta .vt i { height: 8px; }
+  .card.hoja.carta .legend { padding-top: 2px; font-size: 10.5px; }
+  .card.hoja.carta .hoja-der .sec { padding-top: 8px; }
+  .card.hoja.carta .sec-t { margin-bottom: 3px; }
+  .card.hoja.carta .vh { padding-bottom: 0; }
+  .card.hoja.compacta .vgrp { margin-bottom: 2px; }
+  .card.hoja.compacta .vg, .card.hoja.compacta .vr.solo { padding-top: 1px; padding-bottom: 1px; }
+  .card.hoja.compacta .banner { margin-top: 8px; padding: 6px 12px; }
+  .card.hoja.compacta .imp, .card.hoja.compacta .calidez, .card.hoja.compacta .logros { margin-top: 8px; }
+  .card.hoja.compacta .cz-fila { padding: 3px 10px; }
+  .card.hoja.compacta .imp-r { padding: 3px 10px; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -1258,7 +1316,7 @@ function logrosHTML(a, indicadores, reales) {
   const maxChips = Math.max((formatoHoja === 'letter' ? 6 : 8) - nImp, 3);
   return `<div class="logros">
     <div class="lg-b ok"><div class="lg-t">🏆 Tus logros del mes</div>
-      ${logrados.length ? `<div class="lg-chips">${logrados.slice(0, maxChips).map(i => `<span>✓ ${esc(nombre(i))}</span>`).join('')}${logrados.length > maxChips ? `<span>+${logrados.length - maxChips} más</span>` : ''}</div>`
+      ${logrados.length ? `<div class="lg-chips">${logrados.slice(0, maxChips).map(i => `<span>✓ ${esc(nombre(i))}</span>`).join('')}${logrados.length > maxChips ? `<span class="mas" data-n="${logrados.length - maxChips}">+${logrados.length - maxChips} más</span>` : ''}</div>`
         : '<div class="lg-v">Aún sin indicadores cumplidos: ¡el primero está muy cerca!</div>'}</div>
     ${pendientes.length ? `<div class="lg-b foco"><div class="lg-t">🎯 Para cerrar el mes${quedan ? ` · quedan ${quedan} días` : ''}</div>
       ${pendientes.map(x => `<div class="lg-f"><span>${esc(nombre(x.i))}</span><b>Faltan ${x.faltan}</b>${quedan ? `<em>≈ ${Math.ceil(x.faltan / quedan * 10) / 10} al día</em>` : ''}</div>`).join('')}</div>` : ''}
@@ -1369,6 +1427,7 @@ function vistaHoja(e, a, i) {
 function renderTarjetas() {
   renderPanel();
   const e = state.ppto.equipos[state.equipoSel];
+  setTimeout(() => document.querySelectorAll('#cards .hoja-prev .card.hoja').forEach(ajustarHoja), 0);
   document.getElementById('cards').innerHTML = e.asesores.map((a, i) => `
     <div class="card-wrap">
       ${formatoImg === 'hoja' ? vistaHoja(e, a, i) : `<div class="card-scale" id="card-${i}">${tarjetaHTML(e, a)}</div>`}
@@ -2077,12 +2136,47 @@ const IMG_KEY = 'tarjetas-asesores-img';
 let formatoImg = 'hoja';
 try { formatoImg = localStorage.getItem(IMG_KEY) === 'vertical' ? 'vertical' : 'hoja'; } catch (_) {}
 
+// Si la hoja se pasa del alto del papel (ya dibujada en pantalla): primero se compactan los espacios;
+// después se quitan renglones de «Para cerrar el mes» y logros sobrantes (resumidos en «+N más»),
+// pero solo si quitarlos realmente baja el alto (si lo que se pasa es la columna de ventas, no se tocan).
+function ajustarHoja(el) {
+  const alto = parseInt(el.style.minHeight, 10);
+  const pasa = () => el.offsetHeight > alto + 0.5;
+  if (!alto || !pasa()) return;
+  el.classList.add('compacta');
+  // Quita el nodo si eso reduce el alto; si no, lo regresa y avisa que ya no conviene seguir.
+  const quitarSiAyuda = nodo => {
+    const antes = el.offsetHeight, padre = nodo.parentNode, sig = nodo.nextSibling;
+    nodo.remove();
+    if (el.offsetHeight < antes) return true;
+    padre.insertBefore(nodo, sig);
+    return false;
+  };
+  const filas = () => el.querySelectorAll('.lg-f');
+  while (pasa() && filas().length > 2 && quitarSiAyuda(filas()[filas().length - 1]));
+  const chips = el.querySelector('.lg-chips');
+  if (chips) {
+    const reales = () => chips.querySelectorAll('span:not(.mas)');
+    while (pasa() && reales().length > 2) {
+      const mas = chips.querySelector('.mas');
+      const n = (mas ? parseInt(mas.dataset.n, 10) || 0 : 0) + 1;
+      const ultimo = reales()[reales().length - 1];
+      if (!quitarSiAyuda(ultimo)) break;
+      let m = mas;
+      if (!m) { m = document.createElement('span'); m.className = 'mas'; chips.appendChild(m); }
+      m.dataset.n = n; m.textContent = `+${n} más`;
+    }
+  }
+  if (pasa()) { const foco = el.querySelector('.lg-b.foco'); if (foco) quitarSiAyuda(foco); }
+}
+
 // Dibuja la tarjeta del asesor fuera de pantalla y regresa el canvas.
 async function canvasAsesor(e, a, hoja, escala = 2) {
   const caja = document.createElement('div');
   caja.style.cssText = 'position:fixed;left:-10000px;top:0;';
   caja.innerHTML = tarjetaHTML(e, a, hoja);
   document.body.appendChild(caja);
+  if (hoja) ajustarHoja(caja.firstElementChild);
   try { return await html2canvas(caja.firstElementChild, { scale: escala, backgroundColor: '#ffffff', logging: false }); }
   finally { caja.remove(); }
 }
