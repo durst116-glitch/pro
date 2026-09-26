@@ -715,7 +715,9 @@ function calidezAsesor(enc) {
 }
 
 const fmtPts = v => (Math.round(v * 10) / 10).toFixed(1);
-const fmtScore = v => v == null ? '—' : (Math.round(v * 10) / 10).toString();
+// Calificaciones de encuesta con 2 decimales, truncadas (sin redondear): 92.3076 → 92.30.
+const trunc2 = v => Math.trunc(v * 100 + (v < 0 ? -1e-9 : 1e-9)) / 100;
+const fmtScore = v => v == null ? '—' : trunc2(v).toFixed(2);
 
 // ---------- Cálculos ----------
 function diasDelMes(mes) { return new Date(mes.anio, mes.idx + 1, 0).getDate(); }
@@ -1533,12 +1535,15 @@ document.getElementById('g-export').onclick = () => {
     ...g.porInd.map(x => [nombreInd(x.i), x.meta, x.real, r1(x.fReal), x.proy == null ? '' : Math.round(x.proy), r1(x.fProy),
       x.brecha > 0 ? x.brecha : 0, x.porDia == null ? '' : Math.ceil(x.porDia * 10) / 10, x.ceros.length]),
   ]), 'Estimado por indicador');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+  const hojaAs = XLSX.utils.aoa_to_sheet([
     ['Asesor', 'User', 'Equipo', 'Supervisor', 'Cumplimiento al corte %', 'Estimado al cierre %', 'TNPS', 'Indicadores en cero', 'Cuáles'],
     ...g.asesores.map(x => [cap(x.a.nombre), x.a.user, cap(x.e.nombre), cap(x.e.supervisor), r1(x.cumpl), r1(x.proy),
-      x.tnps == null ? '' : Math.round(x.tnps * 10) / 10,
+      x.tnps == null ? '' : trunc2(x.tnps),
       x.ceros.length, x.ceros.map(nombreInd).join(', ')]),
-  ]), 'Asesores');
+  ]);
+  // TNPS (columna G) siempre con 2 decimales.
+  Object.keys(hojaAs).filter(k => /^G\d+$/.test(k) && typeof hojaAs[k].v === 'number').forEach(k => hojaAs[k].z = '0.00');
+  XLSX.utils.book_append_sheet(wb, hojaAs, 'Asesores');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
     ['Asesor', 'User', 'Equipo', 'Indicador en cero', 'Meta'],
     ...g.asesores.flatMap(x => x.ceros.map(i => [cap(x.a.nombre), x.a.user, cap(x.e.nombre), nombreInd(i), x.a.metas[i.id]])),
