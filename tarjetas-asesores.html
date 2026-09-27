@@ -666,6 +666,14 @@
   .tv-ley { margin: 10px 14px 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; font-size: 10.5px; color: #64748b; }
   .tv-ley b { font-weight: 900; }
   .tv-ft { text-align: center; font-size: 12px; font-weight: 800; letter-spacing: .1em; color: #94a3b8; padding: 12px 0 16px; }
+  .secc { margin-top: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+  .secc summary { cursor: pointer; }
+  .secc p { margin: 6px 0; color: var(--ink-2); font-size: 13px; }
+  .sec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 4px 12px; font-size: 13px; }
+  .card.hoja .hoja-body.solo-der .hoja-izq, .card.hoja .hoja-body.solo-izq .hoja-der { display: none; }
+  .card.hoja .hoja-body.solo-izq .hoja-izq { width: auto; flex: 1; }
+  .card.hoja .hoja-body.solo-der .hoja-der > .sec { justify-content: flex-start; gap: 16px; }
+  .card.hoja .hoja-body.solo-der .vgrp { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -778,12 +786,15 @@
       <button class="primary" id="b-zip">Descargar todas las del equipo (ZIP)</button>
       <button id="b-pdf-eq">PDF del equipo (una hoja por asesor)</button>
       <label>Hoja <select id="hoja-fmt"><option value="a4">A4</option><option value="letter">Carta</option></select></label>
-      <label class="chk-cal"><input type="checkbox" id="ver-calif"> Mostrar calificación estimada en la tarjeta</label>
       <label>Imagen <select id="img-fmt"><option value="hoja">Como hoja (A4 / Carta)</option><option value="vertical">Vertical (celular)</option></select></label>
       <label class="upload-btn" style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);cursor:pointer">Cargar varias fotos
         <input type="file" id="f-fotos" accept="image/*" multiple hidden></label>
       <span id="zip-st" style="color:var(--muted);font-size:13px"></span>
     </div>
+    <details id="d-secciones" class="secc" open><summary><b>Secciones de la tarjeta</b> <span id="sec-cuenta"></span></summary>
+      <p>Marca lo que quieres que aparezca en la tarjeta, la imagen y el PDF. Se guarda en este navegador.</p>
+      <div class="sec-grid" id="sec-grid"></div>
+    </details>
     <p style="margin:8px 0 0;color:var(--ink-2);font-size:13px">Para cargar varias fotos a la vez, nombra cada archivo con el user del asesor (por ejemplo <code>XOB7F34.jpg</code>) o con su nombre completo.</p>
     <div class="cards" id="cards"></div>
   </section>
@@ -1654,7 +1665,6 @@ function renderEquipos() {
     : `Sin cargar para ${mesTxt(mes)}.`;
   document.getElementById('b-quitar-ventas').hidden = !v;
   document.getElementById('b-quitar-enc').hidden = !en;
-  document.getElementById('ver-calif').checked = visible('CALIF');
   renderMapeo();
   document.querySelectorAll('.team').forEach(el => el.onclick = () => {
     state.equipoSel = Number(el.dataset.i); renderEquipos(); renderTarjetas();
@@ -1825,11 +1835,13 @@ function tarjetaHTML(e, a, hoja = false) {
           <div class="chip">${esc(MESES[mes.idx])} ${mes.anio} · ${esc(cap(e.cac))}</div>
           <div class="nombre">${esc(cap(a.nombre))}</div>
           <div class="meta">${esc(cap(e.nombre))} · Sup. ${esc(cap(e.supervisor))}<br>${esc(a.user)}${a.dias ? ' · ' + a.dias + ' días a trabajar' : ''}</div>
-          ${lugar ? `<div class="medal">${MEDALLAS[lugar]}</div>` : ''}
+          ${lugar && visible('SEC|MEDALLA') ? `<div class="medal">${MEDALLAS[lugar]}</div>` : ''}
         </div>
       </div>
     </div>`;
-  partes.banner = reales ? mensajeHTML(a, res, ritmo, reales, indicadores) : '';
+  partes.banner = reales && visible('SEC|MENSAJE') ? mensajeHTML(a, res, ritmo, reales, indicadores) : '';
+  partes.imp = visible('SEC|IMPULSO') ? impulsoHTML(a, reales, ritmo) : '';
+  partes.cerrar = visible('SEC|CERRAR') ? logrosHTML(a, indicadores, reales) : '';
   partes.hero = `<div class="hero">
       ${indicadoresCumpl().length ? `<div><div class="lbl">Cumplimiento de ventas</div>
         <div class="kring">${anilloHTML(res.promedio, general)}
@@ -1842,16 +1854,17 @@ function tarjetaHTML(e, a, hoja = false) {
         <div class="val">${enc ? fmtScore(enc.tnps.valor) : '—'}</div>
         <div class="sub">${!state.ppto.encuestas ? 'Pendiente de cargar encuestas' : enc ? `${enc.tnps.base} encuestas` : 'Sin encuestas'}</div></div>` : ''}
     </div>`.replace(/<div class="hero">\s*<\/div>/, '');
-  partes.enc = encuestasBloqueHTML(enc);
+  partes.enc = visible('SEC|ENCUESTAS') ? encuestasBloqueHTML(enc) : '';
+  if (!visible('SEC|HERO')) partes.hero = '';
   partes.calif = visible('CALIF') ? califCardHTML(a) : '';
   partes.rubros = visible('RUBROS') ? rubrosHTML(rubrosAsesor(a, reales)) : '';
-  partes.ventas = filas ? `<div class="sec">
+  partes.ventas = filas && visible('SEC|VENTAS') ? `<div class="sec">
       <div class="sec-t">Ventas</div>
       <div class="vh"><span>Indicador</span><span>Avance</span><span>Llevas</span><span>%</span><span></span></div>
       ${filas}
-      ${hoja ? porArrancarHTML(a, indicadores, reales) : ''}
+      ${hoja && visible('SEC|ARRANCAR') ? porArrancarHTML(a, indicadores, reales) : ''}
     </div>
-    <div class="legend">
+    <div class="legend" ${visible('SEC|LEYENDA') ? '' : 'hidden'}>
       <span class="lg" style="background:${SUAVE.ok}"></span> ¡Logrado! ·
       <span class="lg" style="background:${SUAVE.ritmo}"></span> En ritmo ·
       <span class="lg" style="background:${SUAVE.bajo}"></span> Abajo del ritmo${ritmo != null ? ` (${Math.round(ritmo * 100)}% del mes)` : ''}${hoja && reales ? '' : ` ·
@@ -1865,12 +1878,12 @@ function tarjetaHTML(e, a, hoja = false) {
     const { w, h } = medidasHoja();
     return `<div class="card hoja${formatoHoja === 'letter' ? ' carta' : ''}" style="width:${w}px;min-height:${h}px">${partes.hd}
     <div class="hoja-top">${partes.banner}</div>
-    <div class="hoja-body">
-      <div class="hoja-izq">${partes.calif}${impulsoHTML(a, reales, ritmo)}${partes.enc}${logrosHTML(a, indicadores, reales)}</div>
+    <div class="hoja-body${!(partes.calif + partes.imp + partes.enc + partes.cerrar) ? ' solo-der' : !partes.ventas ? ' solo-izq' : ''}">
+      <div class="hoja-izq">${partes.calif}${partes.imp}${partes.enc}${partes.cerrar}</div>
       <div class="hoja-der">${partes.ventas}</div>
     </div>${partes.ft}</div>`;
   }
-  return `<div class="card">${partes.hd}${partes.banner}${partes.calif}${impulsoHTML(a, reales, ritmo)}${partes.hero}${partes.enc}${partes.rubros}${partes.ventas}${partes.ft}</div>`;
+  return `<div class="card">${partes.hd}${partes.banner}${partes.calif}${partes.imp}${partes.hero}${partes.enc}${partes.rubros}${partes.ventas}${partes.ft}</div>`;
 }
 
 // Vista previa de la hoja, reducida para que quepa en pantalla (la descarga se genera a tamaño completo).
@@ -3003,7 +3016,7 @@ function renderSelector() {
     ${g.items.map(it => `<label><input type="checkbox" data-id="${esc(it.id)}" ${visible(it.id) ? 'checked' : ''}> ${esc(it.txt)}</label>`).join('')}
   </div>`).join('');
   document.getElementById('ind-cuenta').textContent = `(${todos.filter(it => visible(it.id)).length} de ${todos.length})`;
-  document.getElementById('ver-calif').checked = visible('CALIF');
+  renderSecciones();
   document.querySelectorAll('#ind-grid input').forEach(cb => cb.onchange = () => {
     cb.checked ? ocultos.delete(cb.dataset.id) : ocultos.add(cb.dataset.id);
     guardarOcultos(); renderSelector(); renderTarjetas();
@@ -3472,10 +3485,29 @@ document.getElementById('b-reset').onclick = () => {
   state.meses = {};
   sinPresupuesto();
 };
-document.getElementById('ver-calif').onchange = ev => {
-  ev.target.checked ? ocultos.delete('CALIF') : ocultos.add('CALIF');
-  guardarOcultos(); renderSelector(); renderTarjetas();
-};
+// Secciones de la tarjeta que se pueden ocultar (se guardan con los indicadores ocultos).
+const SECCIONES = [
+  { id: 'SEC|MEDALLA', txt: 'Lugar en el equipo (medalla)' },
+  { id: 'SEC|MENSAJE', txt: 'Mensaje motivador' },
+  { id: 'CALIF', txt: 'Calificación estimada' },
+  { id: 'SEC|IMPULSO', txt: 'Impulso del mes' },
+  { id: 'SEC|ENCUESTAS', txt: 'Encuestas (calidez, TNPS y satisfacción)' },
+  { id: 'SEC|CERRAR', txt: 'Para cerrar el mes (hoja)' },
+  { id: 'SEC|VENTAS', txt: 'Ventas' },
+  { id: 'SEC|ARRANCAR', txt: 'Por arrancar (hoja)' },
+  { id: 'SEC|LEYENDA', txt: 'Leyenda de colores' },
+  { id: 'SEC|HERO', txt: 'Cumplimiento e indicadores cumplidos (vertical)' },
+  { id: 'RUBROS', txt: 'Rubros al 75% (vertical)' },
+];
+function renderSecciones() {
+  document.getElementById('sec-grid').innerHTML = SECCIONES.map(x =>
+    `<label><input type="checkbox" data-id="${esc(x.id)}" ${visible(x.id) ? 'checked' : ''}> ${esc(x.txt)}</label>`).join('');
+  document.getElementById('sec-cuenta').textContent = `(${SECCIONES.filter(x => visible(x.id)).length} de ${SECCIONES.length})`;
+  document.querySelectorAll('#sec-grid input').forEach(cb => cb.onchange = () => {
+    cb.checked ? ocultos.delete(cb.dataset.id) : ocultos.add(cb.dataset.id);
+    guardarOcultos(); renderSelector(); renderTarjetas();
+  });
+}
 
 const hoy = new Date();
 document.getElementById('corte').value =
