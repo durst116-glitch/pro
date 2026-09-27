@@ -555,6 +555,46 @@
   .borrado button { font-size: 13px; }
   .peligro { color: #b42318; border-color: #f3b4ae; }
   .chk-cal { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+  /* ---------- Ranking de ventas (imagen para WhatsApp) ---------- */
+  .card.rank .rk-hd { position: relative; }
+  .card.rank .hd .nombre { font-size: 26px; }
+  .rk-msg { margin: 14px 16px 0; background: linear-gradient(90deg, #fff7e0, #ffeccc); border: 1px solid #f7d58c; border-radius: 14px; padding: 10px 14px; color: #7c4a03; }
+  .rk-msg b { display: block; font-size: 18px; font-weight: 900; }
+  .rk-msg span { font-size: 12.5px; font-weight: 600; }
+  .rk-podio { display: flex; align-items: flex-end; justify-content: center; gap: 10px; padding: 18px 16px 0; }
+  .rk-p { flex: 1; max-width: 165px; text-align: center; position: relative; }
+  .rk-av { margin: 0 auto; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #93c5fd, #3b82f6); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; border: 4px solid #fff; }
+  .rk-av img { width: 100%; height: 100%; object-fit: cover; }
+  .rk-av.l1 { width: 92px; height: 92px; font-size: 32px; box-shadow: 0 0 0 4px #f5c542; }
+  .rk-av.l2 { width: 74px; height: 74px; font-size: 26px; box-shadow: 0 0 0 4px #c0c7d2; }
+  .rk-av.l3 { width: 74px; height: 74px; font-size: 26px; box-shadow: 0 0 0 4px #d99a6c; }
+  .rk-med { font-size: 28px; line-height: 1; margin-top: -14px; position: relative; }
+  .rk-pn { font-size: 15px; font-weight: 900; color: #1e293b; margin-top: 4px; line-height: 1.15; }
+  .rk-pp { font-size: 16px; font-weight: 900; color: #2f8a55; }
+  .rk-pv { font-size: 11px; font-weight: 700; color: #64748b; min-height: 28px; line-height: 1.25; padding: 0 4px; }
+  .rk-base { margin-top: 6px; border-radius: 10px 10px 0 0; color: #fff; font-size: 26px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+  .rk-p.l1 .rk-base { height: 70px; background: linear-gradient(180deg, #f5c542, #e0a91f); }
+  .rk-p.l2 .rk-base { height: 50px; background: linear-gradient(180deg, #c9d0da, #9aa5b5); }
+  .rk-p.l3 .rk-base { height: 38px; background: linear-gradient(180deg, #e3aa80, #c27a4a); }
+  .rk-lista { margin: 0 16px; border-top: 3px solid #e2e8f0; padding-top: 6px; }
+  .rk-f { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; padding: 6px 4px; border-bottom: 1px solid #eef2f7; }
+  .rk-n { width: 28px; height: 28px; border-radius: 50%; background: #eef2ff; color: #1e40af; font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .rk-fn { font-size: 14px; font-weight: 800; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rk-fn em { font-style: normal; font-size: 11px; font-weight: 700; color: #64748b; }
+  .rk-bar { height: 7px; border-radius: 4px; background: #eef2f7; margin-top: 4px; overflow: hidden; }
+  .rk-bar i { display: block; height: 7px; border-radius: 4px; background: linear-gradient(90deg, #3b82f6, #22c55e); }
+  .rk-f > b { font-size: 14px; font-weight: 900; color: #2f8a55; white-space: nowrap; }
+  .rk-mas { font-size: 12px; color: #64748b; font-weight: 700; text-align: center; padding: 6px 0 2px; }
+  .rk-cero { margin: 12px 16px 0; background: #f1f5f9; border-radius: 12px; padding: 9px 12px; font-size: 12.5px; color: #334155; line-height: 1.4; }
+  .rk-rec { margin: 10px 16px 0; display: flex; flex-direction: column; gap: 5px; }
+  .rk-rec div { background: #f5f3ff; border: 1px solid #e4dcff; border-radius: 10px; padding: 6px 10px; font-size: 13px; color: #3b2a78; }
+  .rk-eq { display: flex; gap: 8px; margin: 12px 16px 14px; }
+  .rk-eq > div { flex: 1; background: #eff6ff; border-radius: 12px; padding: 8px 10px; text-align: center; }
+  .rk-eq b { display: block; font-size: 22px; font-weight: 900; color: #1e3a6e; }
+  .rk-eq span { font-size: 11px; font-weight: 700; color: #475569; }
+  .rq summary { cursor: pointer; }
+  .rq-t input { width: 52px; text-align: center; }
+  .rq-t th span { display: inline-block; max-width: 90px; white-space: normal; text-align: center; line-height: 1.2; }
 </style>
 </head>
 <body>
@@ -1076,11 +1116,10 @@ function ritmoEsperado() {
 
 // Ventas acumuladas del asesor del día 1 a la fecha de corte, por indicador. null si no hay registro cargado.
 // Incluye las ventas adicionales capturadas a mano (state.ppto.ajustes) con día <= corte.
-function realAsesor(a) {
+function realAsesor(a, hasta = diaCorte() ?? 31) {
   const v = state.ppto.ventas;
   const ajustes = state.ppto.ajustes || [];
   if (!v && !ajustes.length) return null;
-  const hasta = diaCorte() ?? 31;
   const real = {};
   state.ppto.indicadores.forEach(i => real[i.id] = 0);
   Object.entries((v && v.porUser[a.user]) || {}).forEach(([dia, cant]) => {
@@ -1088,12 +1127,14 @@ function realAsesor(a) {
     Object.entries(cant).forEach(([id, n]) => { if (id in real) real[id] += n; });
   });
   ajustes.forEach(j => {
-    if (j.user === a.user && j.dia <= hasta && j.id in real) real[j.id] += j.cantidad;
+    if (j.user === a.user && j.dia <= hasta && j.id in real && !rapidaCubierta(j)) real[j.id] += j.cantidad;
   });
   return real;
 }
 
-const ajustesDe = a => (state.ppto.ajustes || []).filter(j => j.user === a.user && j.dia <= (diaCorte() ?? 31));
+const ajustesDe = a => (state.ppto.ajustes || []).filter(j => j.user === a.user && j.dia <= (diaCorte() ?? 31) && !rapidaCubierta(j));
+// La captura rápida del día se deja de sumar en cuanto se carga un registro de ventas que ya trae ese día.
+const rapidaCubierta = j => !!(j.rapida && state.ppto.ventas && state.ppto.ventas.ultimoDia >= j.dia);
 
 // ---------- Calificación de productividad (Esquema de Productividad Asesores CAC R9) ----------
 // Cada variable da puntos en proporción al avance contra su meta, topado en 100%.
@@ -1192,11 +1233,11 @@ const nombreEsquema = id => {
 
 // Calificación estimada del asesor. proy: ventas proyectadas al cierre (al corte ÷ días transcurridos × días del mes).
 // mas: ventas adicionales por indicador (simulador). null si no hay ventas cargadas.
-function califAsesor(a, { proy = false, mas = {} } = {}) {
-  const actual = realAsesor(a);
+function califAsesor(a, { proy = false, mas = {}, hasta } = {}) {
+  const actual = hasta == null ? realAsesor(a) : realAsesor(a, hasta);
   if (!actual) return null;
   const inds = state.ppto.indicadores;
-  const D = diasDelMes(state.ppto.mes), dc = diaCorte() ?? D;
+  const D = diasDelMes(state.ppto.mes), dc = hasta ?? diaCorte() ?? D;
   const f = proy && dc > 0 ? D / dc : 1;
   const real = {};
   Object.keys(actual).forEach(id => real[id] = Math.max(actual[id], 0) * f + (mas[id] || 0));
@@ -2077,6 +2118,147 @@ function tarjetaSupervisorHTML(titulo, sub, asesores, g) {
   </div>`;
 }
 
+// ---------- Ranking de ventas (tarjeta para WhatsApp) ----------
+let gRankPer = 'dia';
+const DIAS_SEM = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+function inicioSemana(d) {
+  const { anio, idx } = state.ppto.mes;
+  const w = (new Date(anio, idx, d).getDay() + 6) % 7; // lunes = 0
+  return Math.max(d - w, 1);
+}
+// Puntos del periodo = lo que subieron sus puntos de ventas y permanencia del esquema (sin retención, que es un % del mes).
+const ptsVenta = c => c ? c.ventas + c.perm - c.ret.pts : 0;
+function datosRanking(lista, periodo) {
+  const D = diasDelMes(state.ppto.mes), d = Math.min(Math.max(diaCorte() ?? D, 1), D);
+  const desde = periodo === 'dia' ? d : periodo === 'semana' ? inicioSemana(d) : 1;
+  const ids = indicadoresActivos().map(i => i.id);
+  const filas = lista.map(({ a, e }) => {
+    const r1 = realAsesor(a, d), r0 = realAsesor(a, desde - 1);
+    if (!r1) return null;
+    const pts = ptsVenta(califAsesor(a, { hasta: d })) - ptsVenta(califAsesor(a, { hasta: desde - 1 }));
+    const vend = ids.map(id => ({ id, n: (r1[id] || 0) - (r0[id] || 0) })).filter(x => x.n > 0).sort((x, y) => y.n - x.n);
+    // Metas que cruzó en el periodo.
+    const metas = ids.filter(id => a.metas[id] > 0 && (r0[id] || 0) < a.metas[id] && (r1[id] || 0) >= a.metas[id]);
+    // Días seguidos vendiendo hasta el día de corte.
+    let racha = 0;
+    for (let k = d; k >= 1; k--) {
+      const hoy = realAsesor(a, k), ayer = realAsesor(a, k - 1);
+      if (ids.some(id => (hoy[id] || 0) > (ayer[id] || 0))) racha++; else break;
+    }
+    return { a, e, pts, piezas: vend.reduce((t, x) => t + x.n, 0), vend, metas, racha, r1 };
+  }).filter(Boolean).sort((x, y) => y.pts - x.pts || y.piezas - x.piezas);
+  // Lo que falta para la meta, con los indicadores elegidos para el % de cumplimiento.
+  const cumplIds = indicadoresCumpl().map(i => i.id);
+  const faltan = filas.reduce((t, f) => t + cumplIds.reduce((u, id) => u + Math.max((f.a.metas[id] || 0) - (f.r1[id] || 0), 0), 0), 0);
+  return { d, D, desde, filas, faltan, quedan: D - d, piezas: filas.reduce((t, f) => t + f.piezas, 0) };
+}
+
+function rankingHTML(titulo, sub, lista, periodo, maxLista = 99) {
+  const R = datosRanking(lista, periodo);
+  const { mes } = state.ppto;
+  const cortos = nombresCortos(lista.map(x => x.a));
+  const nom = f => cap(cortos[f.a.user]);
+  const fecha = new Date(mes.anio, mes.idx, R.d);
+  const cuando = periodo === 'dia' ? `${DIAS_SEM[fecha.getDay()]} ${R.d} de ${MESES[mes.idx]}`
+    : periodo === 'semana' ? `del ${R.desde} al ${R.d} de ${MESES[mes.idx]}` : `${MESES[mes.idx]} · al día ${R.d}`;
+  const etiqueta = { dia: 'Ranking del día', semana: 'Ranking de la semana', mes: 'Ranking del mes' }[periodo];
+  const conVenta = R.filas.filter(f => f.piezas > 0), sinVenta = R.filas.filter(f => f.piezas <= 0);
+  const porDia = R.quedan > 0 ? R.faltan / R.quedan : null;
+  const hoyTxt = { dia: 'Hoy', semana: 'Esta semana', mes: 'Este mes' }[periodo];
+  const msg = !conVenta.length ? { t: '¡Hoy arrancamos! 💪', s: 'La primera venta del día puede ser la tuya.' }
+    : !sinVenta.length ? { t: '¡Todo el equipo vendió! 🙌', s: 'Así se juega en equipo. ¡Sigamos con este ritmo!' }
+    : periodo === 'dia' && porDia != null && R.piezas >= porDia ? { t: '¡Día de campeones! 🏆', s: 'El equipo vendió al ritmo que necesita la meta.' }
+    : { t: '¡Cada venta cuenta! 🚀', s: 'Felicidades a quienes sumaron. ¡Vamos todos por más!' };
+  const productos = f => f.vend.slice(0, 2).map(x => `${x.n} ${nombreEsquema(x.id)}`).join(' · ') + (f.vend.length > 2 ? ` · +${f.vend.slice(2).reduce((t, x) => t + x.n, 0)}` : '');
+  const ptsTxt = v => `${v > 0 ? '+' : ''}${fmtCal(v)} pts`;
+  const avatar = (f, cls) => `<div class="rk-av ${cls}">${fotos[f.a.user] ? `<img src="${fotos[f.a.user]}" alt="">` : `<span>${esc(iniciales(f.a.nombre))}</span>`}</div>`;
+  const podio = conVenta.slice(0, 3);
+  const orden = [podio[1], podio[0], podio[2]].map((f, k) => f ? { f, lugar: [2, 1, 3][k] } : null).filter(Boolean);
+  const MED = { 1: '🥇', 2: '🥈', 3: '🥉' };
+  const resto = conVenta.slice(3), visibles = resto.slice(0, Math.max(maxLista - 3, 0));
+  const maxPts = Math.max(...conVenta.map(f => f.pts), 0.01);
+
+  // Reconocimientos: impulso del mes, metas cumplidas, más ventas y rachas.
+  const rec = [];
+  indicadoresImpulso().forEach(i => {
+    const top = conVenta.map(f => ({ f, n: (f.vend.find(x => x.id === i.id) || {}).n || 0 })).sort((x, y) => y.n - x.n)[0];
+    if (top && top.n > 0) rec.push(`⚡ Más ${esc(nombreEsquema(i.id))}: <b>${esc(nom(top.f))}</b> (${top.n})`);
+  });
+  R.filas.filter(f => f.metas.length).slice(0, 2).forEach(f => rec.push(`🎯 <b>${esc(nom(f))}</b> cumplió su meta de ${esc(f.metas.slice(0, 2).map(nombreEsquema).join(' y '))}`));
+  const masPiezas = [...conVenta].sort((x, y) => y.piezas - x.piezas)[0];
+  if (masPiezas && masPiezas !== podio[0]) rec.push(`🛒 Más ventas: <b>${esc(nom(masPiezas))}</b> (${masPiezas.piezas})`);
+  const racha = [...R.filas].sort((x, y) => y.racha - x.racha)[0];
+  if (racha && racha.racha >= 3) rec.push(`🔥 <b>${esc(nom(racha))}</b>: ${racha.racha} días seguidos vendiendo`);
+
+  return `<div class="card rank">
+    <div class="hd"><div class="deco d1"></div><div class="deco d2"></div>
+      <div class="rk-hd"><div class="chip">🏆 ${etiqueta} · ${esc(cuando)}</div>
+        <div class="nombre">${esc(titulo)}</div><div class="meta">${esc(sub)}</div></div></div>
+    <div class="rk-msg"><b>${msg.t}</b><span>${msg.s}</span></div>
+    ${podio.length ? `<div class="rk-podio">${orden.map(({ f, lugar }) => `<div class="rk-p l${lugar}">
+      ${avatar(f, 'l' + lugar)}<div class="rk-med">${MED[lugar]}</div>
+      <div class="rk-pn">${esc(nom(f))}</div><div class="rk-pp">${ptsTxt(f.pts)}</div>
+      <div class="rk-pv">${esc(productos(f))}</div>
+      <div class="rk-base">${lugar}</div></div>`).join('')}</div>` : ''}
+    ${visibles.length ? `<div class="rk-lista">${visibles.map((f, k) => `<div class="rk-f">
+      <span class="rk-n">${k + 4}</span>
+      <div class="rk-c"><div class="rk-fn">${esc(nom(f))} <em>${esc(productos(f))}</em></div>
+        <div class="rk-bar"><i style="width:${Math.max(f.pts / maxPts, 0.04) * 100}%"></i></div></div>
+      <b>${ptsTxt(f.pts)}</b></div>`).join('')}
+      ${resto.length > visibles.length ? `<div class="rk-mas">y ${resto.length - visibles.length} asesores más con ventas</div>` : ''}</div>` : ''}
+    ${sinVenta.length ? `<div class="rk-cero">💪 <b>¡${periodo === 'dia' ? 'Mañana' : 'La próxima'} es su día!</b> ${sinVenta.length > 8 ? `${sinVenta.length} asesores van por su primera venta.` : esc(sinVenta.map(nom).join(', '))}</div>` : ''}
+    ${rec.length ? `<div class="rk-rec">${rec.slice(0, 4).map(t => `<div>${t}</div>`).join('')}</div>` : ''}
+    <div class="rk-eq"><div><b>${R.piezas}</b><span>ventas ${hoyTxt.toLowerCase()}</span></div>
+      ${porDia != null ? `<div><b>≈ ${Math.ceil(porDia)}</b><span>ventas al día para cerrar al 100%</span></div><div><b>${R.quedan}</b><span>días restantes</span></div>` : '<div><b>✓</b><span>cierre de mes</span></div>'}</div>
+    <div class="ft"><span>Puntos = lo que suma cada venta a la calificación de productividad</span><b>¡Vamos por más!</b></div>
+  </div>`;
+}
+
+// ---------- Captura rápida de ventas del día ----------
+const idsCaptura = () => [...new Set([
+  ...ESQUEMA.map(e => buscarIndicador(state.ppto.indicadores, ...e.inds[0])).filter(Boolean).map(i => i.id),
+  ...indicadoresImpulso().map(i => i.id),
+])];
+function capturaRapidaHTML(lista) {
+  const ppto = state.ppto, D = diasDelMes(ppto.mes);
+  const hoy = new Date();
+  const esteMes = hoy.getFullYear() === ppto.mes.anio && hoy.getMonth() === ppto.mes.idx;
+  const dia = Math.min(Number(gRapidaDia) || (esteMes ? hoy.getDate() : diaCorte() || 1), D);
+  gRapidaDia = dia;
+  const ids = idsCaptura();
+  const valor = (u, id) => (ppto.ajustes || []).filter(j => j.rapida && j.dia === dia && j.user === u && j.id === id).reduce((t, j) => t + j.cantidad, 0);
+  const cubierta = ppto.ventas && ppto.ventas.ultimoDia >= dia;
+  const cortos = nombresCortos(lista.map(x => x.a));
+  return `<details class="g-sec rq" id="g-rapida" ${gRapidaAbierta ? 'open' : ''}><summary><h3 style="display:inline">⚡ Captura rápida de ventas del día</h3></summary>
+    <p>Escribe lo que vendió cada asesor en el día para armar el ranking sin esperar el registro. Se suma a las ventas del mes y aparece en «Ventas adicionales».
+      Cuando subas un registro de ventas que ya traiga ese día, esta captura se deja de sumar sola para no contarla dos veces.</p>
+    <div class="controls"><label>Día <input type="number" id="rq-dia" min="1" max="${D}" value="${dia}" style="width:70px"></label>
+      <button class="primary" id="rq-guardar">Guardar captura del día ${dia}</button>
+      <button id="rq-borrar">Borrar captura del día ${dia}</button>
+      <span id="rq-st" style="font-size:13px;color:var(--muted)">${cubierta ? `⚠ El registro de ventas ya trae el día ${dia}: esta captura no se suma.` : ''}</span></div>
+    <div class="g-scroll"><table class="g-tabla rq-t">
+      <tr><th class="t">Asesor</th>${ids.map(id => `<th><span>${esc(nombreEsquema(id))}</span></th>`).join('')}</tr>
+      ${lista.map(({ a }) => `<tr><td class="t"><b>${esc(cap(cortos[a.user]))}</b> <span style="color:var(--muted);font-size:11px">${esc(a.user)}</span></td>
+        ${ids.map(id => { const v = valor(a.user, id); return `<td><input type="number" min="0" step="1" data-u="${esc(a.user)}" data-id="${esc(id)}" value="${v || ''}" placeholder="0"></td>`; }).join('')}</tr>`).join('')}
+    </table></div>
+  </details>`;
+}
+let gRapidaDia = null, gRapidaAbierta = false;
+function guardarRapida(lista, borrar = false) {
+  const ppto = state.ppto, dia = gRapidaDia;
+  const users = new Set(lista.map(x => x.a.user));
+  ppto.ajustes = (ppto.ajustes || []).filter(j => !(j.rapida && j.dia === dia && users.has(j.user)));
+  if (!borrar) document.querySelectorAll('#g-rapida input[data-u]').forEach(inp => {
+    const n = Math.round(Number(inp.value) || 0);
+    if (n > 0) ppto.ajustes.push({ user: inp.dataset.u, id: inp.dataset.id, dia, cantidad: n, nota: 'Captura rápida', rapida: true });
+  });
+  // El ranking se arma al día de corte: si la captura es de un día posterior, el corte avanza a ese día.
+  const corte = document.getElementById('corte');
+  if (!borrar && (diaCorte() ?? 0) < dia) corte.value = `${state.mesSel}-${String(dia).padStart(2, '0')}`;
+  gRapidaAbierta = true;
+  guardar(); render();
+}
+
 function renderPanel() {
   const ppto = state.ppto;
   if (!ppto) return;
@@ -2263,6 +2445,28 @@ function renderPanel() {
       </tr>`; }).join('')}
     </table></div></div>` : '';
 
+  // Ranking de ventas: una tarjeta por equipo (y una del CAC si hay varios equipos).
+  const listaG = g.asesores.map(x => ({ a: x.a, e: x.e }));
+  const rankings = [];
+  if (g.porEquipo.length > 1) rankings.push({ titulo: `CAC ${cap(g.porEquipo[0].e.cac || '')}`.trim(), sub: `${g.porEquipo.length} equipos · ${listaG.length} asesores`, lista: listaG, max: 10, archivo: 'CAC' });
+  g.porEquipo.forEach(t => rankings.push({ titulo: cap(t.e.nombre), sub: `Sup. ${cap(t.e.supervisor)} · ${t.n} asesores`, lista: listaG.filter(x => x.e === t.e), max: 99, archivo: `${t.e.nombre} - ${t.e.supervisor}` }));
+  const rankSec = `<div class="g-sec" id="g-rank"><h3>🏆 Ranking de ventas para WhatsApp</h3>
+    <p>Ordenado por los puntos que suma cada venta a la calificación de productividad (una Portabilidad con equipo vale más que un Amigo Chip). Se arma con las ventas del día de corte (${g.dc}); si aún no subes el registro de hoy, usa la captura rápida.</p>
+    <div class="controls">
+      <label>Periodo <select id="rk-per">
+        <option value="dia" ${gRankPer === 'dia' ? 'selected' : ''}>Del día (${g.dc})</option>
+        <option value="semana" ${gRankPer === 'semana' ? 'selected' : ''}>De la semana</option>
+        <option value="mes" ${gRankPer === 'mes' ? 'selected' : ''}>Del mes</option>
+      </select></label>
+      <button id="rk-zip">Descargar todas (ZIP)</button>
+      <span id="rk-st" style="color:var(--muted);font-size:13px"></span>
+    </div>
+    <div class="cards">${rankings.map((r, k) => `<div class="card-wrap">
+      <div class="card-scale" id="rk-${k}">${rankingHTML(r.titulo, r.sub, r.lista, gRankPer, r.max)}</div>
+      <button class="b-rk" data-k="${k}">Descargar imagen</button></div>`).join('')}</div>
+  </div>`;
+  const rapidaSec = capturaRapidaHTML(listaG);
+
   // Metas del mes por supervisor (tarjetas descargables).
   const tarjetasSup = [];
   if (g.porEquipo.length > 1) tarjetasSup.push({ titulo: `CAC ${cap(g.porEquipo[0].e.cac || '')}`.trim(), sub: `${g.porEquipo.length} equipos`, asesores: g.asesores.map(x => x.a), archivo: 'CAC' });
@@ -2285,7 +2489,7 @@ function renderPanel() {
   if (sinVentas) {
     nota.textContent = `${mesTxt(ppto.mes)} · aún no hay registro de ventas: por ahora solo se muestran las metas del mes.`;
   }
-  cuerpo.innerHTML = sinVentas ? metasSec + encuestasSec : kpis + califSec + metasSec + encuestasSec + consulta + `
+  cuerpo.innerHTML = sinVentas ? rapidaSec + metasSec + encuestasSec : kpis + rapidaSec + rankSec + califSec + metasSec + encuestasSec + consulta + `
     ${g.porEquipo.length > 1 ? `<div class="g-sec"><h3>Por equipo</h3>
       <div class="g-scroll"><table class="g-tabla"><tr><th>Equipo</th><th>Asesores</th><th>Cumplimiento al corte</th><th>Estimado al cierre</th><th>Indicadores en cero</th></tr>${filasEq}</table></div></div>` : ''}
     <div class="g-sec"><h3>Estimado de ventas al cierre por indicador</h3>
@@ -2314,6 +2518,28 @@ function renderPanel() {
       <div class="g-scroll">${mapa}</div></div>`;
 
   const nombreMsup = t => `Metas ${mesTxt(ppto.mes)} - ${t.archivo}`.replace(/[\\/:*?"<>|]/g, '') + '.png';
+  document.getElementById('g-rapida').ontoggle = ev => { gRapidaAbierta = ev.target.open; };
+  document.getElementById('rq-dia').onchange = ev => { gRapidaDia = Number(ev.target.value) || null; renderPanel(); };
+  document.getElementById('rq-guardar').onclick = () => guardarRapida(listaG);
+  document.getElementById('rq-borrar').onclick = () => { if (confirm(`¿Borrar la captura rápida del día ${gRapidaDia}?`)) guardarRapida(listaG, true); };
+  if (!sinVentas) {
+    const nombreRk = r => `Ranking ${{ dia: 'dia ' + g.dc, semana: 'semana al ' + g.dc, mes: 'mes al ' + g.dc }[gRankPer]} ${mesTxt(ppto.mes)} - ${r.archivo}`.replace(/[\\/:*?"<>|]/g, '') + '.png';
+    document.getElementById('rk-per').onchange = ev => { gRankPer = ev.target.value; renderPanel(); };
+    cuerpo.querySelectorAll('.b-rk').forEach(b => b.onclick = async () => {
+      b.disabled = true;
+      try { descargar(await cardBlob(document.querySelector(`#rk-${b.dataset.k} .card`)), nombreRk(rankings[Number(b.dataset.k)])); }
+      finally { b.disabled = false; }
+    });
+    document.getElementById('rk-zip').onclick = async () => {
+      const st = document.getElementById('rk-st'), zip = new JSZip();
+      for (let k = 0; k < rankings.length; k++) {
+        st.textContent = `Generando ${k + 1} de ${rankings.length}…`;
+        zip.file(nombreRk(rankings[k]), await cardBlob(document.querySelector(`#rk-${k} .card`)));
+      }
+      descargar(await zip.generateAsync({ type: 'blob' }), `Ranking ${mesTxt(ppto.mes)} dia ${g.dc}.zip`);
+      st.textContent = '';
+    };
+  }
   document.getElementById('g-modo').onchange = ev => { gModoMetas = ev.target.value; renderPanel(); };
   cuerpo.querySelectorAll('.b-msup').forEach(b => b.onclick = async () => {
     const t = tarjetasSup[Number(b.dataset.k)];
