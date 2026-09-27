@@ -1553,7 +1553,7 @@ function carita(tipo) {
 // Mensaje motivacional según el avance contra el ritmo del mes.
 function mensajeHTML(a, res, ritmo, reales, indicadores) {
   if (res.promedio == null) return '';
-  const quedan = Math.max(diasDelMes(state.ppto.mes) - (diaCorte() ?? 0), 0);
+  const quedan = quedanAsesor(a);
   const enfoque = indicadores
     .filter(i => a.metas[i.id] > 0 && reales[i.id] < a.metas[i.id])
     .map(i => ({ i, pct: reales[i.id] / a.metas[i.id], faltan: a.metas[i.id] - reales[i.id] }))
@@ -1565,7 +1565,7 @@ function mensajeHTML(a, res, ritmo, reales, indicadores) {
     .map(i => ({ i, pct: reales[i.id] / a.metas[i.id] })).sort((x, y) => y.pct - x.pct)[0];
   const destaca = mejor && mejor.pct >= 0.5
     ? `Destacas en ${mejor.i.sub ? `${cap(mejor.i.grupo)} ${mejor.i.sub}` : cap(mejor.i.grupo)} (${Math.round(mejor.pct * 100)}%). ` : '';
-  const dias = quedan ? ` Quedan ${quedan} días.` : '';
+  const dias = quedan ? ` Te quedan ${quedan} días${descansoFijo[a.user] != null ? ' de venta' : ''}.` : '';
   let m;
   if (res.promedio >= 1) m = { ico: carita('cumplida'), t: '¡Meta del mes cumplida!', s: 'Gracias por tu gran trabajo, eres ejemplo para tu equipo.', bg: '#dcfce7', fg: '#14532d' };
   else if (ritmo != null && res.promedio >= ritmo) m = { ico: carita('ritmo'), t: '¡Vas en ritmo, sigue así!', s: `Mantén el paso para cerrar el mes arriba.${dias}`, bg: '#dbeafe', fg: '#1e3a8a' };
@@ -1713,7 +1713,7 @@ function califCardHTML(a) {
 function impulsoHTML(a, reales, ritmo) {
   const inds = indicadoresImpulso().filter(i => a.metas[i.id] > 0);
   if (!inds.length) return '';
-  const quedan = Math.max(diasDelMes(state.ppto.mes) - (diaCorte() ?? 0), 0);
+  const quedan = quedanAsesor(a);
   return `<div class="imp">
     <div class="imp-hd"><span class="imp-ico">⚡</span><div>
       <div class="imp-t">Impulso del mes</div>
@@ -1736,7 +1736,7 @@ function impulsoHTML(a, reales, ritmo) {
 // Solo en la hoja: en qué enfocarse para cerrar el mes (usa el espacio libre de la columna izquierda).
 function logrosHTML(a, indicadores, reales) {
   if (!reales) return '';
-  const quedan = Math.max(diasDelMes(state.ppto.mes) - (diaCorte() ?? 0), 0);
+  const quedan = quedanAsesor(a);
   const conMeta = indicadores.filter(i => a.metas[i.id] > 0);
   const nombre = i => i.sub ? `${cap(i.grupo)} ${i.sub}` : cap(i.grupo);
   // Los de impulso ya tienen su propio bloque; el espacio que dejan se usa para más pendientes.
@@ -1746,7 +1746,7 @@ function logrosHTML(a, indicadores, reales) {
     .map(i => ({ i, faltan: a.metas[i.id] - reales[i.id] }))
     .sort((x, y) => y.faltan - x.faltan).slice(0, maxPend);
   return `<div class="logros">
-    ${pendientes.length ? `<div class="lg-b foco"><div class="lg-t">🎯 Para cerrar el mes${quedan ? ` · quedan ${quedan} días` : ''}</div>
+    ${pendientes.length ? `<div class="lg-b foco"><div class="lg-t">🎯 Para cerrar el mes${quedan ? ` · te quedan ${quedan} días${descansoFijo[a.user] != null ? ' de venta' : ''}` : ''}</div>
       ${pendientes.map(x => `<div class="lg-f"><span>${esc(nombre(x.i))}</span><b>Faltan ${x.faltan}</b>${quedan ? `<em>≈ ${Math.ceil(x.faltan / quedan * 10) / 10} al día</em>` : ''}</div>`).join('')}</div>` : ''}
   </div>`;
 }
@@ -2212,6 +2212,13 @@ function descansaEl(user, dia) {
   if (k == null) return false;
   const w = (new Date(state.ppto.mes.anio, state.ppto.mes.idx, dia).getDay() + 6) % 7; // lunes = 0
   return w === k || w === (k + 1) % 7;
+}
+// Días que le quedan al asesor para vender después del corte, sin contar sus días de descanso.
+function quedanAsesor(a) {
+  const D = diasDelMes(state.ppto.mes), dc = diaCorte() ?? 0;
+  let n = 0;
+  for (let k = Math.max(dc + 1, 1); k <= D; k++) if (!descansoDe(k).includes(a.user)) n++;
+  return n;
 }
 // Quién descansa ese día: lo guardado en la captura rápida de ese día o, si no se ha guardado, su descanso fijo.
 const descansoDe = dia => {
@@ -2755,7 +2762,7 @@ function renderPanel() {
     gRapidaAbierta = true; gDescAbierta = true;
     // Conserva lo que ya se escribió en la tabla (aún sin guardar) al redibujar.
     const tecleado = [...document.querySelectorAll('#g-rapida input[type=number][data-u]')].map(i => [i.dataset.u, i.dataset.id, i.value]);
-    renderPanel();
+    renderTarjetas(); // tarjetas, panel y calculadora usan los días que le quedan a cada quien
     tecleado.forEach(([u, id, v]) => { const i = document.querySelector(`#g-rapida input[type=number][data-u="${CSS.escape(u)}"][data-id="${CSS.escape(id)}"]`); if (i) i.value = v; });
   });
   document.getElementById('rq-borrar').onclick = () => { if (confirm(`¿Borrar la captura rápida del día ${gRapidaDia}?`)) guardarRapida(listaG, true); };
@@ -3114,7 +3121,7 @@ function renderCalc() {
   const hoy = califAsesor(a);
   const planHTML = `<div class="c-box"><h3>¿Qué le falta para llegar a
       <select id="c-obj">${[70, 80, 88, 90, 95, 100].map(v => `<option ${v === calcObj ? 'selected' : ''}>${v}</option>`).join('')}</select>?</h3>
-    <p>Ventas adicionales a las que lleva hoy (${fmtCal(hoy.final)}), eligiendo siempre la que más sube la calificación. Quedan ${Math.max(D - dc, 0)} días.</p>
+    <p>Ventas adicionales a las que lleva hoy (${fmtCal(hoy.final)}), eligiendo siempre la que más sube la calificación. Le quedan ${quedanAsesor(a)} días de venta${descansoFijo[a.user] != null ? ' (sin sus descansos)' : ''}.</p>
     ${hoy.final >= calcObj ? '<p class="c-ya">✓ Ya llega con lo que lleva hoy.</p>'
       : plan.total ? `${Object.entries(plan.plan).sort((x, y) => y[1] - x[1]).map(([id, n]) => `<div class="c-chk plan"><span>${esc(nombreEsquema(id))}</span><b>${n}</b></div>`).join('')}
         <p class="${plan.llega ? 'c-ya' : 'c-no'}">${plan.total} venta(s) → ${fmtCal(plan.final)}${plan.llega ? '' : ` · con ventas no alcanza ${calcObj}: revisa venta estratégica, calidad o extras`}</p>`
