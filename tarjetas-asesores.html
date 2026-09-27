@@ -594,6 +594,10 @@
   .rk-eq span { font-size: 11px; font-weight: 700; color: #475569; }
   .rq summary { cursor: pointer; }
   .rq-t input { width: 52px; text-align: center; }
+  .fd-i select { max-width: 150px; }
+  #rq-desc-cfg { margin: 8px 0; }
+  #rq-desc-cfg .fd-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  #rq-desc-cfg select { max-width: none; width: 175px; }
   .rq-t th span { display: inline-block; max-width: 90px; white-space: normal; text-align: center; line-height: 1.2; }
   .rk-foco { margin: 10px 16px 0; background: linear-gradient(90deg, #f3e8ff, #ede9fe); border: 1.5px solid #c4b5fd; border-radius: 14px; padding: 9px 12px; }
   .rk-ft { font-size: 13px; font-weight: 900; color: #5b21b6; text-transform: uppercase; letter-spacing: .05em; }
@@ -2197,8 +2201,24 @@ function inicioSemana(d) {
 const ptsVenta = c => c ? c.ventas + c.perm - c.ret.pts : 0;
 // Foco del día: productos que el supervisor quiere impulsar ese día, con los puntos que vale cada venta en el ranking.
 const focoDe = dia => (state.ppto.foco || {})[dia] || {};
-// Asesores marcados con día de descanso en la captura rápida.
-const descansoDe = dia => (state.ppto.descanso || {})[dia] || [];
+// Descanso fijo por asesor: dos días seguidos de la semana (0 = lunes-martes, 1 = martes-miércoles, … 6 = domingo-lunes).
+const DESC_KEY = 'tarjetas-asesores-descanso';
+let descansoFijo = {};
+try { descansoFijo = JSON.parse(localStorage.getItem(DESC_KEY) || '{}'); } catch (_) {}
+const DIAS_CORTO = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const OPC_DESCANSO = DIAS_CORTO.map((d, k) => `${cap(d)} y ${DIAS_CORTO[(k + 1) % 7]}`);
+function descansaEl(user, dia) {
+  const k = descansoFijo[user];
+  if (k == null) return false;
+  const w = (new Date(state.ppto.mes.anio, state.ppto.mes.idx, dia).getDay() + 6) % 7; // lunes = 0
+  return w === k || w === (k + 1) % 7;
+}
+// Quién descansa ese día: lo guardado en la captura rápida de ese día o, si no se ha guardado, su descanso fijo.
+const descansoDe = dia => {
+  const guardado = (state.ppto.descanso || {})[dia];
+  if (guardado) return guardado;
+  return state.ppto.equipos.flatMap(e => e.asesores).filter(a => descansaEl(a.user, dia)).map(a => a.user);
+};
 const hayFoco = (desde, d) => { for (let k = desde; k <= d; k++) if (Object.keys(focoDe(k)).length) return true; return false; };
 let gRankOrden = 'foco';
 function datosRanking(lista, periodo) {
@@ -2257,7 +2277,6 @@ function rankingHTML(titulo, sub, lista, periodo, maxLista = 99) {
   const focoHoy = focoDe(R.d), focoIds = new Set(Object.keys(R.focoTot).concat(periodo === 'dia' ? Object.keys(focoHoy) : []));
   const focoLogro = Object.values(R.focoTot).reduce((t, n) => t + n, 0);
   const msg = !conVenta.length ? { t: '¡Hoy arrancamos! 💪', s: 'La primera venta del día puede ser la tuya.' }
-    : R.porFoco && focoLogro ? { t: '¡Así se impulsa el foco! ⚡', s: `El equipo logró ${focoLogro} venta${focoLogro === 1 ? '' : 's'} del foco. ¡Vamos por más!` }
     : !sinVenta.length ? { t: '¡Todo el equipo vendió! 🙌', s: 'Así se juega en equipo. ¡Sigamos con este ritmo!' }
     : periodo === 'dia' && porDia != null && R.piezas >= porDia ? { t: '¡Día de campeones! 🏆', s: 'El equipo vendió al ritmo que necesita la meta.' }
     : { t: '¡Cada venta cuenta! 🚀', s: 'Felicidades a quienes sumaron. ¡Vamos todos por más!' };
@@ -2343,14 +2362,11 @@ function rankingListaHTML(titulo, sub, lista, periodo, maxLista = 99) {
   const vendCol = (f, c) => c.ids.reduce((t, id) => t + Math.max((f.r1[id] || 0) - (f.r0[id] || 0), 0), 0);
   const conVenta = R.filas.filter(f => f.piezas > 0), sinVenta = R.filas.filter(f => f.piezas <= 0);
   const visibles = conVenta.slice(0, maxLista);
-  const focoLogro = Object.values(R.focoTot).reduce((t, n) => t + n, 0);
   const msg = !conVenta.length ? '¡Hoy arrancamos! La primera venta del día puede ser la tuya 💪'
-    : R.porFoco && focoLogro ? `¡Así se impulsa el foco! ${focoLogro} venta${focoLogro === 1 ? '' : 's'} del foco ⚡`
     : !sinVenta.filter(f => !f.descanso).length ? '¡Todo el equipo vendió! Así se juega en equipo 🙌'
     : '¡Cada venta cuenta! Felicidades a quienes sumaron 🚀';
   const avatar = f => `<div class="tv-av">${fotos[f.a.user] ? `<img src="${fotos[f.a.user]}" alt="">` : `<span>${esc(iniciales(f.a.nombre))}</span>`}</div>`;
   const celdas = f => cols.map(c => { const n = vendCol(f, c); return `<div class="tv-c ${c.foco ? 'fz' : ''}"><span>${esc(c.k)}</span><b style="color:${n ? c.color : '#cbd5e1'}">${n}</b></div>`; }).join('');
-  const ptsTxt = f => R.porFoco ? (f.ptsFoco > 0 ? `⚡ ${fmtMax(f.ptsFoco)} pts` : '') : gRankOrden === 'piezas' ? '' : `+${fmtCal(f.pts)} pts`;
   const ICON = { 1: '👑', 2: '⭐', 3: '⭐' };
   const tot = c => R.filas.reduce((t, f) => t + vendCol(f, c), 0);
   // Reconocimientos cortos.
@@ -2369,13 +2385,13 @@ function rankingListaHTML(titulo, sub, lista, periodo, maxLista = 99) {
       <div class="tv-t">🏆 ${titulo2} 🏆</div>
       <div class="tv-f">${esc(cuando.toUpperCase())}</div>
       <div class="tv-msg">${msg}</div>
-      ${Object.keys(focoHoy).length ? `<div class="tv-foco">⚡ FOCO DEL DÍA: ${Object.entries(focoHoy).map(([id, w]) => `<b>${esc(nombreEsquema(id))}</b> ${fmtMax(w)} pts c/u`).join(' · ')}</div>` : ''}
+      ${Object.keys(focoHoy).length ? `<div class="tv-foco">⚡ FOCO DEL DÍA: ${Object.keys(focoHoy).map(id => `<b>${esc(nombreEsquema(id))}</b>${R.focoTot[id] ? ` (hoy van ${R.focoTot[id]})` : ''}`).join(' · ')}</div>` : ''}
     </div>
     <div class="tv-lista">
       ${visibles.map((f, k) => `<div class="tv-r ${k < 3 ? 'p' + (k + 1) : ''}">
         <div class="tv-n">#${k + 1}</div>
         <div class="tv-avw">${avatar(f)}${ICON[k + 1] ? `<i>${ICON[k + 1]}</i>` : ''}</div>
-        <div class="tv-nm"><b>${esc(nom(f))}</b><span>TOTAL: <em>${f.piezas}</em></span>${ptsTxt(f) ? `<small>${ptsTxt(f)}</small>` : ''}</div>
+        <div class="tv-nm"><b>${esc(nom(f))}</b><span>TOTAL: <em>${f.piezas}</em></span></div>
         <div class="tv-cs">${celdas(f)}</div></div>`).join('')}
       ${conVenta.length > visibles.length ? `<div class="tv-mas">y ${conVenta.length - visibles.length} asesores más con ventas</div>` : ''}
       ${sinVenta.slice(0, periodo === 'dia' && maxLista >= 99 ? 99 : 0).map(f => `<div class="tv-r off">
@@ -2416,6 +2432,12 @@ function capturaRapidaHTML(lista) {
       <button class="primary" id="rq-guardar">Guardar captura del día ${dia}</button>
       <button id="rq-borrar">Borrar captura del día ${dia}</button>
       <span id="rq-st" style="font-size:13px;color:var(--muted)">${cubierta ? `⚠ El registro de ventas ya trae el día ${dia}: esta captura no se suma.` : ''}</span></div>
+    <details class="ef-box" id="rq-desc-cfg" ${gDescAbierta ? 'open' : ''}><summary style="cursor:pointer"><b>🌙 Días de descanso de cada asesor</b></summary>
+      <p>Elige los dos días de descanso de la semana. Se marcan solos en la columna «Descanso» y en el ranking; si un día cambia (por ejemplo cubre un turno), desmárcalo en la tabla y guarda la captura de ese día. Aplica a todos los meses.</p>
+      <div class="fd-grid">${lista.map(({ a }) => `<label class="fd-i ${descansoFijo[a.user] != null ? 'on' : ''}"><span>${esc(cap(cortos[a.user]))}</span>
+        <select class="rq-fijo" data-u="${esc(a.user)}"><option value="">Sin descanso fijo</option>
+          ${OPC_DESCANSO.map((t, k) => `<option value="${k}" ${descansoFijo[a.user] === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>`).join('')}</div>
+    </details>
     <div class="g-scroll"><table class="g-tabla rq-t">
       <tr><th class="t">Asesor</th><th>Descanso</th>${ids.map(id => `<th class="${foco[id] ? 'fz' : ''}"><span>${foco[id] ? '⚡ ' : ''}${esc(nombreEsquema(id))}</span></th>`).join('')}</tr>
       ${lista.map(({ a }) => `<tr><td class="t"><b>${esc(cap(cortos[a.user]))}</b> <span style="color:var(--muted);font-size:11px">${esc(a.user)}</span></td>
@@ -2424,16 +2446,15 @@ function capturaRapidaHTML(lista) {
     </table></div>
   </details>`;
 }
-let gRapidaDia = null, gRapidaAbierta = false;
+let gRapidaDia = null, gRapidaAbierta = false, gDescAbierta = false;
 function guardarRapida(lista, borrar = false) {
   const ppto = state.ppto, dia = gRapidaDia;
   const users = new Set(lista.map(x => x.a.user));
   ppto.ajustes = (ppto.ajustes || []).filter(j => !(j.rapida && j.dia === dia && users.has(j.user)));
-  const desc = (ppto.descanso || {})[dia] || [];
-  const nuevo = desc.filter(u => !users.has(u));
+  const nuevo = descansoDe(dia).filter(u => !users.has(u));
   if (!borrar) document.querySelectorAll('#g-rapida .rq-desc:checked').forEach(cb => nuevo.push(cb.dataset.u));
   ppto.descanso = { ...(ppto.descanso || {}) };
-  if (nuevo.length) ppto.descanso[dia] = nuevo; else delete ppto.descanso[dia];
+  if (borrar) delete ppto.descanso[dia]; else ppto.descanso[dia] = nuevo;
   if (!borrar) document.querySelectorAll('#g-rapida input[type=number][data-u]').forEach(inp => {
     const n = Math.round(Number(inp.value) || 0);
     if (n > 0) ppto.ajustes.push({ user: inp.dataset.u, id: inp.dataset.id, dia, cantidad: n, nota: 'Captura rápida', rapida: true });
@@ -2727,6 +2748,16 @@ function renderPanel() {
   document.getElementById('g-rapida').ontoggle = ev => { gRapidaAbierta = ev.target.open; };
   document.getElementById('rq-dia').onchange = ev => { gRapidaDia = Number(ev.target.value) || null; renderPanel(); };
   document.getElementById('rq-guardar').onclick = () => guardarRapida(listaG);
+  document.getElementById('rq-desc-cfg').ontoggle = ev => { gDescAbierta = ev.target.open; };
+  cuerpo.querySelectorAll('.rq-fijo').forEach(sel => sel.onchange = () => {
+    if (sel.value === '') delete descansoFijo[sel.dataset.u]; else descansoFijo[sel.dataset.u] = Number(sel.value);
+    try { localStorage.setItem(DESC_KEY, JSON.stringify(descansoFijo)); } catch (_) {}
+    gRapidaAbierta = true; gDescAbierta = true;
+    // Conserva lo que ya se escribió en la tabla (aún sin guardar) al redibujar.
+    const tecleado = [...document.querySelectorAll('#g-rapida input[type=number][data-u]')].map(i => [i.dataset.u, i.dataset.id, i.value]);
+    renderPanel();
+    tecleado.forEach(([u, id, v]) => { const i = document.querySelector(`#g-rapida input[type=number][data-u="${CSS.escape(u)}"][data-id="${CSS.escape(id)}"]`); if (i) i.value = v; });
+  });
   document.getElementById('rq-borrar').onclick = () => { if (confirm(`¿Borrar la captura rápida del día ${gRapidaDia}?`)) guardarRapida(listaG, true); };
   if (!sinVentas) {
     const nombreRk = r => `Ranking ${{ dia: 'dia ' + g.dc, semana: 'semana al ' + g.dc, mes: 'mes al ' + g.dc }[gRankPer]} ${mesTxt(ppto.mes)} - ${r.archivo}`.replace(/[\\/:*?"<>|]/g, '') + '.png';
