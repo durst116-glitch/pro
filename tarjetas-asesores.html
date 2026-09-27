@@ -617,6 +617,51 @@
   .fd-i input { width: 60px; }
   .fd-i.on { border-color: #a78bfa; background: rgba(167,139,250,.12); font-weight: 700; }
   .rq-t th.fz { color: #6d28d9; }
+  /* ---------- Ranking «lista por producto» ---------- */
+  .card.tv { background: #ffffff; }
+  .tv-hd { position: relative; overflow: hidden; text-align: center; padding: 20px 16px 14px; background: linear-gradient(180deg, #ecfdf5 0%, #f8fafc 70%, #ffffff 100%); }
+  .tv-deco { position: absolute; width: 260px; height: 260px; border-radius: 50%; background: rgba(16,185,129,.08); left: -90px; top: -120px; }
+  .tv-cac { position: relative; display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #047857; background: #fff; border: 1px solid #d1fae5; border-radius: 999px; padding: 4px 12px; }
+  .tv-t { position: relative; font-size: 27px; font-weight: 900; color: #1e293b; margin-top: 10px; }
+  .tv-f { position: relative; font-size: 12.5px; font-weight: 800; color: #64748b; letter-spacing: .04em; margin-top: 2px; }
+  .tv-msg { position: relative; margin-top: 10px; font-size: 13.5px; font-weight: 800; color: #92400e; background: #fff7e0; border: 1px solid #f7d58c; border-radius: 12px; padding: 7px 10px; }
+  .tv-foco { position: relative; margin-top: 8px; font-size: 12.5px; color: #4c1d95; background: #f3e8ff; border: 1.5px solid #c4b5fd; border-radius: 12px; padding: 6px 10px; }
+  .tv-lista { padding: 4px 14px 0; display: flex; flex-direction: column; gap: 8px; }
+  .tv-r { display: grid; grid-template-columns: 38px 54px minmax(0, 1fr) auto; align-items: center; gap: 8px; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 8px 10px; background: #fff; }
+  .tv-r.p1 { border: 2.5px solid #f5c542; box-shadow: 0 3px 10px rgba(245,197,66,.25); }
+  .tv-n { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; color: #475569; background: #f1f5f9; border: 1px solid #e2e8f0; }
+  .tv-r.p1 .tv-n { background: linear-gradient(180deg, #fde047, #eab308); color: #713f12; border-color: #ca8a04; }
+  .tv-r.p2 .tv-n { background: linear-gradient(180deg, #e2e8f0, #b6c2d2); color: #334155; border-color: #94a3b8; }
+  .tv-r.p3 .tv-n { background: linear-gradient(180deg, #fdba74, #f97316); color: #7c2d12; border-color: #ea580c; }
+  .tv-avw { position: relative; width: 50px; height: 50px; }
+  .tv-av { width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 2.5px solid #e2e8f0; background: linear-gradient(135deg, #93c5fd, #3b82f6); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 17px; }
+  .tv-r.p1 .tv-av { border-color: #f5c542; }
+  .tv-av img { width: 100%; height: 100%; object-fit: cover; }
+  .tv-avw i { position: absolute; right: -5px; bottom: -3px; font-style: normal; font-size: 13px; background: #fff; border-radius: 50%; width: 21px; height: 21px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .tv-nm { min-width: 0; }
+  .tv-nm b { display: block; font-size: 16px; font-weight: 900; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .02em; }
+  .tv-nm span { display: inline-block; margin-top: 2px; font-size: 11px; font-weight: 800; color: #334155; background: #f1f5f9; border-radius: 6px; padding: 1px 7px; }
+  .tv-nm em { font-style: normal; color: #b45309; }
+  .tv-nm small { display: block; font-size: 11px; font-weight: 800; color: #6d28d9; margin-top: 2px; }
+  .tv-cs { display: flex; border-left: 1px solid #e2e8f0; padding-left: 4px; }
+  .tv-c { width: 34px; text-align: center; border-radius: 8px; padding: 2px 0; }
+  .tv-c span { display: block; font-size: 8.5px; font-weight: 800; color: #94a3b8; letter-spacing: .02em; }
+  .tv-c b { display: block; font-size: 19px; font-weight: 900; line-height: 1.2; }
+  .tv-c.fz { background: #f3e8ff; }
+  .tv-c.fz span { color: #7c3aed; }
+  .tv-r.off { background: #f8fafc; border-color: #eef2f7; }
+  .tv-r.off .tv-nm b { color: #94a3b8; }
+  .tv-r.off .tv-av { filter: grayscale(.6); opacity: .8; }
+  .tv-st { font-size: 11.5px; font-weight: 800; color: #64748b; background: #eef2f7; border-radius: 10px; padding: 8px 12px; letter-spacing: .03em; white-space: nowrap; }
+  .tv-r.tot { background: #eff6ff; border-color: #bfdbfe; grid-template-columns: 38px minmax(0, 1fr) auto; }
+  .tv-r.tot .tv-n { background: #1e40af; color: #fff; border-color: #1e40af; }
+  .tv-r.tot .tv-c b { color: #1e3a6e; }
+  .tv-mas { text-align: center; font-size: 12px; font-weight: 700; color: #64748b; }
+  .tv-rec { margin: 10px 14px 0; display: flex; flex-direction: column; gap: 5px; }
+  .tv-rec div { background: #f5f3ff; border: 1px solid #e4dcff; border-radius: 10px; padding: 6px 10px; font-size: 12.5px; color: #3b2a78; }
+  .tv-ley { margin: 10px 14px 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; font-size: 10.5px; color: #64748b; }
+  .tv-ley b { font-weight: 900; }
+  .tv-ft { text-align: center; font-size: 12px; font-weight: 800; letter-spacing: .1em; color: #94a3b8; padding: 12px 0 16px; }
 </style>
 </head>
 <body>
@@ -2152,12 +2197,14 @@ function inicioSemana(d) {
 const ptsVenta = c => c ? c.ventas + c.perm - c.ret.pts : 0;
 // Foco del día: productos que el supervisor quiere impulsar ese día, con los puntos que vale cada venta en el ranking.
 const focoDe = dia => (state.ppto.foco || {})[dia] || {};
+// Asesores marcados con día de descanso en la captura rápida.
+const descansoDe = dia => (state.ppto.descanso || {})[dia] || [];
 const hayFoco = (desde, d) => { for (let k = desde; k <= d; k++) if (Object.keys(focoDe(k)).length) return true; return false; };
 let gRankOrden = 'foco';
 function datosRanking(lista, periodo) {
   const D = diasDelMes(state.ppto.mes), d = Math.min(Math.max(diaCorte() ?? D, 1), D);
   const desde = periodo === 'dia' ? d : periodo === 'semana' ? inicioSemana(d) : 1;
-  const conFoco = hayFoco(desde, d), porFoco = conFoco && gRankOrden === 'foco';
+  const conFoco = hayFoco(desde, d), porFoco = conFoco && gRankOrden !== 'esquema' && gRankOrden !== 'piezas';
   const ids = indicadoresActivos().map(i => i.id);
   const filas = lista.map(({ a, e }) => {
     const r1 = realAsesor(a, d), r0 = realAsesor(a, desde - 1);
@@ -2183,7 +2230,9 @@ function datosRanking(lista, periodo) {
       const hoy = realAsesor(a, k), ayer = realAsesor(a, k - 1);
       if (ids.some(id => (hoy[id] || 0) > (ayer[id] || 0))) racha++; else break;
     }
-    return { a, e, pts, ptsFoco, focoVend, orden: porFoco ? ptsFoco : pts, piezas: vend.reduce((t, x) => t + x.n, 0), vend, metas, racha, r1 };
+    const piezas = vend.reduce((t, x) => t + x.n, 0);
+    return { a, e, pts, ptsFoco, focoVend, orden: gRankOrden === 'piezas' ? piezas : porFoco ? ptsFoco : pts, piezas, vend, metas, racha, r1, r0,
+      descanso: periodo === 'dia' && (descansoDe(d)).includes(a.user) };
   }).filter(Boolean).sort((x, y) => y.orden - x.orden || y.pts - x.pts || y.piezas - x.piezas);
   // Lo que falta para la meta, con los indicadores elegidos para el % de cumplimiento.
   const cumplIds = indicadoresCumpl().map(i => i.id);
@@ -2263,6 +2312,86 @@ function rankingHTML(titulo, sub, lista, periodo, maxLista = 99) {
   </div>`;
 }
 
+// Diseño «lista por producto»: una fila por asesor con su foto y sus ventas por categoría.
+const COLS_RANK = [
+  { k: 'POS', nombre: 'Pospago', inds: [['POSPAGO', ''], ['WIFI', 'CON EQUIPO'], ['WIFI', 'SIN EQUIPO'], ['ZEEK', '']], color: '#1d4ed8' },
+  { k: 'PORTA', nombre: 'Portabilidad', inds: [['PORTABILIDAD', '']], color: '#be185d' },
+  { k: 'REN', nombre: 'Renovación', inds: [['RENOVACION', 'CON EQUIPO'], ['RENOVACION', 'VIP']], color: '#0f766e' },
+  { k: 'RNV', nombre: 'Renuévate', inds: [['RENOVACION', 'RENUEVATE']], color: '#7c3aed' },
+  { k: 'PRE', nombre: 'Prepago (Kit y Chip)', inds: [['PREPAGO', 'KIT'], ['PREPAGO', 'CHIP'], ['WIFI', 'PREPAGO']], color: '#b91c1c' },
+  { k: 'PAG', nombre: 'Amigo Paguitos', inds: [['PREPAGO', 'PAGUITOS']], color: '#c2410c' },
+  { k: 'ACC', nombre: 'Accesorios', inds: [['ACCESORIOS', '']], color: '#047857' },
+];
+const idsDeGrupo = ([g, sub]) => state.ppto.indicadores.filter(i => key(i.grupo).startsWith(g) && key(i.sub).includes(sub)).map(i => i.id);
+let gRankDis = 'lista';
+
+function rankingListaHTML(titulo, sub, lista, periodo, maxLista = 99) {
+  const R = datosRanking(lista, periodo);
+  const { mes } = state.ppto;
+  const cortos = nombresCortos(lista.map(x => x.a));
+  const nom = f => cortos[f.a.user].toUpperCase();
+  const fecha = new Date(mes.anio, mes.idx, R.d);
+  const titulo2 = { dia: 'Top Ventas del Día', semana: 'Top Ventas de la Semana', mes: 'Top Ventas del Mes' }[periodo];
+  const cuando = periodo === 'dia' ? `${DIAS_SEM[fecha.getDay()]}, ${R.d} de ${MESES[mes.idx]} de ${mes.anio}`
+    : periodo === 'semana' ? `del ${R.d === R.desde ? R.d : `${R.desde} al ${R.d}`} de ${MESES[mes.idx]} de ${mes.anio}` : `${MESES[mes.idx]} ${mes.anio} · al día ${R.d}`;
+  const focoHoy = periodo === 'dia' ? focoDe(R.d) : {};
+  const focoIds = new Set([...Object.keys(R.focoTot), ...Object.keys(focoHoy)]);
+  // Columnas: las fijas y, si un producto del foco no cae en ninguna, una columna extra para él.
+  const cols = COLS_RANK.map(c => ({ ...c, ids: [...new Set(c.inds.flatMap(idsDeGrupo))] })).filter(c => c.ids.length);
+  [...focoIds].filter(id => !cols.some(c => c.ids.includes(id))).forEach(id => cols.push({ k: nombreEsquema(id).slice(0, 5).toUpperCase(), nombre: nombreEsquema(id), ids: [id], color: '#6d28d9' }));
+  cols.forEach(c => c.foco = c.ids.some(id => focoIds.has(id)));
+  const vendCol = (f, c) => c.ids.reduce((t, id) => t + Math.max((f.r1[id] || 0) - (f.r0[id] || 0), 0), 0);
+  const conVenta = R.filas.filter(f => f.piezas > 0), sinVenta = R.filas.filter(f => f.piezas <= 0);
+  const visibles = conVenta.slice(0, maxLista);
+  const focoLogro = Object.values(R.focoTot).reduce((t, n) => t + n, 0);
+  const msg = !conVenta.length ? '¡Hoy arrancamos! La primera venta del día puede ser la tuya 💪'
+    : R.porFoco && focoLogro ? `¡Así se impulsa el foco! ${focoLogro} venta${focoLogro === 1 ? '' : 's'} del foco ⚡`
+    : !sinVenta.filter(f => !f.descanso).length ? '¡Todo el equipo vendió! Así se juega en equipo 🙌'
+    : '¡Cada venta cuenta! Felicidades a quienes sumaron 🚀';
+  const avatar = f => `<div class="tv-av">${fotos[f.a.user] ? `<img src="${fotos[f.a.user]}" alt="">` : `<span>${esc(iniciales(f.a.nombre))}</span>`}</div>`;
+  const celdas = f => cols.map(c => { const n = vendCol(f, c); return `<div class="tv-c ${c.foco ? 'fz' : ''}"><span>${esc(c.k)}</span><b style="color:${n ? c.color : '#cbd5e1'}">${n}</b></div>`; }).join('');
+  const ptsTxt = f => R.porFoco ? (f.ptsFoco > 0 ? `⚡ ${fmtMax(f.ptsFoco)} pts` : '') : gRankOrden === 'piezas' ? '' : `+${fmtCal(f.pts)} pts`;
+  const ICON = { 1: '👑', 2: '⭐', 3: '⭐' };
+  const tot = c => R.filas.reduce((t, f) => t + vendCol(f, c), 0);
+  // Reconocimientos cortos.
+  const rec = [];
+  [...focoIds, ...indicadoresImpulso().map(i => i.id)].filter((id, k, arr) => arr.indexOf(id) === k).forEach(id => {
+    const top = conVenta.map(f => ({ f, n: (f.vend.find(x => x.id === id) || {}).n || 0 })).sort((x, y) => y.n - x.n)[0];
+    if (top && top.n > 0) rec.push(`⚡ Más ${esc(nombreEsquema(id))}: <b>${esc(cap(cortos[top.f.a.user]))}</b> (${top.n})`);
+  });
+  R.filas.filter(f => f.metas.length).slice(0, 2).forEach(f => rec.push(`🎯 <b>${esc(cap(cortos[f.a.user]))}</b> cumplió su meta de ${esc(f.metas.slice(0, 2).map(nombreEsquema).join(' y '))}`));
+  const racha = [...R.filas].sort((x, y) => y.racha - x.racha)[0];
+  if (racha && racha.racha >= 3) rec.push(`🔥 <b>${esc(cap(cortos[racha.a.user]))}</b>: ${racha.racha} días seguidos vendiendo`);
+
+  return `<div class="card tv">
+    <div class="tv-hd"><div class="tv-deco"></div>
+      <div class="tv-cac">${esc(titulo)} · ${esc(sub)}</div>
+      <div class="tv-t">🏆 ${titulo2} 🏆</div>
+      <div class="tv-f">${esc(cuando.toUpperCase())}</div>
+      <div class="tv-msg">${msg}</div>
+      ${Object.keys(focoHoy).length ? `<div class="tv-foco">⚡ FOCO DEL DÍA: ${Object.entries(focoHoy).map(([id, w]) => `<b>${esc(nombreEsquema(id))}</b> ${fmtMax(w)} pts c/u`).join(' · ')}</div>` : ''}
+    </div>
+    <div class="tv-lista">
+      ${visibles.map((f, k) => `<div class="tv-r ${k < 3 ? 'p' + (k + 1) : ''}">
+        <div class="tv-n">#${k + 1}</div>
+        <div class="tv-avw">${avatar(f)}${ICON[k + 1] ? `<i>${ICON[k + 1]}</i>` : ''}</div>
+        <div class="tv-nm"><b>${esc(nom(f))}</b><span>TOTAL: <em>${f.piezas}</em></span>${ptsTxt(f) ? `<small>${ptsTxt(f)}</small>` : ''}</div>
+        <div class="tv-cs">${celdas(f)}</div></div>`).join('')}
+      ${conVenta.length > visibles.length ? `<div class="tv-mas">y ${conVenta.length - visibles.length} asesores más con ventas</div>` : ''}
+      ${sinVenta.slice(0, periodo === 'dia' && maxLista >= 99 ? 99 : 0).map(f => `<div class="tv-r off">
+        <div class="tv-n">–</div><div class="tv-avw">${avatar(f)}</div>
+        <div class="tv-nm"><b>${esc(nom(f))}</b></div>
+        <div class="tv-st">${f.descanso ? 'DÍA DE DESCANSO 🌙' : '¡VA POR SU PRIMERA VENTA! 💪'}</div></div>`).join('')}
+      ${sinVenta.length && !(periodo === 'dia' && maxLista >= 99) ? `<div class="tv-mas">${sinVenta.length} asesores van por su primera venta 💪</div>` : ''}
+      <div class="tv-r tot"><div class="tv-n">Σ</div><div class="tv-nm"><b>EQUIPO</b><span>TOTAL: <em>${R.piezas}</em></span></div>
+        <div class="tv-cs">${cols.map(c => `<div class="tv-c ${c.foco ? 'fz' : ''}"><span>${esc(c.k)}</span><b>${tot(c)}</b></div>`).join('')}</div></div>
+    </div>
+    ${rec.length ? `<div class="tv-rec">${rec.slice(0, 3).map(t => `<div>${t}</div>`).join('')}</div>` : ''}
+    <div class="tv-ley">${cols.map(c => `<span><b style="color:${c.color}">${esc(c.k)}</b> ${esc(c.nombre)}</span>`).join('')}</div>
+    <div class="tv-ft">— ${conVenta.length ? 'EXCELENTE TRABAJO' : 'VAMOS POR TODO'} —</div>
+  </div>`;
+}
+
 // ---------- Captura rápida de ventas del día ----------
 const idsCaptura = dia => [...new Set([
   ...Object.keys(focoDe(dia)),
@@ -2288,8 +2417,9 @@ function capturaRapidaHTML(lista) {
       <button id="rq-borrar">Borrar captura del día ${dia}</button>
       <span id="rq-st" style="font-size:13px;color:var(--muted)">${cubierta ? `⚠ El registro de ventas ya trae el día ${dia}: esta captura no se suma.` : ''}</span></div>
     <div class="g-scroll"><table class="g-tabla rq-t">
-      <tr><th class="t">Asesor</th>${ids.map(id => `<th class="${foco[id] ? 'fz' : ''}"><span>${foco[id] ? '⚡ ' : ''}${esc(nombreEsquema(id))}</span></th>`).join('')}</tr>
+      <tr><th class="t">Asesor</th><th>Descanso</th>${ids.map(id => `<th class="${foco[id] ? 'fz' : ''}"><span>${foco[id] ? '⚡ ' : ''}${esc(nombreEsquema(id))}</span></th>`).join('')}</tr>
       ${lista.map(({ a }) => `<tr><td class="t"><b>${esc(cap(cortos[a.user]))}</b> <span style="color:var(--muted);font-size:11px">${esc(a.user)}</span></td>
+        <td style="text-align:center"><input type="checkbox" class="rq-desc" data-u="${esc(a.user)}" ${descansoDe(dia).includes(a.user) ? 'checked' : ''} style="width:auto"></td>
         ${ids.map(id => { const v = valor(a.user, id); return `<td><input type="number" min="0" step="1" data-u="${esc(a.user)}" data-id="${esc(id)}" value="${v || ''}" placeholder="0"></td>`; }).join('')}</tr>`).join('')}
     </table></div>
   </details>`;
@@ -2299,7 +2429,12 @@ function guardarRapida(lista, borrar = false) {
   const ppto = state.ppto, dia = gRapidaDia;
   const users = new Set(lista.map(x => x.a.user));
   ppto.ajustes = (ppto.ajustes || []).filter(j => !(j.rapida && j.dia === dia && users.has(j.user)));
-  if (!borrar) document.querySelectorAll('#g-rapida input[data-u]').forEach(inp => {
+  const desc = (ppto.descanso || {})[dia] || [];
+  const nuevo = desc.filter(u => !users.has(u));
+  if (!borrar) document.querySelectorAll('#g-rapida .rq-desc:checked').forEach(cb => nuevo.push(cb.dataset.u));
+  ppto.descanso = { ...(ppto.descanso || {}) };
+  if (nuevo.length) ppto.descanso[dia] = nuevo; else delete ppto.descanso[dia];
+  if (!borrar) document.querySelectorAll('#g-rapida input[type=number][data-u]').forEach(inp => {
     const n = Math.round(Number(inp.value) || 0);
     if (n > 0) ppto.ajustes.push({ user: inp.dataset.u, id: inp.dataset.id, dia, cantidad: n, nota: 'Captura rápida', rapida: true });
   });
@@ -2515,9 +2650,14 @@ function renderPanel() {
     <p>Se arma con las ventas del día de corte (${g.dc}); si aún no subes el registro de hoy, usa la captura rápida. Con foco del día, el ranking se ordena por los puntos del foco; sin foco, por lo que suma cada venta a la calificación de productividad.</p>
     ${focoSec}
     <div class="controls" style="margin-top:10px">
-      <label>Ordenar por <select id="rk-orden" ${hayFoco(1, g.dc) ? '' : 'disabled'}>
-        <option value="foco" ${gRankOrden === 'foco' ? 'selected' : ''}>Puntos del foco del día</option>
-        <option value="esquema" ${gRankOrden === 'esquema' ? 'selected' : ''}>Puntos de calificación</option>
+      <label>Diseño <select id="rk-dis">
+        <option value="lista" ${gRankDis === 'lista' ? 'selected' : ''}>Lista por producto</option>
+        <option value="podio" ${gRankDis === 'podio' ? 'selected' : ''}>Podio</option>
+      </select></label>
+      <label>Ordenar por <select id="rk-orden">
+        ${hayFoco(1, g.dc) ? `<option value="foco" ${gRankOrden === 'foco' ? 'selected' : ''}>Puntos del foco del día</option>` : ''}
+        <option value="esquema" ${gRankOrden === 'esquema' || (gRankOrden === 'foco' && !hayFoco(1, g.dc)) ? 'selected' : ''}>Puntos de calificación</option>
+        <option value="piezas" ${gRankOrden === 'piezas' ? 'selected' : ''}>Total de ventas</option>
       </select></label>
       <label>Periodo <select id="rk-per">
         <option value="dia" ${gRankPer === 'dia' ? 'selected' : ''}>Del día (${g.dc})</option>
@@ -2528,7 +2668,7 @@ function renderPanel() {
       <span id="rk-st" style="color:var(--muted);font-size:13px"></span>
     </div>
     <div class="cards">${rankings.map((r, k) => `<div class="card-wrap">
-      <div class="card-scale" id="rk-${k}">${rankingHTML(r.titulo, r.sub, r.lista, gRankPer, r.max)}</div>
+      <div class="card-scale" id="rk-${k}">${(gRankDis === 'lista' ? rankingListaHTML : rankingHTML)(r.titulo, r.sub, r.lista, gRankPer, r.max)}</div>
       <button class="b-rk" data-k="${k}">Descargar imagen</button></div>`).join('')}</div>
   </div>`;
   const rapidaSec = capturaRapidaHTML(listaG);
@@ -2592,10 +2732,11 @@ function renderPanel() {
     const nombreRk = r => `Ranking ${{ dia: 'dia ' + g.dc, semana: 'semana al ' + g.dc, mes: 'mes al ' + g.dc }[gRankPer]} ${mesTxt(ppto.mes)} - ${r.archivo}`.replace(/[\\/:*?"<>|]/g, '') + '.png';
     document.getElementById('rk-per').onchange = ev => { gRankPer = ev.target.value; renderPanel(); };
     document.getElementById('rk-orden').onchange = ev => { gRankOrden = ev.target.value; renderPanel(); };
+    document.getElementById('rk-dis').onchange = ev => { gRankDis = ev.target.value; renderPanel(); };
     const guardarFoco = f => {
       ppto.foco = { ...(ppto.foco || {}) };
       if (Object.keys(f).length) ppto.foco[g.dc] = f; else delete ppto.foco[g.dc];
-      gRankOrden = 'foco';
+      if (Object.keys(f).length) gRankOrden = 'foco';
       guardar(); renderPanel();
     };
     cuerpo.querySelectorAll('.fd-w').forEach(inp => inp.onchange = () => {
