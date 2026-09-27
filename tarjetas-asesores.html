@@ -249,7 +249,7 @@
   .card .cz-r span { display: block; font-size: 10px; font-weight: 600; color: #6b7280; }
   .card .cz-bar { flex: 1; }
   .card .cz-bar .track, .card .cz-bar .fill { height: 10px; border-radius: 5px; }
-  .card .cz-p { width: 84px; text-align: right; font-size: 18px; font-weight: 900; color: #1e1b4b; white-space: nowrap; }
+  .card .cz-p { width: 98px; text-align: right; font-size: 18px; font-weight: 900; color: #1e1b4b; white-space: nowrap; }
   .card .cz-p span { font-size: 11px; font-weight: 700; color: #6b7280; }
   .card .cz-otras { display: flex; gap: 8px; padding: 10px 14px 12px; border-top: 1px solid #e0e7ff; background: #ede9fe; }
   .card .cz-o { flex: 1; background: #ffffff; border: 1px solid #d1d5db; border-radius: 12px; padding: 8px 10px; }
@@ -455,7 +455,7 @@
   .card.hoja .cz-tot { font-size: 26px; }
   .card.hoja .cz-n { width: 104px; font-size: 13.5px; }
   .card.hoja .cz-r { width: 62px; font-size: 14.5px; }
-  .card.hoja .cz-p { width: 74px; font-size: 17px; }
+  .card.hoja .cz-p { width: 92px; font-size: 17px; }
   .card.hoja .cz-on { font-size: 12.5px; }
   .card.hoja .cz-ov { font-size: 20px; }
   .card.hoja .cz-os { font-size: 12px; }
@@ -1049,7 +1049,8 @@ function calidezAsesor(enc) {
   return { filas, total: filas.reduce((t, f) => t + f.puntos, 0) };
 }
 
-const fmtPts = v => (Math.round(v * 10) / 10).toFixed(1);
+// Puntos de encuesta con 2 decimales, truncados (sin redondear): 75% de ofrecimiento → 3.75; 94.11% → 4.70.
+const fmtPts = v => trunc2(v).toFixed(2);
 // Calificaciones de encuesta con 2 decimales, truncadas (sin redondear): 92.3076 → 92.30.
 const trunc2 = v => Math.trunc(v * 100 + (v < 0 ? -1e-9 : 1e-9)) / 100;
 const fmtScore = v => v == null ? '—' : trunc2(v).toFixed(2);
@@ -2577,7 +2578,7 @@ function renderCalc() {
     ${c.filas.filter(x => x.bloque === 'perm').map(x => fila(esc(x.nombre), num(x.real), x.meta || '—', x.pts, x.max, fr(x))).join('')}
     ${fila('Retención pospago', c.ret.pct == null ? '—' : (Math.round(c.ret.pct * 10000) / 100).toFixed(2) + '%', '95%', c.ret.pts, RETENCION.pts, retTxt)}
     ${grp('Calidad en la atención', c.calid, MAX_CALIDAD)}
-    ${c.calidez.map(x => fila(esc(x.nombre), x.manual ? esc(x.txt) : fmtScore(x.valor), x.manual ? 'captura' : 'encuesta', x.pts, x.max, x.manual ? '' : '5 pts × % de la encuesta')).join('')}
+    ${c.calidez.map(x => fila(esc(x.nombre), x.manual ? esc(x.txt) : fmtScore(x.valor), x.manual ? 'captura' : 'encuesta', x.manual ? x.pts : trunc2(x.pts), x.max, x.manual ? '' : '5 pts × % de la encuesta')).join('')}
     ${c.descRH || c.descSim ? `${grp('Descuentos por incidencias', -(c.descRH + c.descSim), null)}
       ${c.descRH ? fila('Incidencias de Recursos Humanos', cap_.rh, '', -c.descRH, 0) : ''}
       ${SIMAEC.filter(x => Number(cap_[x.id])).map(x => fila(`SIMAEC · ${x.nombre}`, '', '', -Number(cap_[x.id]), 0)).join('')}` : ''}
