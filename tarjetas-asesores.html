@@ -595,6 +595,28 @@
   .rq summary { cursor: pointer; }
   .rq-t input { width: 52px; text-align: center; }
   .rq-t th span { display: inline-block; max-width: 90px; white-space: normal; text-align: center; line-height: 1.2; }
+  .rk-foco { margin: 10px 16px 0; background: linear-gradient(90deg, #f3e8ff, #ede9fe); border: 1.5px solid #c4b5fd; border-radius: 14px; padding: 9px 12px; }
+  .rk-ft { font-size: 13px; font-weight: 900; color: #5b21b6; text-transform: uppercase; letter-spacing: .05em; }
+  .rk-fl { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+  .rk-fl span { background: #fff; border-radius: 999px; padding: 3px 10px; font-size: 12.5px; color: #4c1d95; }
+  .rk-fl em { font-style: normal; font-weight: 800; color: #2f8a55; }
+  .rk-ch { display: inline-block; background: #f1f5f9; color: #334155; border-radius: 999px; padding: 2px 8px; font-size: 11.5px; font-weight: 700; margin: 2px 2px 0 0; white-space: nowrap; }
+  .rk-ch b { font-weight: 900; color: #0f172a; }
+  .rk-ch.foco { background: linear-gradient(90deg, #7c3aed, #a855f7); color: #fff; box-shadow: 0 1px 4px rgba(124,58,237,.35); }
+  .rk-ch.foco b { color: #fff; }
+  .rk-pv { min-height: 0; }
+  .rk-p { min-width: 0; }
+  .rk-pv .rk-ch { white-space: normal; max-width: 100%; font-size: 11px; line-height: 1.25; padding: 2px 7px; }
+  .rk-f { grid-template-columns: 30px 44px 1fr auto; }
+  .rk-av.sm { width: 44px; height: 44px; font-size: 15px; border-width: 2px; box-shadow: 0 0 0 2px #dbe4fb; }
+  .rk-chs { margin-top: 2px; line-height: 1.3; }
+  .fd { margin-top: 8px; }
+  .fd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px; }
+  .fd-i { display: flex; align-items: center; gap: 6px; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+  .fd-i span { flex: 1; }
+  .fd-i input { width: 60px; }
+  .fd-i.on { border-color: #a78bfa; background: rgba(167,139,250,.12); font-weight: 700; }
+  .rq-t th.fz { color: #6d28d9; }
 </style>
 </head>
 <body>
@@ -2128,15 +2150,31 @@ function inicioSemana(d) {
 }
 // Puntos del periodo = lo que subieron sus puntos de ventas y permanencia del esquema (sin retención, que es un % del mes).
 const ptsVenta = c => c ? c.ventas + c.perm - c.ret.pts : 0;
+// Foco del día: productos que el supervisor quiere impulsar ese día, con los puntos que vale cada venta en el ranking.
+const focoDe = dia => (state.ppto.foco || {})[dia] || {};
+const hayFoco = (desde, d) => { for (let k = desde; k <= d; k++) if (Object.keys(focoDe(k)).length) return true; return false; };
+let gRankOrden = 'foco';
 function datosRanking(lista, periodo) {
   const D = diasDelMes(state.ppto.mes), d = Math.min(Math.max(diaCorte() ?? D, 1), D);
   const desde = periodo === 'dia' ? d : periodo === 'semana' ? inicioSemana(d) : 1;
+  const conFoco = hayFoco(desde, d), porFoco = conFoco && gRankOrden === 'foco';
   const ids = indicadoresActivos().map(i => i.id);
   const filas = lista.map(({ a, e }) => {
     const r1 = realAsesor(a, d), r0 = realAsesor(a, desde - 1);
     if (!r1) return null;
     const pts = ptsVenta(califAsesor(a, { hasta: d })) - ptsVenta(califAsesor(a, { hasta: desde - 1 }));
     const vend = ids.map(id => ({ id, n: (r1[id] || 0) - (r0[id] || 0) })).filter(x => x.n > 0).sort((x, y) => y.n - x.n);
+    // Puntos del foco: cada venta vale lo que se le puso a su producto en el foco de ese día.
+    let ptsFoco = 0;
+    const focoVend = {};
+    if (conFoco) {
+      let prev = r0;
+      for (let k = desde; k <= d; k++) {
+        const rk = realAsesor(a, k), w = focoDe(k);
+        Object.keys(w).forEach(id => { const n = (rk[id] || 0) - (prev[id] || 0); if (n > 0) { ptsFoco += n * w[id]; focoVend[id] = (focoVend[id] || 0) + n; } });
+        prev = rk;
+      }
+    }
     // Metas que cruzó en el periodo.
     const metas = ids.filter(id => a.metas[id] > 0 && (r0[id] || 0) < a.metas[id] && (r1[id] || 0) >= a.metas[id]);
     // Días seguidos vendiendo hasta el día de corte.
@@ -2145,12 +2183,14 @@ function datosRanking(lista, periodo) {
       const hoy = realAsesor(a, k), ayer = realAsesor(a, k - 1);
       if (ids.some(id => (hoy[id] || 0) > (ayer[id] || 0))) racha++; else break;
     }
-    return { a, e, pts, piezas: vend.reduce((t, x) => t + x.n, 0), vend, metas, racha, r1 };
-  }).filter(Boolean).sort((x, y) => y.pts - x.pts || y.piezas - x.piezas);
+    return { a, e, pts, ptsFoco, focoVend, orden: porFoco ? ptsFoco : pts, piezas: vend.reduce((t, x) => t + x.n, 0), vend, metas, racha, r1 };
+  }).filter(Boolean).sort((x, y) => y.orden - x.orden || y.pts - x.pts || y.piezas - x.piezas);
   // Lo que falta para la meta, con los indicadores elegidos para el % de cumplimiento.
   const cumplIds = indicadoresCumpl().map(i => i.id);
   const faltan = filas.reduce((t, f) => t + cumplIds.reduce((u, id) => u + Math.max((f.a.metas[id] || 0) - (f.r1[id] || 0), 0), 0), 0);
-  return { d, D, desde, filas, faltan, quedan: D - d, piezas: filas.reduce((t, f) => t + f.piezas, 0) };
+  const focoTot = {};
+  filas.forEach(f => Object.entries(f.focoVend).forEach(([id, n]) => focoTot[id] = (focoTot[id] || 0) + n));
+  return { d, D, desde, filas, faltan, quedan: D - d, piezas: filas.reduce((t, f) => t + f.piezas, 0), conFoco, porFoco, focoTot };
 }
 
 function rankingHTML(titulo, sub, lista, periodo, maxLista = 99) {
@@ -2165,24 +2205,29 @@ function rankingHTML(titulo, sub, lista, periodo, maxLista = 99) {
   const conVenta = R.filas.filter(f => f.piezas > 0), sinVenta = R.filas.filter(f => f.piezas <= 0);
   const porDia = R.quedan > 0 ? R.faltan / R.quedan : null;
   const hoyTxt = { dia: 'Hoy', semana: 'Esta semana', mes: 'Este mes' }[periodo];
+  const focoHoy = focoDe(R.d), focoIds = new Set(Object.keys(R.focoTot).concat(periodo === 'dia' ? Object.keys(focoHoy) : []));
+  const focoLogro = Object.values(R.focoTot).reduce((t, n) => t + n, 0);
   const msg = !conVenta.length ? { t: '¡Hoy arrancamos! 💪', s: 'La primera venta del día puede ser la tuya.' }
+    : R.porFoco && focoLogro ? { t: '¡Así se impulsa el foco! ⚡', s: `El equipo logró ${focoLogro} venta${focoLogro === 1 ? '' : 's'} del foco. ¡Vamos por más!` }
     : !sinVenta.length ? { t: '¡Todo el equipo vendió! 🙌', s: 'Así se juega en equipo. ¡Sigamos con este ritmo!' }
     : periodo === 'dia' && porDia != null && R.piezas >= porDia ? { t: '¡Día de campeones! 🏆', s: 'El equipo vendió al ritmo que necesita la meta.' }
     : { t: '¡Cada venta cuenta! 🚀', s: 'Felicidades a quienes sumaron. ¡Vamos todos por más!' };
-  const productos = f => f.vend.slice(0, 2).map(x => `${x.n} ${nombreEsquema(x.id)}`).join(' · ') + (f.vend.length > 2 ? ` · +${f.vend.slice(2).reduce((t, x) => t + x.n, 0)}` : '');
+  // Todas sus ventas del periodo; primero las del foco (resaltadas).
+  const chips = f => [...f.vend].sort((x, y) => focoIds.has(y.id) - focoIds.has(x.id) || y.n - x.n)
+    .map(x => `<span class="rk-ch ${focoIds.has(x.id) ? 'foco' : ''}">${focoIds.has(x.id) ? '⚡ ' : ''}<b>${x.n}</b> ${esc(nombreEsquema(x.id))}</span>`).join('');
+  const ptsDe = f => R.porFoco ? f.ptsFoco : f.pts;
   const ptsTxt = v => `${v > 0 ? '+' : ''}${fmtCal(v)} pts`;
   const avatar = (f, cls) => `<div class="rk-av ${cls}">${fotos[f.a.user] ? `<img src="${fotos[f.a.user]}" alt="">` : `<span>${esc(iniciales(f.a.nombre))}</span>`}</div>`;
   const podio = conVenta.slice(0, 3);
   const orden = [podio[1], podio[0], podio[2]].map((f, k) => f ? { f, lugar: [2, 1, 3][k] } : null).filter(Boolean);
   const MED = { 1: '🥇', 2: '🥈', 3: '🥉' };
   const resto = conVenta.slice(3), visibles = resto.slice(0, Math.max(maxLista - 3, 0));
-  const maxPts = Math.max(...conVenta.map(f => f.pts), 0.01);
 
-  // Reconocimientos: impulso del mes, metas cumplidas, más ventas y rachas.
+  // Reconocimientos: productos del foco y del impulso del mes, metas cumplidas, más ventas y rachas.
   const rec = [];
-  indicadoresImpulso().forEach(i => {
-    const top = conVenta.map(f => ({ f, n: (f.vend.find(x => x.id === i.id) || {}).n || 0 })).sort((x, y) => y.n - x.n)[0];
-    if (top && top.n > 0) rec.push(`⚡ Más ${esc(nombreEsquema(i.id))}: <b>${esc(nom(top.f))}</b> (${top.n})`);
+  [...new Set([...focoIds, ...indicadoresImpulso().map(i => i.id)])].forEach(id => {
+    const top = conVenta.map(f => ({ f, n: (f.vend.find(x => x.id === id) || {}).n || 0 })).sort((x, y) => y.n - x.n)[0];
+    if (top && top.n > 0) rec.push(`⚡ Más ${esc(nombreEsquema(id))}: <b>${esc(nom(top.f))}</b> (${top.n})`);
   });
   R.filas.filter(f => f.metas.length).slice(0, 2).forEach(f => rec.push(`🎯 <b>${esc(nom(f))}</b> cumplió su meta de ${esc(f.metas.slice(0, 2).map(nombreEsquema).join(' y '))}`));
   const masPiezas = [...conVenta].sort((x, y) => y.piezas - x.piezas)[0];
@@ -2190,42 +2235,48 @@ function rankingHTML(titulo, sub, lista, periodo, maxLista = 99) {
   const racha = [...R.filas].sort((x, y) => y.racha - x.racha)[0];
   if (racha && racha.racha >= 3) rec.push(`🔥 <b>${esc(nom(racha))}</b>: ${racha.racha} días seguidos vendiendo`);
 
+  const focoBox = periodo === 'dia' && Object.keys(focoHoy).length ? `<div class="rk-foco"><div class="rk-ft">⚡ Foco del día</div>
+      <div class="rk-fl">${Object.entries(focoHoy).map(([id, w]) => `<span><b>${esc(nombreEsquema(id))}</b> ${fmtMax(w)} pts c/u${R.focoTot[id] ? ` · <em>hoy van ${R.focoTot[id]}</em>` : ''}</span>`).join('')}</div></div>` : '';
+
   return `<div class="card rank">
     <div class="hd"><div class="deco d1"></div><div class="deco d2"></div>
       <div class="rk-hd"><div class="chip">🏆 ${etiqueta} · ${esc(cuando)}</div>
         <div class="nombre">${esc(titulo)}</div><div class="meta">${esc(sub)}</div></div></div>
     <div class="rk-msg"><b>${msg.t}</b><span>${msg.s}</span></div>
+    ${focoBox}
     ${podio.length ? `<div class="rk-podio">${orden.map(({ f, lugar }) => `<div class="rk-p l${lugar}">
       ${avatar(f, 'l' + lugar)}<div class="rk-med">${MED[lugar]}</div>
-      <div class="rk-pn">${esc(nom(f))}</div><div class="rk-pp">${ptsTxt(f.pts)}</div>
-      <div class="rk-pv">${esc(productos(f))}</div>
+      <div class="rk-pn">${esc(nom(f))}</div><div class="rk-pp">${ptsTxt(ptsDe(f))}</div>
+      <div class="rk-pv">${chips(f)}</div>
       <div class="rk-base">${lugar}</div></div>`).join('')}</div>` : ''}
     ${visibles.length ? `<div class="rk-lista">${visibles.map((f, k) => `<div class="rk-f">
-      <span class="rk-n">${k + 4}</span>
-      <div class="rk-c"><div class="rk-fn">${esc(nom(f))} <em>${esc(productos(f))}</em></div>
-        <div class="rk-bar"><i style="width:${Math.max(f.pts / maxPts, 0.04) * 100}%"></i></div></div>
-      <b>${ptsTxt(f.pts)}</b></div>`).join('')}
+      <span class="rk-n">${k + 4}</span>${avatar(f, 'sm')}
+      <div class="rk-c"><div class="rk-fn">${esc(nom(f))}</div><div class="rk-chs">${chips(f)}</div></div>
+      <b>${ptsTxt(ptsDe(f))}</b></div>`).join('')}
       ${resto.length > visibles.length ? `<div class="rk-mas">y ${resto.length - visibles.length} asesores más con ventas</div>` : ''}</div>` : ''}
     ${sinVenta.length ? `<div class="rk-cero">💪 <b>¡${periodo === 'dia' ? 'Mañana' : 'La próxima'} es su día!</b> ${sinVenta.length > 8 ? `${sinVenta.length} asesores van por su primera venta.` : esc(sinVenta.map(nom).join(', '))}</div>` : ''}
     ${rec.length ? `<div class="rk-rec">${rec.slice(0, 4).map(t => `<div>${t}</div>`).join('')}</div>` : ''}
     <div class="rk-eq"><div><b>${R.piezas}</b><span>ventas ${hoyTxt.toLowerCase()}</span></div>
-      ${porDia != null ? `<div><b>≈ ${Math.ceil(porDia)}</b><span>ventas al día para cerrar al 100%</span></div><div><b>${R.quedan}</b><span>días restantes</span></div>` : '<div><b>✓</b><span>cierre de mes</span></div>'}</div>
-    <div class="ft"><span>Puntos = lo que suma cada venta a la calificación de productividad</span><b>¡Vamos por más!</b></div>
+      ${R.conFoco ? `<div><b>${focoLogro}</b><span>ventas del foco</span></div>` : ''}
+      ${porDia != null ? `<div><b>≈ ${Math.ceil(porDia)}</b><span>ventas al día para cerrar al 100%</span></div>` : '<div><b>✓</b><span>cierre de mes</span></div>'}</div>
+    <div class="ft"><span>${R.porFoco ? 'Puntos = ventas del foco × puntos de cada producto' : 'Puntos = lo que suma cada venta a la calificación de productividad'}</span><b>¡Vamos por más!</b></div>
   </div>`;
 }
 
 // ---------- Captura rápida de ventas del día ----------
-const idsCaptura = () => [...new Set([
+const idsCaptura = dia => [...new Set([
+  ...Object.keys(focoDe(dia)),
   ...ESQUEMA.map(e => buscarIndicador(state.ppto.indicadores, ...e.inds[0])).filter(Boolean).map(i => i.id),
   ...indicadoresImpulso().map(i => i.id),
-])];
+])].filter(id => state.ppto.indicadores.some(i => i.id === id));
 function capturaRapidaHTML(lista) {
   const ppto = state.ppto, D = diasDelMes(ppto.mes);
   const hoy = new Date();
   const esteMes = hoy.getFullYear() === ppto.mes.anio && hoy.getMonth() === ppto.mes.idx;
   const dia = Math.min(Number(gRapidaDia) || (esteMes ? hoy.getDate() : diaCorte() || 1), D);
   gRapidaDia = dia;
-  const ids = idsCaptura();
+  const ids = idsCaptura(dia);
+  const foco = focoDe(dia);
   const valor = (u, id) => (ppto.ajustes || []).filter(j => j.rapida && j.dia === dia && j.user === u && j.id === id).reduce((t, j) => t + j.cantidad, 0);
   const cubierta = ppto.ventas && ppto.ventas.ultimoDia >= dia;
   const cortos = nombresCortos(lista.map(x => x.a));
@@ -2237,7 +2288,7 @@ function capturaRapidaHTML(lista) {
       <button id="rq-borrar">Borrar captura del día ${dia}</button>
       <span id="rq-st" style="font-size:13px;color:var(--muted)">${cubierta ? `⚠ El registro de ventas ya trae el día ${dia}: esta captura no se suma.` : ''}</span></div>
     <div class="g-scroll"><table class="g-tabla rq-t">
-      <tr><th class="t">Asesor</th>${ids.map(id => `<th><span>${esc(nombreEsquema(id))}</span></th>`).join('')}</tr>
+      <tr><th class="t">Asesor</th>${ids.map(id => `<th class="${foco[id] ? 'fz' : ''}"><span>${foco[id] ? '⚡ ' : ''}${esc(nombreEsquema(id))}</span></th>`).join('')}</tr>
       ${lista.map(({ a }) => `<tr><td class="t"><b>${esc(cap(cortos[a.user]))}</b> <span style="color:var(--muted);font-size:11px">${esc(a.user)}</span></td>
         ${ids.map(id => { const v = valor(a.user, id); return `<td><input type="number" min="0" step="1" data-u="${esc(a.user)}" data-id="${esc(id)}" value="${v || ''}" placeholder="0"></td>`; }).join('')}</tr>`).join('')}
     </table></div>
@@ -2450,9 +2501,24 @@ function renderPanel() {
   const rankings = [];
   if (g.porEquipo.length > 1) rankings.push({ titulo: `CAC ${cap(g.porEquipo[0].e.cac || '')}`.trim(), sub: `${g.porEquipo.length} equipos · ${listaG.length} asesores`, lista: listaG, max: 10, archivo: 'CAC' });
   g.porEquipo.forEach(t => rankings.push({ titulo: cap(t.e.nombre), sub: `Sup. ${cap(t.e.supervisor)} · ${t.n} asesores`, lista: listaG.filter(x => x.e === t.e), max: 99, archivo: `${t.e.nombre} - ${t.e.supervisor}` }));
+  const focoHoy = focoDe(g.dc);
+  const focoPrevio = (() => { for (let k = g.dc - 1; k >= 1; k--) if (Object.keys(focoDe(k)).length) return k; return null; })();
+  const focoSec = `<div class="ef-box fd"><b>⚡ Foco del día ${g.dc}</b>
+    <p>Pon puntos por venta a los productos que quieres impulsar hoy (por ejemplo Portabilidad con equipo = 3). El ranking del día se ordena con esos puntos y la tarjeta resalta esas ventas. Deja en blanco los demás.</p>
+    <div class="fd-grid">${indicadoresActivos().map(i => { const w = focoHoy[i.id]; return `<label class="fd-i ${w ? 'on' : ''}"><span>${esc(nombreEsquema(i.id))}</span>
+      <input type="number" class="fd-w" data-id="${esc(i.id)}" min="0" step="0.5" value="${w || ''}" placeholder="—"> pts</label>`; }).join('')}</div>
+    <div class="controls" style="margin-top:8px">
+      ${Object.keys(focoHoy).length ? '<button id="fd-quitar">Quitar el foco de este día</button>' : ''}
+      ${focoPrevio && !Object.keys(focoHoy).length ? `<button id="fd-copiar">Usar el foco del día ${focoPrevio}</button>` : ''}
+    </div></div>`;
   const rankSec = `<div class="g-sec" id="g-rank"><h3>🏆 Ranking de ventas para WhatsApp</h3>
-    <p>Ordenado por los puntos que suma cada venta a la calificación de productividad (una Portabilidad con equipo vale más que un Amigo Chip). Se arma con las ventas del día de corte (${g.dc}); si aún no subes el registro de hoy, usa la captura rápida.</p>
-    <div class="controls">
+    <p>Se arma con las ventas del día de corte (${g.dc}); si aún no subes el registro de hoy, usa la captura rápida. Con foco del día, el ranking se ordena por los puntos del foco; sin foco, por lo que suma cada venta a la calificación de productividad.</p>
+    ${focoSec}
+    <div class="controls" style="margin-top:10px">
+      <label>Ordenar por <select id="rk-orden" ${hayFoco(1, g.dc) ? '' : 'disabled'}>
+        <option value="foco" ${gRankOrden === 'foco' ? 'selected' : ''}>Puntos del foco del día</option>
+        <option value="esquema" ${gRankOrden === 'esquema' ? 'selected' : ''}>Puntos de calificación</option>
+      </select></label>
       <label>Periodo <select id="rk-per">
         <option value="dia" ${gRankPer === 'dia' ? 'selected' : ''}>Del día (${g.dc})</option>
         <option value="semana" ${gRankPer === 'semana' ? 'selected' : ''}>De la semana</option>
@@ -2525,6 +2591,21 @@ function renderPanel() {
   if (!sinVentas) {
     const nombreRk = r => `Ranking ${{ dia: 'dia ' + g.dc, semana: 'semana al ' + g.dc, mes: 'mes al ' + g.dc }[gRankPer]} ${mesTxt(ppto.mes)} - ${r.archivo}`.replace(/[\\/:*?"<>|]/g, '') + '.png';
     document.getElementById('rk-per').onchange = ev => { gRankPer = ev.target.value; renderPanel(); };
+    document.getElementById('rk-orden').onchange = ev => { gRankOrden = ev.target.value; renderPanel(); };
+    const guardarFoco = f => {
+      ppto.foco = { ...(ppto.foco || {}) };
+      if (Object.keys(f).length) ppto.foco[g.dc] = f; else delete ppto.foco[g.dc];
+      gRankOrden = 'foco';
+      guardar(); renderPanel();
+    };
+    cuerpo.querySelectorAll('.fd-w').forEach(inp => inp.onchange = () => {
+      const f = { ...focoDe(g.dc) }, v = Number(inp.value);
+      if (v > 0) f[inp.dataset.id] = v; else delete f[inp.dataset.id];
+      guardarFoco(f);
+    });
+    const quitar = document.getElementById('fd-quitar'), copiar = document.getElementById('fd-copiar');
+    if (quitar) quitar.onclick = () => guardarFoco({});
+    if (copiar) copiar.onclick = () => guardarFoco({ ...focoDe(focoPrevio) });
     cuerpo.querySelectorAll('.b-rk').forEach(b => b.onclick = async () => {
       b.disabled = true;
       try { descargar(await cardBlob(document.querySelector(`#rk-${b.dataset.k} .card`)), nombreRk(rankings[Number(b.dataset.k)])); }
