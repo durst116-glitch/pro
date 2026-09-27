@@ -3199,7 +3199,12 @@ function ajustarHoja(el) {
   const filas = () => el.querySelectorAll('.lg-f');
   while (pasa() && filas().length > 2 && quitarSiAyuda(filas()[filas().length - 1]));
   if (pasa()) { const foco = el.querySelector('.lg-b.foco'); if (foco) quitarSiAyuda(foco); }
-  if (pasa()) { const sug = el.querySelector('.cal-sug'); if (sug) quitarSiAyuda(sug); }
+  // Último recurso: subtítulos pequeños (textos de apoyo que no llevan datos).
+  for (const sel of ['.cal-sug', '.imp-s', '.cz-s', '.cal-s']) {
+    if (!pasa()) break;
+    const n = el.querySelector(sel);
+    if (n) quitarSiAyuda(n);
+  }
 }
 
 // Dibuja la tarjeta del asesor fuera de pantalla y regresa el canvas.
