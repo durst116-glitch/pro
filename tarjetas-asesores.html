@@ -2244,11 +2244,15 @@ const descansoDe = dia => {
   return state.ppto.equipos.flatMap(e => e.asesores).filter(a => descansaEl(a.user, dia)).map(a => a.user);
 };
 const hayFoco = (desde, d) => { for (let k = desde; k <= d; k++) if (Object.keys(focoDe(k)).length) return true; return false; };
-let gRankOrden = 'foco';
+let gRankOrden = 'piezas';
 function datosRanking(lista, periodo) {
   const D = diasDelMes(state.ppto.mes), d = Math.min(Math.max(diaCorte() ?? D, 1), D);
   const desde = periodo === 'dia' ? d : periodo === 'semana' ? inicioSemana(d) : 1;
-  const conFoco = hayFoco(desde, d), porFoco = conFoco && gRankOrden !== 'esquema' && gRankOrden !== 'piezas';
+  const conFoco = hayFoco(desde, d);
+  // Orden efectivo: sin foco en el periodo, «foco» ordena por total de ventas; la lista no muestra puntos de calificación.
+  let orden = gRankOrden === 'foco' && !conFoco ? 'piezas' : gRankOrden;
+  if (gRankDis === 'lista' && orden === 'esquema') orden = 'piezas';
+  const porFoco = orden === 'foco';
   const ids = indicadoresActivos().map(i => i.id);
   const filas = lista.map(({ a, e }) => {
     const r1 = realAsesor(a, d), r0 = realAsesor(a, desde - 1);
@@ -2275,15 +2279,17 @@ function datosRanking(lista, periodo) {
       if (ids.some(id => (hoy[id] || 0) > (ayer[id] || 0))) racha++; else break;
     }
     const piezas = vend.reduce((t, x) => t + x.n, 0);
-    return { a, e, pts, ptsFoco, focoVend, orden: gRankOrden === 'piezas' ? piezas : porFoco ? ptsFoco : pts, piezas, vend, metas, racha, r1, r0,
+    return { a, e, pts, ptsFoco, focoVend, orden: orden === 'piezas' ? piezas : porFoco ? ptsFoco : pts, piezas, vend, metas, racha, r1, r0,
       descanso: periodo === 'dia' && (descansoDe(d)).includes(a.user) };
-  }).filter(Boolean).sort((x, y) => y.orden - x.orden || y.pts - x.pts || y.piezas - x.piezas);
+  }).filter(Boolean).sort((x, y) => y.orden - x.orden || y.piezas - x.piezas || y.ptsFoco - x.ptsFoco || y.pts - x.pts);
+  // Lugar con empates: quien tiene el mismo valor comparte lugar (1, 1, 3…).
+  filas.forEach((f, k) => { f.lugar = k && Math.abs(f.orden - filas[k - 1].orden) < 1e-9 ? filas[k - 1].lugar : k + 1; });
   // Lo que falta para la meta, con los indicadores elegidos para el % de cumplimiento.
   const cumplIds = indicadoresCumpl().map(i => i.id);
   const faltan = filas.reduce((t, f) => t + cumplIds.reduce((u, id) => u + Math.max((f.a.metas[id] || 0) - (f.r1[id] || 0), 0), 0), 0);
   const focoTot = {};
   filas.forEach(f => Object.entries(f.focoVend).forEach(([id, n]) => focoTot[id] = (focoTot[id] || 0) + n));
-  return { d, D, desde, filas, faltan, quedan: D - d, piezas: filas.reduce((t, f) => t + f.piezas, 0), conFoco, porFoco, focoTot };
+  return { d, D, desde, filas, faltan, quedan: D - d, piezas: filas.reduce((t, f) => t + f.piezas, 0), conFoco, porFoco, focoTot, orden };
 }
 
 function rankingHTML(titulo, sub, lista, periodo, maxLista = 99) {
@@ -2412,10 +2418,10 @@ function rankingListaHTML(titulo, sub, lista, periodo, maxLista = 99) {
       ${Object.keys(focoHoy).length ? `<div class="tv-foco">⚡ FOCO DEL DÍA: ${Object.keys(focoHoy).map(id => `<b>${esc(nombreEsquema(id))}</b>${R.focoTot[id] ? ` (hoy van ${R.focoTot[id]})` : ''}`).join(' · ')}</div>` : ''}
     </div>
     <div class="tv-lista">
-      ${visibles.map((f, k) => `<div class="tv-r ${k < 3 ? 'p' + (k + 1) : ''}">
-        <div class="tv-n">#${k + 1}</div>
-        <div class="tv-avw">${avatar(f)}${ICON[k + 1] ? `<i>${ICON[k + 1]}</i>` : ''}</div>
-        <div class="tv-nm"><b>${esc(nom(f))}</b><span>TOTAL: <em>${f.piezas}</em></span></div>
+      ${visibles.map(f => `<div class="tv-r ${f.lugar <= 3 ? 'p' + f.lugar : ''}">
+        <div class="tv-n">#${f.lugar}</div>
+        <div class="tv-avw">${avatar(f)}${ICON[f.lugar] ? `<i>${ICON[f.lugar]}</i>` : ''}</div>
+        <div class="tv-nm"><b>${esc(nom(f))}</b><span>TOTAL: <em>${f.piezas}</em></span>${R.porFoco && Object.keys(f.focoVend).length ? `<small>⚡ Foco: ${Object.values(f.focoVend).reduce((t, n) => t + n, 0)} venta(s)</small>` : ''}</div>
         <div class="tv-cs">${celdas(f)}</div></div>`).join('')}
       ${conVenta.length > visibles.length ? `<div class="tv-mas">y ${conVenta.length - visibles.length} asesores más con ventas</div>` : ''}
       ${sinVenta.slice(0, periodo === 'dia' && maxLista >= 99 ? 99 : 0).map(f => `<div class="tv-r off">
@@ -2700,9 +2706,9 @@ function renderPanel() {
         <option value="podio" ${gRankDis === 'podio' ? 'selected' : ''}>Podio</option>
       </select></label>
       <label>Ordenar por <select id="rk-orden">
-        ${hayFoco(1, g.dc) ? `<option value="foco" ${gRankOrden === 'foco' ? 'selected' : ''}>Puntos del foco del día</option>` : ''}
-        <option value="esquema" ${gRankOrden === 'esquema' || (gRankOrden === 'foco' && !hayFoco(1, g.dc)) ? 'selected' : ''}>Puntos de calificación</option>
-        <option value="piezas" ${gRankOrden === 'piezas' ? 'selected' : ''}>Total de ventas</option>
+        <option value="piezas" ${gRankOrden === 'piezas' || (gRankOrden === 'foco' && !hayFoco(1, g.dc)) || (gRankOrden === 'esquema' && gRankDis === 'lista') ? 'selected' : ''}>Total de ventas</option>
+        ${hayFoco(1, g.dc) ? `<option value="foco" ${gRankOrden === 'foco' ? 'selected' : ''}>Ventas del foco (con su ponderación)</option>` : ''}
+        ${gRankDis === 'podio' ? `<option value="esquema" ${gRankOrden === 'esquema' ? 'selected' : ''}>Puntos de calificación</option>` : ''}
       </select></label>
       <label>Periodo <select id="rk-per">
         <option value="dia" ${gRankPer === 'dia' ? 'selected' : ''}>Del día (${g.dc})</option>
@@ -2791,7 +2797,7 @@ function renderPanel() {
     const guardarFoco = f => {
       ppto.foco = { ...(ppto.foco || {}) };
       if (Object.keys(f).length) ppto.foco[g.dc] = f; else delete ppto.foco[g.dc];
-      if (Object.keys(f).length) gRankOrden = 'foco';
+
       guardar(); renderPanel();
     };
     cuerpo.querySelectorAll('.fd-w').forEach(inp => inp.onchange = () => {
