@@ -1795,10 +1795,14 @@ function porArrancarHTML(a, indicadores, reales) {
   if (!reales) return '';
   const cero = indicadores.filter(i => a.metas[i.id] > 0 && !(reales[i.id] > 0) && !esImpulso(i.id));
   if (!cero.length) return '';
+  // Si de la categoría ya vendió algún producto, se nombra cada producto que falta (ej. «Wifi Telcel sin equipo»)
+  // para que no parezca que la categoría completa sigue en cero; si toda la categoría va en cero, se agrupa.
+  const conVentas = g => state.ppto.indicadores.some(i => i.grupo === g && reales[i.id] > 0);
   const grupos = [];
   cero.forEach(i => {
-    let g = grupos.find(x => x.nombre === i.grupo);
-    if (!g) grupos.push(g = { nombre: i.grupo, n: 0, meta: 0, sub: i.sub });
+    const suelto = conVentas(i.grupo);
+    let g = suelto ? null : grupos.find(x => x.nombre === i.grupo && !x.suelto);
+    if (!g) grupos.push(g = { nombre: i.grupo, n: 0, meta: 0, sub: i.sub, suelto });
     g.n++; g.meta += a.metas[i.id];
   });
   return `<div class="arr">
