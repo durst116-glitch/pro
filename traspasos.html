@@ -89,9 +89,18 @@ kbd.kb{font:600 .7rem/1 var(--f-body);padding:3px 5px;border-radius:4px;border:1
 .btn.primary kbd.kb{opacity:.8}
 @media (max-width:560px){kbd.kb{display:none}}
 /* Autocompletado (reemplaza la lista nativa, que en Safari es poco práctica) */
+.sw{display:inline-block;width:20px;height:20px;border-radius:6px;border:1px solid rgba(59,36,38,.18);flex:none;vertical-align:middle;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+.sw-empty{background:transparent;border-style:dashed;box-shadow:none}
+.sw-insumo{background:var(--surface-2);border-style:dashed;border-color:var(--muted);box-shadow:none;position:relative}
+.sw-insumo::after{content:"";position:absolute;inset:5px;border:1.5px solid var(--muted);border-radius:2px}
+.inp-sw{position:relative;min-width:0}
+.inp-sw .sw{position:absolute;left:8px;top:50%;transform:translateY(-50%);pointer-events:none}
+.inp-sw input{padding-left:36px!important}
+.sw-cell{display:flex;align-items:center;gap:10px}
 .ac{position:fixed;z-index:60;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(59,36,38,.16);
   max-height:300px;overflow-y:auto;overscroll-behavior:contain;padding:4px;min-width:220px}
-.ac-opt{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;align-items:baseline;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:.88rem}
+.ac-opt{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:.88rem}
 .ac-opt.col{grid-template-columns:1fr}
 .ac-opt b{font:600 .82rem var(--f-mono);color:var(--accent);white-space:nowrap}
 .ac-opt span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -121,8 +130,8 @@ kbd.kb{font:600 .7rem/1 var(--f-body);padding:3px 5px;border-radius:4px;border:1
 .icon-btn:hover{background:var(--bad-soft);color:var(--bad)}
 
 /* ---------- Renglones de material ---------- */
-.items-head,.item{display:grid;grid-template-columns:26px 172px minmax(0,1fr) 124px 76px 76px minmax(0,120px) 116px 30px;gap:8px;align-items:center}
-.items-head{background:var(--accent-soft);color:var(--accent)!important;border-radius:8px;padding:9px 10px;margin-bottom:6px;font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.items-head,.item{display:grid;grid-template-columns:26px 196px minmax(0,1fr) 116px 80px 80px minmax(0,112px) 112px 30px;gap:8px;align-items:center}
+.items-head{background:var(--accent-soft);color:var(--accent)!important;border-radius:8px;padding:9px 10px;margin-bottom:6px;font-size:.66rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
 .items{display:grid;gap:6px}
 .item{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
 .item .n{font:600 .8rem var(--f-mono);color:var(--muted);text-align:center}
@@ -254,6 +263,9 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
 .sh-items th{background:#b72125;color:#fff;font-size:8.5pt;padding:1.6mm 1mm;border:1px solid #8e1a1d;text-align:center}
 .sh-items td{border:1px solid #9aa5b5;padding:1.1mm 1.4mm;font-size:8.8pt;height:6.4mm;overflow:hidden;word-wrap:break-word}
 .sh-items td.c{text-align:center}
+.sh-items .sw-print{width:3.2mm;height:3.2mm;border-radius:.8mm;margin-right:1.4mm;vertical-align:-.5mm;border:.2mm solid #999;box-shadow:none}
+.sh-items .sw-print.sw-empty{display:none}
+.sh-items .sw-print.sw-insumo::after{inset:.6mm;border-width:.25mm}
 .sh-items td.r{text-align:right}
 .sh-notes{border:1px solid #000;margin-top:3mm;padding:1.5mm 2mm;min-height:10mm;font-size:9pt}
 .sh-sign{display:grid;grid-template-columns:1fr 1fr;gap:18mm;margin-top:8mm;page-break-inside:avoid}
@@ -377,7 +389,7 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
     <div class="panel">
       <div class="src-line" id="srcLine" style="margin-bottom:10px"></div>
       <p class="hint" style="margin:0 0 10px" id="catHowto"></p>
-      <p class="hint" style="margin:0 0 10px">La app busca sola la hoja de materiales (columnas <b>Clave</b> y <b>Descripción</b>, y <b>Marca</b> si existe), aunque cambies columnas de lugar o agregues otras. Las hojas <b>Almacenes</b> y <b>Colaboradores</b> llenan las listas de sucursales y de nombres. Si renombras una columna, indícala en <b>Ajustar columnas</b>.</p>
+      <p class="hint" style="margin:0 0 10px">La app busca sola la hoja de materiales (columnas <b>Clave</b> y <b>Descripción</b>, y <b>Marca</b> si existe), aunque cambies columnas de lugar o agregues otras. Las hojas <b>Almacenes</b> y <b>Colaboradores</b> llenan las listas de sucursales y de nombres. Si renombras una columna, indícala en <b>Ajustar columnas</b>. La muestra de color junto a cada clave es aproximada: se calcula por el nombre del producto (color, código RAL, claro/oscuro y acabado).</p>
       <div class="inline">
         <input id="catNewClave" placeholder="Clave" style="flex:0 1 140px">
         <input id="catNewDesc" placeholder="Descripción">
@@ -610,7 +622,7 @@ function renderItems(){
   $('#items').innerHTML = form.items.map((it, i) => `
     <div class="item" data-i="${i}">
       <div class="n">${i + 1}</div>
-      <label class="f c-clave"><span>Clave</span><input data-k="clave" data-ac="mat" value="${esc(it.clave)}" autocomplete="off" spellcheck="false"></label>
+      <label class="f c-clave"><span>Clave</span><div class="inp-sw">${swatchHtml(it.clave, it.descripcion)}<input data-k="clave" data-ac="mat" value="${esc(it.clave)}" autocomplete="off" spellcheck="false"></div></label>
       <label class="f c-desc"><span>Descripción</span><input data-k="descripcion" data-ac="mat" value="${esc(it.descripcion)}" autocomplete="off" spellcheck="false"></label>
       <label class="f c-marca"><span>Marca</span><input data-k="marca" value="${esc(it.marca)}"></label>
       <label class="f c-sol"><span>Solicitada</span><input class="num" data-k="sol" inputmode="decimal" value="${esc(it.sol)}"></label>
@@ -652,6 +664,7 @@ function onItemEdit(e){
     row.querySelector('[data-k=descripcion]').value = it.descripcion;
     row.querySelector('[data-k=marca]').value = it.marca;
   }
+  if(k === 'clave' || k === 'descripcion') row.querySelector('.inp-sw .sw').outerHTML = swatchHtml(it.clave, it.descripcion);
   const sel = row.querySelector('.c-st select'); if(document.activeElement !== sel) sel.outerHTML = stSelect(it);
   renderTotals(); saveDraft();
 }
@@ -779,7 +792,7 @@ function renderSheet(t){
   let body = '';
   for(let i = 0; i < rows; i++){
     const it = items[i];
-    body += it ? `<tr><td class="c">${i + 1}</td><td>${esc(it.clave)}</td><td>${esc(it.descripcion)}</td><td class="c">${esc(it.marca)}</td>
+    body += it ? `<tr><td class="c">${i + 1}</td><td>${swatchHtml(it.clave, it.descripcion, 'sw-print')}${esc(it.clave)}</td><td>${esc(it.descripcion)}</td><td class="c">${esc(it.marca)}</td>
       <td class="r">${esc(it.sol)}</td><td class="r">${esc(it.ent)}</td><td>${esc(it.obs)}</td><td class="c">${statusOf(it)}</td></tr>`
       : `<tr><td class="c">${i + 1}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
   }
@@ -919,7 +932,7 @@ function renderCat(){
   $('#catCount').textContent = `${catalogo.length} material${catalogo.length === 1 ? '' : 'es'} en el catálogo` + (nManual ? ` (${nManual} agregado${nManual === 1 ? '' : 's'} a mano)` : '');
   $('#catHead').innerHTML = `<tr><th>Clave</th><th>Descripción</th><th>Marca</th>${extras.map(x => `<th>${esc(x)}</th>`).join('')}<th></th></tr>`;
   $('#catBody').innerHTML = shown.length ? shown.map(c => `
-    <tr><td class="mono">${esc(c.clave)}</td><td>${esc(c.descripcion)}</td><td>${c.marca ? esc(c.marca) : '<span class="hint">Sin marca</span>'}</td>
+    <tr><td class="mono"><span class="sw-cell">${swatchHtml(c.clave, c.descripcion)}${esc(c.clave)}</span></td><td>${esc(c.descripcion)}</td><td>${c.marca ? esc(c.marca) : '<span class="hint">Sin marca</span>'}</td>
     ${extras.map(x => `<td>${esc((c.extra || {})[x])}</td>`).join('')}
     <td>${c.origen === 'manual'
       ? `<button class="icon-btn" data-cdel="${esc(c.id)}" aria-label="Quitar ${esc(c.clave)}">&times;</button>`
@@ -963,6 +976,86 @@ const RX = {
 };
 const RX_SUC = /almac|sucursal|tienda|bodega/, RX_COL = /colabor|emplead|personal|usuario|responsable|trabajador/;
 const RX_SKIPSHEET = /formato|plantilla|traspaso/;
+
+/* ---------- Muestra de color por material ----------
+   Se calcula con el nombre (clave + descripción): palabra de color, código RAL, tono claro/oscuro y acabado.
+   Es una referencia visual aproximada, no el color exacto de la pintura. */
+const RAL = { '1003':'#f9a800','1013':'#e3d9c6','1015':'#e6d2b5','1018':'#faca30','1021':'#f6b600','1023':'#f7b500','2004':'#e25303','3000':'#a72920','3002':'#a2231d','3003':'#8d1d2c','3020':'#c1121c',
+  '5002':'#00387b','5005':'#154889','5010':'#004f7c','5012':'#0089b6','5015':'#007cb0','5017':'#005b8c','6002':'#325928','6005':'#114232','6018':'#48a43f','6029':'#006f3d',
+  '7001':'#8f999f','7004':'#9c9c9c','7011':'#555d61','7015':'#51565c','7016':'#383e42','7021':'#2f3234','7024':'#474a50','7035':'#c5c7c4','7037':'#7a7b7a','7038':'#b0b0a9','7040':'#9ca4a9','7042':'#8f9695','7045':'#8f9699','7047':'#cacbcd',
+  '8014':'#4a3526','8017':'#44322d','8019':'#3d3635','9001':'#e9e0d2','9002':'#d7d5cb','9003':'#ecece7','9004':'#2b2b2c','9005':'#0e0e10','9006':'#a1a1a0','9007':'#878581','9010':'#f1ece1','9011':'#27292b','9016':'#f1f0ea','9017':'#2a292a' };
+const COLORES = [
+  [/\b(transparente|clear|barniz)\b/, '#e9eef2', 'Transparente'],
+  [/\b(negro|black)\b/, '#1d1d1f', 'Negro'], [/\b(blanco|white)\b/, '#f6f5f1', 'Blanco'],
+  [/\b(amarillo|yellow)\b/, '#f2c500', 'Amarillo'], [/\b(naranja|orange)\b/, '#ee6c12', 'Naranja'],
+  [/\b(rojo|red)\b/, '#c62828', 'Rojo'], [/\b(vino|guinda|borgona)\b/, '#7a1f2d', 'Vino'],
+  [/\b(rosa|pink)\b/, '#e98fb0', 'Rosa'], [/\blila\b/, '#b59ad8', 'Lila'], [/\b(morado|violeta|purple)\b/, '#6a3d9a', 'Morado'],
+  [/\b(azul|blue|aqua|turquesa)\b/, '#1f58a8', 'Azul'], [/\b(verde|green)\b/, '#2e7d32', 'Verde'],
+  [/\b(cafe|chocolate|brown|marron)\b/, '#6b4a32', 'Café'], [/\b(beige|arena|gamuza|almendra|hueso|marfil|perla)\b/, '#d9c7a4', 'Beige'],
+  [/\bocre\b/, '#c58b1c', 'Ocre'], [/\b(champagne|champana)\b/, '#dcc9a0', 'Champagne'],
+  [/\b(dorado|oro|gold)\b/, '#c9a227', 'Dorado'], [/\b(bronze|bronce)\b/, '#8c6239', 'Bronce'], [/\b(cobre|cooper|copper)\b/, '#b87333', 'Cobre'],
+  [/\b(plata|silver|aluminio|cromo|acero|steel|pewter)\b/, '#b9bdc1', 'Plata'],
+  [/\b(gris|gray|grey|oxford|granito|zinc|primer|carbon)\b/, '#8a8e92', 'Gris']
+];
+const NO_PINTURA = /\b(cubrebocas|guante|overol|removedor|fosfato|fosf|tamiz|catalogo|carta|coleccion|colleccion|sello|tiras|termografia|costo|mat-rec|brake)\b/;
+const hexRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const rgbHex = a => '#' + a.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+const mix = (h, to, t) => { const a = hexRgb(h), b = hexRgb(to); return rgbHex(a.map((v, i) => v + (b[i] - v) * t)); };
+const swCache = new Map();
+function colorInfo(clave, descripcion){
+  const key = normK(clave) + '¦' + normK(descripcion);
+  if(swCache.has(key)) return swCache.get(key);
+  const txt = normH(`${clave} ${descripcion}`).replace(/[-_/]/g, ' ');
+  const first = normH(clave).split(/[\s\-]/)[0];
+  let info = null;
+  if(!txt.trim()) info = null;
+  else if(NO_PINTURA.test(txt) && !COLORES.some(([rx]) => rx.test(normH(clave)))) info = { tipo:'insumo', nombre:'Insumo (no es pintura)' };
+  else {
+    const ral = txt.match(/\bral\s?(\d{4})\b/);
+    let base, nombre;
+    if(ral && RAL[ral[1]]){ base = RAL[ral[1]]; nombre = 'RAL ' + ral[1]; }
+    else {
+      const hit = COLORES.find(([rx]) => rx.test(first)) || COLORES.find(([rx]) => rx.test(txt));
+      if(hit){ base = hit[1]; nombre = hit[2]; }
+    }
+    if(!base) info = { tipo:'insumo', nombre:'Sin color identificado' };
+    else {
+      if(/\b(claro|light|pastel)\b/.test(txt)){ base = mix(base, '#ffffff', .38); nombre += ' claro'; }
+      if(/\b(oscuro|obscuro|dark)\b/.test(txt)){ base = mix(base, '#000000', .35); nombre += ' oscuro'; }
+      let acabado = 'liso';
+      if(/\b(transparente|clear|barniz)\b/.test(txt)) acabado = 'transparente';
+      else if(/\b(martillado|martill|hammer|hammertone)\b/.test(txt)) acabado = 'martillado';
+      else if(/\b(metalico|metallic|perlescente|anodic|vein|cromo|aluminio|silver|plata|dorado|oro|gold|bronze|bronce|cobre|cooper|copper|champagne)\b/.test(txt)) acabado = 'metalico';
+      else if(/\b(texturado|texturizado|texture|tx|gofrado|arrugado|corrugado|granito|kraken|rugoso)\b/.test(txt)) acabado = 'texturizado';
+      else if(/\b(fluorescente|neon)\b/.test(txt)) acabado = 'fluorescente';
+      else if(/\b(brillante|gloss|alto brillo)\b/.test(txt)) acabado = 'brillante';
+      else if(/\b(mate|matte)\b/.test(txt)) acabado = 'mate';
+      info = { tipo:'color', base, nombre, acabado };
+    }
+  }
+  swCache.set(key, info);
+  return info;
+}
+function swatchStyle(ci){
+  const b = ci.base, lt = mix(b, '#ffffff', .45), dk = mix(b, '#000000', .35);
+  switch(ci.acabado){
+    case 'transparente': { const [r, g, bl] = hexRgb(b); const tinte = ci.nombre.startsWith('Transparente') ? 'rgba(255,255,255,0)' : `rgba(${r},${g},${bl},.55)`;
+      return `background:linear-gradient(135deg,rgba(255,255,255,.7),rgba(255,255,255,0) 60%),linear-gradient(${tinte},${tinte}),conic-gradient(#d9dde1 25%,#fff 0 50%,#d9dde1 0 75%,#fff 0) 0 0/8px 8px`; }
+    case 'metalico': return `background:linear-gradient(135deg,${lt} 0%,${b} 38%,${dk} 52%,${b} 66%,${lt} 100%)`;
+    case 'martillado': return `background:radial-gradient(circle at 30% 30%,${lt} 0 18%,transparent 34%) 0 0/9px 9px,radial-gradient(circle at 70% 70%,${dk} 0 16%,transparent 32%) 0 0/9px 9px,${b}`;
+    case 'texturizado': return `background:radial-gradient(${lt} 0.8px,transparent 1.3px) 0 0/4px 4px,radial-gradient(${dk} 0.8px,transparent 1.3px) 2px 2px/4px 4px,${b}`;
+    case 'brillante': return `background:linear-gradient(150deg,rgba(255,255,255,.65) 0%,rgba(255,255,255,0) 42%),${b}`;
+    case 'fluorescente': return `background:${mix(b, '#ffff00', .15)};box-shadow:0 0 0 2px ${mix(b, '#ffffff', .5)},0 0 8px ${b}`;
+    default: return `background:${b}`;
+  }
+}
+function swatchHtml(clave, descripcion, cls){
+  const ci = colorInfo(clave, descripcion);
+  if(!ci) return `<span class="sw sw-empty ${cls || ''}" aria-hidden="true"></span>`;
+  if(ci.tipo === 'insumo') return `<span class="sw sw-insumo ${cls || ''}" title="${esc(ci.nombre)}" aria-hidden="true"></span>`;
+  const label = `${ci.nombre}${ci.acabado !== 'liso' && !ci.nombre.toLowerCase().startsWith(ci.acabado) ? ' · ' + ci.acabado : ''} (color aproximado)`;
+  return `<span class="sw ${cls || ''}" style="${swatchStyle(ci)}" title="${esc(label)}" role="img" aria-label="${esc(label)}"></span>`;
+}
 
 function sheetGrid(ws){
   if(!ws || !ws['!ref']) return { rows:[], r0:0, c0:0 };
@@ -1438,7 +1531,7 @@ function acRender(){
   } else {
     el.innerHTML = opts.map((o, i) => kind === 'col'
       ? `<div class="ac-opt col" role="option" data-i="${i}" aria-selected="${i === ac.idx}"><span>${esc(o.value)}</span></div>`
-      : `<div class="ac-opt" role="option" data-i="${i}" aria-selected="${i === ac.idx}"><b>${esc(o.c.clave)}</b><span>${esc(o.c.descripcion)}</span><small>${esc(o.c.marca)}</small></div>`).join('');
+      : `<div class="ac-opt" role="option" data-i="${i}" aria-selected="${i === ac.idx}">${swatchHtml(o.c.clave, o.c.descripcion)}<b>${esc(o.c.clave)}</b><span>${esc(o.c.descripcion)}</span><small>${esc(o.c.marca)}</small></div>`).join('');
   }
   el.hidden = false;
   const r = input.getBoundingClientRect();
@@ -1464,6 +1557,7 @@ function acPick(i){
   row.querySelector('[data-k=descripcion]').value = it.descripcion;
   row.querySelector('[data-k=marca]').value = it.marca;
   row.querySelector('.c-st select').outerHTML = stSelect(it);
+  row.querySelector('.inp-sw .sw').outerHTML = swatchHtml(it.clave, it.descripcion);
   renderTotals(); saveDraft(); acClose();
   row.querySelector('[data-k=sol]').focus();
 }
