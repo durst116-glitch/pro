@@ -99,7 +99,7 @@ textarea{resize:vertical;min-height:64px}
 .icon-btn:hover{background:var(--bad-soft);color:var(--bad)}
 
 /* ---------- Renglones de material ---------- */
-.items-head,.item{display:grid;grid-template-columns:26px 178px minmax(0,1fr) 128px 78px 78px minmax(0,130px) 92px 30px;gap:8px;align-items:center}
+.items-head,.item{display:grid;grid-template-columns:26px 172px minmax(0,1fr) 124px 76px 76px minmax(0,120px) 116px 30px;gap:8px;align-items:center}
 .items-head{background:var(--accent-soft);color:var(--accent)!important;border-radius:8px;padding:9px 10px;margin-bottom:6px;font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .items{display:grid;gap:6px}
 .item{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
@@ -117,20 +117,23 @@ textarea{resize:vertical;min-height:64px}
   .item .c-marca{grid-column:span 2}
   .item .c-sol,.item .c-ent{grid-column:span 2}
   .item .c-obs{grid-column:span 4}
-  .item .c-st{grid-column:span 2;align-self:end;padding-bottom:6px}
+  .item .c-st{grid-column:span 2}
   .item .icon-btn{position:absolute;top:4px;right:4px}
 }
 @media (max-width:520px){
   .item .c-clave,.item .c-marca,.item .c-sol,.item .c-ent{grid-column:span 3}
   .item .c-desc,.item .c-obs,.item .c-st{grid-column:1/-1}
   .item .c-clave{order:1}.item .c-marca{order:2}.item .c-desc{order:3}
-  .item .c-sol{order:4}.item .c-ent{order:5}.item .c-obs{order:6}.item .c-st{order:7;padding-bottom:0}
+  .item .c-sol{order:4}.item .c-ent{order:5}.item .c-obs{order:6}.item .c-st{order:7}
 }
 
 .pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
 .pill.Completo{background:var(--ok-soft);color:var(--ok)}
 .pill.Parcial{background:var(--warn-soft);color:var(--warn)}
 .pill.Pendiente{background:var(--bad-soft);color:var(--bad)}
+.item select.st-sel{min-height:32px;padding:4px 8px;border-radius:999px;font-size:.74rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase;cursor:pointer;background:var(--surface)}
+.item select.st-Completo{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.item select.st-Parcial{background:var(--warn-soft);color:var(--warn);border-color:transparent}
 .pill.Excedente{background:var(--info-soft);color:var(--info)}
 .pill.none{background:transparent;color:var(--muted)}
 
@@ -282,8 +285,8 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
       <div class="grid-4">
         <div class="f"><span>Folio</span><div class="folio-box" id="folioBox">—</div></div>
         <label class="f"><span>Fecha</span><input type="date" id="fFecha"></label>
-        <label class="f"><span>Almacén origen</span><input id="fOrigen" list="dl-suc" placeholder="Elige o escribe el almacén" autocomplete="off"></label>
-        <label class="f"><span>Almacén destino</span><input id="fDestino" list="dl-suc" placeholder="Elige o escribe el almacén" autocomplete="off"></label>
+        <label class="f"><span>Almacén origen</span><select id="fOrigen"></select></label>
+        <label class="f"><span>Almacén destino</span><select id="fDestino"></select></label>
       </div>
     </div>
 
@@ -506,20 +509,24 @@ function download(name, blob){
 }
 
 /* ---------- Status por renglón ---------- */
-function statusOf(it){
+/* Solo dos estados: Completo o Parcial. Se propone según las cantidades
+   (entregada ≥ solicitada = Completo) y se puede cambiar a mano en cada renglón. */
+const STATUS = ['Completo', 'Parcial'];
+function autoStatus(it){
   const s = num(it.sol), e = num(it.ent);
-  if(!s && !e && it.ent === '') return '';
-  if(it.ent === '' || e === 0) return 'Pendiente';
-  if(e < s) return 'Parcial';
-  if(e > s) return 'Excedente';
-  return 'Completo';
+  if(!s && !e) return '';
+  return e > 0 && e >= s ? 'Completo' : 'Parcial';
 }
+const statusOf = it => STATUS.includes(it.st) ? it.st : autoStatus(it);
 function statusGeneral(t){
   const st = t.items.map(statusOf).filter(Boolean);
-  if(!st.length) return 'Pendiente';
-  if(st.every(s => s === 'Completo')) return 'Completo';
-  if(st.every(s => s === 'Pendiente')) return 'Pendiente';
-  return 'Parcial';
+  if(!st.length) return '';
+  return st.every(s => s === 'Completo') ? 'Completo' : 'Parcial';
+}
+function stSelect(it){
+  const v = statusOf(it);
+  return `<select data-k="st" class="st-sel st-${v || 'none'}" aria-label="Status">${v ? '' : '<option value="" selected>—</option>'}` +
+    STATUS.map(x => `<option value="${x}"${x === v ? ' selected' : ''}>${x}</option>`).join('') + '</select>';
 }
 const pill = s => s ? `<span class="pill ${s}">${s}</span>` : '<span class="pill none">—</span>';
 
@@ -532,7 +539,7 @@ function blankForm(){
 function loadForm(t){
   form = JSON.parse(JSON.stringify(t));
   if(!form.items.length) form.items.push(blankItem());
-  $('#fFecha').value = form.fecha; $('#fOrigen').value = form.origen; $('#fDestino').value = form.destino;
+  $('#fFecha').value = form.fecha; renderAlmacenes();
   $('#fNotas').value = form.notas || ''; $('#fEntrega').value = form.entrega || ''; $('#fRecibe').value = form.recibe || '';
   $('#formTitle').textContent = form.id ? `Editando ${form.folio}` : 'Nuevo traspaso';
   $('#formErr').hidden = true;
@@ -553,7 +560,7 @@ function renderItems(){
       <label class="f c-sol"><span>Solicitada</span><input class="num" data-k="sol" inputmode="decimal" value="${esc(it.sol)}"></label>
       <label class="f c-ent"><span>Entregada</span><input class="num" data-k="ent" inputmode="decimal" value="${esc(it.ent)}"></label>
       <label class="f c-obs"><span>Observaciones</span><input data-k="obs" value="${esc(it.obs)}"></label>
-      <div class="c-st">${pill(statusOf(it))}</div>
+      <label class="f c-st"><span>Status</span>${stSelect(it)}</label>
       <button class="icon-btn" type="button" data-del="${i}" aria-label="Quitar renglón ${i + 1}">&times;</button>
     </div>`).join('');
   renderTotals();
@@ -565,10 +572,12 @@ function renderTotals(){
 }
 
 
-$('#items').addEventListener('input', e => {
-  const inp = e.target.closest('input[data-k]'); if(!inp) return;
+function onItemEdit(e){
+  const inp = e.target.closest('[data-k]'); if(!inp) return;
   const row = inp.closest('.item'), i = +row.dataset.i, k = inp.dataset.k, it = form.items[i];
   it[k] = inp.value;
+  if(k === 'sol' || k === 'ent') it.st = '';          // al cambiar cantidades se vuelve a proponer
+  if(k === 'st'){ row.querySelector('.c-st select').outerHTML = stSelect(it); renderTotals(); saveDraft(); return; }
   let hit;
   if(k === 'clave'){
     const hits = claveIndex().get(normK(inp.value)) || [];
@@ -587,9 +596,11 @@ $('#items').addEventListener('input', e => {
     row.querySelector('[data-k=descripcion]').value = it.descripcion;
     row.querySelector('[data-k=marca]').value = it.marca;
   }
-  row.querySelector('.c-st').innerHTML = pill(statusOf(it));
+  const sel = row.querySelector('.c-st select'); if(document.activeElement !== sel) sel.outerHTML = stSelect(it);
   renderTotals(); saveDraft();
-});
+}
+$('#items').addEventListener('input', e => { if(e.target.tagName !== 'SELECT') onItemEdit(e); });
+$('#items').addEventListener('change', e => { if(e.target.tagName === 'SELECT') onItemEdit(e); });
 $('#items').addEventListener('keydown', e => {
   // Enter en el último campo agrega renglón nuevo
   if(e.key === 'Enter' && e.target.dataset.k === 'obs'){
@@ -609,8 +620,24 @@ function addRow(){
 }
 $('#btnAddRow').onclick = addRow;
 
-[['#fFecha','fecha'],['#fOrigen','origen'],['#fDestino','destino'],['#fNotas','notas'],['#fEntrega','entrega'],['#fRecibe','recibe']]
+[['#fFecha','fecha'],['#fNotas','notas'],['#fEntrega','entrega'],['#fRecibe','recibe']]
   .forEach(([sel, k]) => $(sel).addEventListener('input', e => { form[k] = e.target.value; saveDraft(); }));
+/* Origen y destino: listas desplegables con los almacenes del Excel y los agregados en Ajustes.
+   El destino no ofrece el almacén elegido como origen. */
+function renderAlmacenes(){
+  if(!form) return;
+  const base = allOf('sucursales');
+  const opts = (list, val, ph) => {
+    const all = val && !list.some(x => normK(x) === normK(val)) ? [val, ...list] : list;
+    return `<option value="">${ph}</option>` + all.map(x => `<option value="${esc(x)}"${normK(x) === normK(val) ? ' selected' : ''}>${esc(x)}</option>`).join('');
+  };
+  const vacio = base.length ? 'Selecciona el almacén' : 'Agrega almacenes en Ajustes o en el Excel';
+  if(form.destino && normK(form.destino) === normK(form.origen)) form.destino = '';
+  $('#fOrigen').innerHTML = opts(base, form.origen, vacio);
+  $('#fDestino').innerHTML = opts(base.filter(x => normK(x) !== normK(form.origen)), form.destino, vacio);
+}
+$('#fOrigen').addEventListener('change', e => { form.origen = e.target.value; renderAlmacenes(); saveDraft(); });
+$('#fDestino').addEventListener('change', e => { form.destino = e.target.value; saveDraft(); });
 
 $('#btnNuevo').onclick = async () => {
   const dirty = form.items.some(it => it.clave || it.descripcion) || form.origen || form.destino;
@@ -659,8 +686,8 @@ function cleanItems(t){ return t.items.filter(it => String(it.clave).trim() || S
 function validate(){
   const errs = [];
   if(!form.fecha) errs.push('Falta la fecha.');
-  if(!form.origen.trim()) errs.push('Indica el almacén de origen.');
-  if(!form.destino.trim()) errs.push('Indica el almacén de destino.');
+  if(!form.origen.trim()) errs.push('Selecciona el almacén de origen.');
+  if(!form.destino.trim()) errs.push('Selecciona el almacén de destino.');
   if(form.origen.trim() && form.origen.trim().toUpperCase() === form.destino.trim().toUpperCase()) errs.push('El origen y el destino no pueden ser el mismo almacén.');
   const used = cleanItems(form);
   if(!used.length) errs.push('Agrega al menos un material con clave o descripción.');
@@ -1223,6 +1250,7 @@ function renderListas(){
   $('#sucChips').innerHTML = chips('sucursales');
   $('#colChips').innerHTML = chips('colaboradores');
   $('#dl-suc').innerHTML = allOf('sucursales').map(s => `<option value="${esc(s)}"></option>`).join('');
+  renderAlmacenes();
   $('#dl-col').innerHTML = allOf('colaboradores').map(s => `<option value="${esc(s)}"></option>`).join('');
 }
 function renderSettings(){
