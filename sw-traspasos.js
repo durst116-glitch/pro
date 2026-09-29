@@ -1,12 +1,11 @@
 // Service worker de Traspasos Pinturas Powder: permite instalar la app y usarla sin internet.
-const CACHE = 'traspasos-v1';
+const CACHE = 'traspasos-v2';
 const SHELL = [
   'traspasos.html',
   'manifest.webmanifest',
   'img/logo-pinturas-powder.png',
   'img/icon-192.png',
-  'img/icon-512.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+  'img/icon-512.png'
 ];
 
 self.addEventListener('install', e => {
