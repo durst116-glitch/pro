@@ -30,9 +30,9 @@
   --warn:#946000; --warn-soft:#fdf5e2;
   --bad:#b3261e; --bad-soft:#fdeceb;
   --info:#5b4bb0; --info-soft:#f1eefc;
-  --f-display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --f-display:'Barlow Condensed','Avenir Next Condensed','Arial Narrow',Arial,sans-serif;
   --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
-  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --f-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
   --bar:#ffffff; --bar-ink:#3b2426;
   --r:10px;
   color-scheme:light;
@@ -40,7 +40,7 @@
 
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 [hidden]{display:none!important}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -80,6 +80,28 @@ input[type=text],input[type=date],input[type=number],input:not([type]),select,te
   width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:40px}
 input:focus,select:focus,textarea:focus{border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 3px var(--accent-soft)}
 textarea{resize:vertical;min-height:64px}
+/* Listas desplegables con el mismo aspecto en Safari, Chrome, Edge y Firefox */
+select{-webkit-appearance:none;appearance:none;padding-right:32px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23b72125' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;background-size:12px 8px}
+select::-ms-expand{display:none}
+kbd.kb{font:600 .7rem/1 var(--f-body);padding:3px 5px;border-radius:4px;border:1px solid currentColor;opacity:.6;margin-left:4px}
+.btn.primary kbd.kb{opacity:.8}
+@media (max-width:560px){kbd.kb{display:none}}
+/* Autocompletado (reemplaza la lista nativa, que en Safari es poco práctica) */
+.ac{position:fixed;z-index:60;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(59,36,38,.16);
+  max-height:300px;overflow-y:auto;overscroll-behavior:contain;padding:4px;min-width:220px}
+.ac-opt{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;align-items:baseline;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:.88rem}
+.ac-opt.col{grid-template-columns:1fr}
+.ac-opt b{font:600 .82rem var(--f-mono);color:var(--accent);white-space:nowrap}
+.ac-opt span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-opt small{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.ac-opt[aria-selected="true"],.ac-opt:hover{background:var(--accent-soft)}
+.ac-empty{padding:10px;color:var(--muted);font-size:.85rem}
+.drop{position:fixed;inset:12px;z-index:70;border:3px dashed var(--accent);border-radius:16px;background:rgba(252,236,234,.92);
+  display:flex;align-items:center;justify-content:center;text-align:center;font:700 1.4rem/1.3 var(--f-display);letter-spacing:.04em;text-transform:uppercase;color:var(--accent);pointer-events:none}
+.msg.warnbox{background:var(--warn-soft);color:var(--ink);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px}
+.tips{margin:0;padding-left:1.2rem;display:grid;gap:6px;font-size:.9rem;max-width:80ch}
 .grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 @media (max-width:820px){.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:460px){.grid-4{grid-template-columns:1fr}}
@@ -131,9 +153,9 @@ textarea{resize:vertical;min-height:64px}
 .pill.Completo{background:var(--ok-soft);color:var(--ok)}
 .pill.Parcial{background:var(--warn-soft);color:var(--warn)}
 .pill.Pendiente{background:var(--bad-soft);color:var(--bad)}
-.item select.st-sel{min-height:32px;padding:4px 8px;border-radius:999px;font-size:.74rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase;cursor:pointer;background:var(--surface)}
-.item select.st-Completo{background:var(--ok-soft);color:var(--ok);border-color:transparent}
-.item select.st-Parcial{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.item select.st-sel{min-height:32px;padding:4px 26px 4px 10px;background-position:right 9px center;border-radius:999px;font-size:.74rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase;cursor:pointer;background-color:var(--surface)}
+.item select.st-Completo{background-color:var(--ok-soft);color:var(--ok);border-color:transparent}
+.item select.st-Parcial{background-color:var(--warn-soft);color:var(--warn);border-color:transparent}
 .pill.Excedente{background:var(--info-soft);color:var(--info)}
 .pill.none{background:transparent;color:var(--muted)}
 
@@ -271,11 +293,15 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
     <div class="head-row">
       <div>
         <h2 id="formTitle">Nuevo traspaso</h2>
-        <p class="hint">Escribe la clave del material y la descripción se llena sola desde el catálogo.</p>
+        <p class="hint">Escribe parte de la clave o la descripción y elige el material de la lista.</p>
       </div>
       <button class="btn" id="btnNuevo" type="button">+ Traspaso en blanco</button>
     </div>
 
+    <div class="msg warnbox" id="backupBanner" hidden>
+      <span id="backupMsg"></span>
+      <button class="btn sm" id="btnBackupNow" type="button">Descargar respaldo</button>
+    </div>
     <div class="msg info" id="linkBanner" hidden>
       <span>Hay materiales vinculados a <b id="linkName"></b>. Autoriza la lectura para traer los cambios del Excel.</span>
       <button class="btn sm" id="btnLinkRefresh" type="button">Actualizar materiales</button>
@@ -308,11 +334,11 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
       <label class="f"><span>Notas generales (opcional)</span><textarea id="fNotas" placeholder="Ej. Se envía en camioneta de reparto, cajas selladas."></textarea></label>
       <div class="sign-grid">
         <div class="sign">
-          <label class="f"><span>Entrega (nombre)</span><input id="fEntrega" list="dl-col" autocomplete="off"></label>
+          <label class="f"><span>Entrega (nombre)</span><input id="fEntrega" data-ac="col" autocomplete="off" placeholder="Escribe o elige un nombre"></label>
           <div class="pad" data-pad="entrega"><canvas></canvas><div class="ph">Firma aquí con el dedo o el mouse</div><button class="btn sm clr" type="button">Borrar</button></div>
         </div>
         <div class="sign">
-          <label class="f"><span>Recibe (nombre)</span><input id="fRecibe" list="dl-col" autocomplete="off"></label>
+          <label class="f"><span>Recibe (nombre)</span><input id="fRecibe" data-ac="col" autocomplete="off" placeholder="Escribe o elige un nombre"></label>
           <div class="pad" data-pad="recibe"><canvas></canvas><div class="ph">Firma aquí con el dedo o el mouse</div><button class="btn sm clr" type="button">Borrar</button></div>
         </div>
       </div>
@@ -420,8 +446,12 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
       </ol>
     </div>
     <div class="panel stack">
+      <h3>Uso en Mac y PC</h3>
+      <ul class="tips" id="tipsList"></ul>
+    </div>
+    <div class="panel stack">
       <h3>Respaldo</h3>
-      <p class="hint" style="margin:0">Los datos se guardan en este dispositivo. Descarga un respaldo para pasarlos a otro equipo o por seguridad.</p>
+      <p class="hint" style="margin:0">Los datos se guardan en este dispositivo. Descarga un respaldo para pasarlos a otro equipo o por seguridad. <span id="backupInfo"></span></p>
       <div class="btn-row">
         <button class="btn" id="btnBackup" type="button">Descargar respaldo</button>
         <label class="btn" for="restoreFile">Restaurar respaldo</label>
@@ -434,8 +464,8 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
 <div class="actionbar" id="actionbar">
   <div class="btn-row">
     <button class="btn" id="btnExcel" type="button">Excel</button>
-    <button class="btn" id="btnPrint" type="button">Imprimir / PDF</button>
-    <button class="btn primary" id="btnSave" type="button">Guardar traspaso</button>
+    <button class="btn" id="btnPrint" type="button">Imprimir / PDF<kbd class="kb" data-kb="P"></kbd></button>
+    <button class="btn primary" id="btnSave" type="button">Guardar traspaso<kbd class="kb" data-kb="S"></kbd></button>
   </div>
 </div>
 
@@ -454,6 +484,8 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
 <div class="toast" id="toast" role="status"></div>
 
 <div id="sheet"></div>
+<div class="ac" id="ac" role="listbox" hidden></div>
+<div class="drop" id="dropZone" hidden>Suelta tu Excel para actualizar los materiales</div>
 
 <!-- SheetJS Community Edition 0.18.5 (Apache-2.0), incluida para que la app funcione sin internet -->
 <script>/*@@XLSX@@*/</script>
@@ -554,8 +586,8 @@ function renderItems(){
   $('#items').innerHTML = form.items.map((it, i) => `
     <div class="item" data-i="${i}">
       <div class="n">${i + 1}</div>
-      <label class="f c-clave"><span>Clave</span><input data-k="clave" list="dl-claves" value="${esc(it.clave)}" autocomplete="off"></label>
-      <label class="f c-desc"><span>Descripción</span><input data-k="descripcion" list="dl-desc" value="${esc(it.descripcion)}" autocomplete="off"></label>
+      <label class="f c-clave"><span>Clave</span><input data-k="clave" data-ac="mat" value="${esc(it.clave)}" autocomplete="off" spellcheck="false"></label>
+      <label class="f c-desc"><span>Descripción</span><input data-k="descripcion" data-ac="mat" value="${esc(it.descripcion)}" autocomplete="off" spellcheck="false"></label>
       <label class="f c-marca"><span>Marca</span><input data-k="marca" value="${esc(it.marca)}"></label>
       <label class="f c-sol"><span>Solicitada</span><input class="num" data-k="sol" inputmode="decimal" value="${esc(it.sol)}"></label>
       <label class="f c-ent"><span>Entregada</span><input class="num" data-k="ent" inputmode="decimal" value="${esc(it.ent)}"></label>
@@ -711,7 +743,7 @@ function save(){
   }
   if(!saveTraspasos()) return false;
   addSucursal(rec.origen); addSucursal(rec.destino); addManual('colaboradores', rec.entrega); addManual('colaboradores', rec.recibe);
-  loadForm(rec);
+  loadForm(rec); renderBackup();
   toast(`Traspaso ${rec.folio} guardado`);
   return rec;
 }
@@ -749,8 +781,9 @@ function renderSheet(t){
     </div>
     <div class="sh-foot">Impreso el ${new Date().toLocaleString('es-MX')}</div>`;
 }
+let printing = null; // traspaso que se está imprimiendo (desde el historial o el formulario)
 function printT(t){
-  renderSheet(t);
+  printing = t; renderSheet(t);
   const imgs = $$('#sheet img');
   Promise.all(imgs.map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; }))).then(() => window.print());
 }
@@ -1170,7 +1203,8 @@ function renderSource(){
     : `<span class="dot"></span><span>Aún no se ha leído ningún Excel de materiales.</span>`;
   $('#catHowto').innerHTML = canLink
     ? 'Pulsa <b>Vincular Excel de materiales</b> y elige tu archivo una sola vez. Cada vez que abras la app, o regreses a ella después de guardar cambios en el Excel, los materiales, almacenes y colaboradores se actualizan solos.'
-    : 'Pulsa <b>Importar Excel</b> y elige tu archivo. Los datos quedan guardados en este equipo. Cuando modifiques el Excel, vuelve a importarlo. En Chrome o Edge puedes vincularlo para que se actualice solo.';
+    : 'Pulsa <b>Importar Excel</b> o <b>arrastra el archivo</b> a esta ventana. Los datos quedan guardados en este equipo. Cuando modifiques el Excel, vuelve a importarlo. En Chrome o Edge puedes vincularlo para que se actualice solo.';
+  $('#lblImport').textContent = !canLink && fuente ? 'Actualizar desde Excel' : 'Importar Excel';
   $('#btnLink').hidden = !canLink;
   $('#lblImport').classList.toggle('primary', !canLink);
   $('#btnCatReload').hidden = !(linked || onWeb);
@@ -1311,6 +1345,7 @@ $('#sLogo').addEventListener('change', e => {
 });
 $('#btnLogoDel').onclick = () => { settings.logo = ''; saveSettings(); renderSettings(); };
 $('#btnBackup').onclick = () => {
+  settings.ultimoRespaldo = new Date().toISOString(); saveSettings(); setTimeout(renderBackup, 0);
   const data = { app:'traspasos', version:2, fecha:new Date().toISOString(), settings, catalogo, traspasos, listas, revision, fuente };
   download(`respaldo_traspasos_${today()}.json`, new Blob([JSON.stringify(data)], { type:'application/json' }));
 };
@@ -1329,6 +1364,145 @@ $('#restoreFile').addEventListener('change', async e => {
   } catch(err){ toast('Ese archivo no es un respaldo válido de esta app'); }
 });
 
+/* ---------- Mac y PC ---------- */
+const isMac = /mac|iphone|ipad/i.test((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent);
+const isSafari = /^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent);
+document.documentElement.classList.toggle('mac', isMac);
+const MOD = isMac ? '⌘' : 'Ctrl+';
+$$('[data-kb]').forEach(k => { k.textContent = MOD + k.dataset.kb; });
+if(isMac) $$('.pad .ph').forEach(x => { x.textContent = 'Firma aquí con el trackpad o el mouse'; });
+$('#btnSave').title = `Guardar (${MOD}S)`; $('#btnPrint').title = `Imprimir o guardar PDF (${MOD}P)`;
+
+// ⌘S / Ctrl+S guarda; ⌘P / Ctrl+P imprime el formato (no la pantalla).
+document.addEventListener('keydown', e => {
+  const mod = isMac ? e.metaKey : e.ctrlKey;
+  if(!mod || e.altKey || e.shiftKey) return;
+  const k = e.key.toLowerCase();
+  if(k === 's'){ e.preventDefault(); if($('#view-nuevo').hidden) show('nuevo'); save(); }
+  if(k === 'p'){ e.preventDefault(); if($('#view-nuevo').hidden) show('nuevo'); $('#btnPrint').click(); }
+});
+// Si se imprime desde el menú Archivo → Imprimir, también sale el formato actualizado.
+window.addEventListener('beforeprint', () => { renderSheet(printing || form); });
+window.addEventListener('afterprint', () => { printing = null; });
+
+/* Autocompletado para clave, descripción y nombres: busca por cualquier palabra de la clave,
+   la descripción o la marca; funciona con mouse, trackpad y teclado (flechas, Enter, Esc). */
+const ac = { el:$('#ac'), input:null, opts:[], idx:-1 };
+function acMatches(kind, qRaw){
+  const q = normK(qRaw);
+  if(kind === 'col'){
+    const all = allOf('colaboradores');
+    return (q ? all.filter(n => normK(n).includes(q)) : all).slice(0, 60).map(n => ({ value:n }));
+  }
+  if(!q) return [];
+  const words = q.split(' '), out = [];
+  for(const c of catalogo){
+    const hay = normK(`${c.clave} ${c.descripcion} ${c.marca}`);
+    if(!words.every(w => hay.includes(w))) continue;
+    const rank = normK(c.clave) === q ? 0 : normK(c.clave).startsWith(q) ? 1 : normK(c.descripcion).startsWith(q) ? 2 : 3;
+    out.push({ rank, c });
+  }
+  return out.sort((a, b) => a.rank - b.rank).slice(0, 80);
+}
+function acRender(){
+  const { el, input, opts } = ac;
+  if(!input){ el.hidden = true; return; }
+  const kind = input.dataset.ac;
+  if(!opts.length){
+    if(kind === 'mat' && input.value.trim() && catalogo.length){ el.innerHTML = '<div class="ac-empty">Sin coincidencias en el catálogo.</div>'; }
+    else { el.hidden = true; return; }
+  } else {
+    el.innerHTML = opts.map((o, i) => kind === 'col'
+      ? `<div class="ac-opt col" role="option" data-i="${i}" aria-selected="${i === ac.idx}"><span>${esc(o.value)}</span></div>`
+      : `<div class="ac-opt" role="option" data-i="${i}" aria-selected="${i === ac.idx}"><b>${esc(o.c.clave)}</b><span>${esc(o.c.descripcion)}</span><small>${esc(o.c.marca)}</small></div>`).join('');
+  }
+  el.hidden = false;
+  const r = input.getBoundingClientRect();
+  const w = Math.min(window.innerWidth - 16, Math.max(r.width, kind === 'mat' ? 520 : 260));
+  el.style.width = w + 'px';
+  el.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
+  const h = Math.min(el.scrollHeight, 300), below = window.innerHeight - r.bottom - 80; // deja libre la barra de acciones
+  el.style.top = (below < h && r.top > h + 8 ? r.top - h - 4 : r.bottom + 4) + 'px';
+  const sel = el.querySelector('[aria-selected="true"]'); if(sel) sel.scrollIntoView({ block:'nearest' });
+}
+function acOpen(input){
+  ac.input = input; ac.opts = acMatches(input.dataset.ac, input.value); ac.idx = -1; acRender();
+}
+function acClose(){ ac.input = null; ac.opts = []; ac.idx = -1; ac.el.hidden = true; }
+function acPick(i){
+  const o = ac.opts[i], input = ac.input; if(!o || !input) return;
+  if(input.dataset.ac === 'col'){
+    input.value = o.value; input.dispatchEvent(new Event('input', { bubbles:true })); acClose(); return;
+  }
+  const row = input.closest('.item'), it = form.items[+row.dataset.i];
+  it.clave = o.c.clave; it.descripcion = o.c.descripcion; it.marca = o.c.marca || ''; it.st = '';
+  row.querySelector('[data-k=clave]').value = it.clave;
+  row.querySelector('[data-k=descripcion]').value = it.descripcion;
+  row.querySelector('[data-k=marca]').value = it.marca;
+  row.querySelector('.c-st select').outerHTML = stSelect(it);
+  renderTotals(); saveDraft(); acClose();
+  row.querySelector('[data-k=sol]').focus();
+}
+document.addEventListener('focusin', e => { const t = e.target; if(t.matches && t.matches('[data-ac]')) acOpen(t); else if(!ac.el.contains(t)) acClose(); });
+document.addEventListener('input', e => { if(e.target === ac.input) acOpen(e.target); });
+document.addEventListener('focusout', e => { if(e.target === ac.input) setTimeout(() => { if(document.activeElement !== ac.input) acClose(); }, 120); });
+document.addEventListener('keydown', e => {
+  if(!ac.input || e.target !== ac.input || ac.el.hidden) return;
+  const n = ac.opts.length;
+  if(e.key === 'ArrowDown' && n){ e.preventDefault(); ac.idx = (ac.idx + 1) % n; acRender(); }
+  else if(e.key === 'ArrowUp' && n){ e.preventDefault(); ac.idx = (ac.idx - 1 + n) % n; acRender(); }
+  else if(e.key === 'Enter' && ac.idx >= 0){ e.preventDefault(); e.stopPropagation(); acPick(ac.idx); }
+  else if(e.key === 'Escape'){ e.preventDefault(); acClose(); }
+}, true);
+ac.el.addEventListener('mousedown', e => e.preventDefault()); // que el campo no pierda el foco
+ac.el.addEventListener('click', e => { const o = e.target.closest('.ac-opt'); if(o) acPick(+o.dataset.i); });
+window.addEventListener('scroll', e => { if(ac.input && !ac.el.contains(e.target)) acRender(); }, true);
+window.addEventListener('resize', () => { if(ac.input) acRender(); });
+
+/* Arrastrar el Excel desde Finder o el Explorador de Windows a la ventana para actualizar materiales. */
+let dragDepth = 0;
+const hasFiles = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+window.addEventListener('dragenter', e => { if(!hasFiles(e)) return; e.preventDefault(); dragDepth++; $('#dropZone').hidden = false; });
+window.addEventListener('dragover', e => { if(hasFiles(e)){ e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } });
+window.addEventListener('dragleave', e => { if(!hasFiles(e)) return; if(--dragDepth <= 0){ dragDepth = 0; $('#dropZone').hidden = true; } });
+window.addEventListener('drop', async e => {
+  if(!hasFiles(e)) return;
+  e.preventDefault(); dragDepth = 0; $('#dropZone').hidden = true;
+  const f = Array.from(e.dataTransfer.files).find(x => /\.(xlsx|xlsm|xls|csv)$/i.test(x.name));
+  if(!f){ toast('Suelta un archivo de Excel (.xlsx)'); return; }
+  try{ toast(resumenCambios(applyWorkbook(await f.arrayBuffer(), f.name, {}))); }
+  catch(err){ onExcelError(err, true); }
+});
+
+/* Recordatorio de respaldo: los datos viven en el navegador de cada equipo
+   (Safari puede borrar los datos de páginas que no se abren en varios días). */
+function renderBackup(){
+  const last = settings.ultimoRespaldo ? new Date(settings.ultimoRespaldo) : null;
+  const pend = traspasos.filter(t => !last || new Date(t.actualizado || t.creado || 0) > last).length;
+  const dias = last ? (Date.now() - last) / 864e5 : Infinity;
+  $('#backupInfo').textContent = last ? `Último respaldo: ${last.toLocaleString('es-MX')}.` : 'Aún no has descargado un respaldo.';
+  const show = pend > 0 && (dias >= 7 || (!last && traspasos.length >= 3));
+  $('#backupBanner').hidden = !show;
+  if(show) $('#backupMsg').innerHTML = `Tienes <b>${pend}</b> traspaso${pend === 1 ? '' : 's'} sin respaldar${last ? ` desde el ${last.toLocaleDateString('es-MX')}` : ''}.` +
+    (isSafari ? ' En Safari conviene respaldar seguido: puede borrar los datos de la app si no la abres en varios días.' : '');
+}
+$('#btnBackupNow').onclick = () => $('#btnBackup').click();
+
+function renderTips(){
+  const pdf = isMac ? 'En el cuadro de impresión abre el menú <b>PDF</b> → <b>Guardar como PDF</b>.' : 'En el cuadro de impresión elige <b>Guardar como PDF</b> o <b>Microsoft Print to PDF</b>.';
+  const abrir = isMac
+    ? 'Con doble clic el archivo abre en Safari. Para abrirlo en Chrome o Edge: clic derecho sobre el archivo → <b>Abrir con</b> → Google Chrome.'
+    : 'Con doble clic abre en tu navegador predeterminado. Para elegir otro: clic derecho → <b>Abrir con</b>.';
+  const excel = canLink
+    ? 'En este navegador puedes <b>vincular</b> el Excel en Catálogo para que se actualice solo.'
+    : 'En este navegador el Excel no se puede vincular: <b>arrastra el archivo</b> a la ventana o usa <b>Importar Excel</b> cada vez que lo cambies. Chrome y Edge sí permiten vincularlo.';
+  $('#tipsList').innerHTML = [
+    `<b>${MOD}S</b> guarda el traspaso y <b>${MOD}P</b> imprime el formato. ${pdf}`,
+    'En Clave, Descripción, Entrega y Recibe escribe cualquier parte del texto y elige con el mouse o con las flechas y <b>Enter</b>.',
+    abrir, excel
+  ].map(x => `<li>${x}</li>`).join('');
+}
+
 /* ---------- Navegación ---------- */
 function show(view){
   $$('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.view === view)));
@@ -1341,7 +1515,7 @@ function show(view){
 $$('.tab').forEach(t => t.onclick = () => show(t.dataset.view));
 
 /* ---------- Inicio ---------- */
-renderSettings(); renderCat(); renderSource(); renderRevision();
+renderSettings(); renderCat(); renderSource(); renderRevision(); renderBackup(); renderTips();
 loadForm(store.get('borrador', null) || blankForm());
 (async () => {
   if(canLink) linked = await idb.get('excel');
