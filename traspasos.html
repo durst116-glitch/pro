@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Traspasos de Material</title>
+<title>Traspasos Pinturas Powder</title>
+<link rel="icon" href="img/logo-pinturas-powder.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -11,15 +12,15 @@
 <style>
 /* Layout: barra superior con pestañas; formulario tipo "hoja de almacén" con renglones que se apilan en celular. Hoja imprimible aparte. */
 :root{
-  --bg:#eef1f5;
+  --bg:#f3f1f1;
   --surface:#ffffff;
-  --surface-2:#f6f8fb;
-  --line:#d6dce5;
-  --ink:#15233a;
-  --muted:#5d6b80;
-  --accent:#2f5f9e;          /* azul de encabezado del formato */
+  --surface-2:#f8f6f6;
+  --line:#e0d9d9;
+  --ink:#231a1b;
+  --muted:#6e6263;
+  --accent:#b72125;          /* rojo Pinturas Powder */
   --accent-ink:#ffffff;
-  --accent-soft:#e3ecf8;
+  --accent-soft:#fbe7e6;
   --ok:#1d7a46;  --ok-soft:#dff3e7;
   --warn:#9a6200; --warn-soft:#fdf0d5;
   --bad:#b3261e; --bad-soft:#fbe3e1;
@@ -27,26 +28,26 @@
   --f-display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
   --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
-  --bar:#15233a; --bar-ink:#eef1f5;
+  --bar:#b72125; --bar-ink:#ffffff;
   --r:10px;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0f1520; --surface:#18212f; --surface-2:#1e2939; --line:#2e3b50;
-    --ink:#e6ecf5; --muted:#9aa8bd; --accent:#6f9fe0; --accent-ink:#0b1422; --accent-soft:#1f3150;
+    --bg:#141011; --surface:#1f1a1b; --surface-2:#282223; --line:#3d3334;
+    --ink:#f1eaea; --muted:#b3a4a5; --accent:#f07a73; --accent-ink:#1a0707; --accent-soft:#3c1b1c;
     --ok:#6fd49a; --ok-soft:#173526; --warn:#f0bf5a; --warn-soft:#3a2e12;
     --bad:#ff8a80; --bad-soft:#3d1c1a; --info:#b3a6ff; --info-soft:#2a2547;
-    --bar:#070b12; --bar-ink:#e6ecf5;
+    --bar:#4d1517; --bar-ink:#fbe9e8;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0f1520; --surface:#18212f; --surface-2:#1e2939; --line:#2e3b50;
-  --ink:#e6ecf5; --muted:#9aa8bd; --accent:#6f9fe0; --accent-ink:#0b1422; --accent-soft:#1f3150;
+  --bg:#141011; --surface:#1f1a1b; --surface-2:#282223; --line:#3d3334;
+  --ink:#f1eaea; --muted:#b3a4a5; --accent:#f07a73; --accent-ink:#1a0707; --accent-soft:#3c1b1c;
   --ok:#6fd49a; --ok-soft:#173526; --warn:#f0bf5a; --warn-soft:#3a2e12;
   --bad:#ff8a80; --bad-soft:#3d1c1a; --info:#b3a6ff; --info-soft:#2a2547;
-  --bar:#070b12; --bar-ink:#e6ecf5;
+  --bar:#4d1517; --bar-ink:#fbe9e8;
   color-scheme:dark;
 }
 
@@ -62,7 +63,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 0}
 .top-row{display:flex;align-items:center;gap:12px;max-width:1180px;margin:0 auto}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
-.brand img{width:34px;height:34px;object-fit:contain;border-radius:6px;background:#fff}
+.brand img{height:48px;width:auto;object-fit:contain;border-radius:8px;background:#fff;padding:3px 5px;flex:none}
 .brand-txt{min-width:0}
 .brand-name{font:700 1.35rem/1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brand-sub{font-size:.72rem;opacity:.7;letter-spacing:.08em;text-transform:uppercase}
@@ -70,7 +71,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .tab{background:none;border:0;color:inherit;opacity:.65;padding:10px 14px;font:700 1rem/1 var(--f-display);
   letter-spacing:.06em;text-transform:uppercase;border-radius:8px 8px 0 0;cursor:pointer;white-space:nowrap}
 .tab:hover{opacity:1}
-.tab[aria-selected="true"]{opacity:1;background:var(--bg);color:var(--ink)}
+.tab[aria-selected="true"]{opacity:1;background:var(--bg);color:var(--accent)}
 
 main{max-width:1180px;margin:0 auto;padding:20px 16px 110px}
 h2{font:800 1.7rem/1.1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;margin:0;text-wrap:balance}
@@ -146,6 +147,10 @@ textarea{resize:vertical;min-height:64px}
 .totals b{color:var(--ink);font-variant-numeric:tabular-nums}
 
 /* ---------- Firmas ---------- */
+.src-line{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;font-size:.85rem;color:var(--muted)}
+.src-line b{color:var(--ink)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+.dot.on{background:var(--ok)}
 .sign-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 @media (max-width:640px){.sign-grid{grid-template-columns:1fr}}
 .sign{display:grid;gap:8px}
@@ -202,20 +207,20 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
   #sheet{display:block;color:#000;font:10pt/1.3 Arial,Helvetica,sans-serif}
   #sheet *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
-.sh-head{display:grid;grid-template-columns:34mm 1fr 44mm;border:1px solid #000;align-items:stretch}
+.sh-head{display:grid;grid-template-columns:42mm 1fr 44mm;border:1px solid #000;align-items:stretch}
 .sh-logo{border-right:1px solid #000;display:flex;align-items:center;justify-content:center;padding:2mm;min-height:24mm}
 .sh-logo img{max-width:100%;max-height:22mm}
 .sh-title{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2mm}
-.sh-title .e{font-size:13pt;font-weight:700;text-transform:uppercase}
+.sh-title .e{font-size:13pt;font-weight:700;text-transform:uppercase;color:#b72125}
 .sh-title .t{font-size:15pt;font-weight:800;letter-spacing:.5pt;margin-top:1mm}
 .sh-folio{border-left:1px solid #000;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2mm}
 .sh-folio small{font-size:8pt;text-transform:uppercase}
 .sh-folio b{font-size:14pt;color:#b00000;font-family:'Courier New',monospace}
 .sh-info{width:100%;border-collapse:collapse;margin-top:3mm}
 .sh-info td{border:1px solid #000;padding:1.3mm 2mm;font-size:9.5pt}
-.sh-info td.k{font-weight:700;width:34mm;background:#eef2f8}
+.sh-info td.k{font-weight:700;width:34mm;background:#fbeeee}
 .sh-items{width:100%;border-collapse:collapse;margin-top:3mm;table-layout:fixed}
-.sh-items th{background:#3f6fb0;color:#fff;font-size:8.5pt;padding:1.6mm 1mm;border:1px solid #2c528a;text-align:center}
+.sh-items th{background:#b72125;color:#fff;font-size:8.5pt;padding:1.6mm 1mm;border:1px solid #8e1a1d;text-align:center}
 .sh-items td{border:1px solid #9aa5b5;padding:1.1mm 1.4mm;font-size:8.8pt;height:6.4mm;overflow:hidden;word-wrap:break-word}
 .sh-items td.c{text-align:center}
 .sh-items td.r{text-align:right}
@@ -235,9 +240,9 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
 <header class="top">
   <div class="top-row">
     <div class="brand">
-      <img id="brandLogo" alt="" hidden>
+      <img id="brandLogo" src="img/logo-pinturas-powder.png" alt="Pinturas Powder">
       <div class="brand-txt">
-        <div class="brand-name" id="brandName">Mi Negocio</div>
+        <div class="brand-name" id="brandName">Pinturas Powder</div>
         <div class="brand-sub">Traspasos de material entre sucursales</div>
       </div>
     </div>
@@ -323,11 +328,13 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
       <div class="btn-row">
         <label class="btn primary" for="catFile">Importar Excel</label>
         <input type="file" id="catFile" accept=".xlsx,.xls,.csv" hidden>
+        <button class="btn" id="btnCatReload" type="button">Recargar materiales.xlsx</button>
         <button class="btn danger" id="btnCatClear" type="button">Vaciar</button>
       </div>
     </div>
     <div class="panel">
-      <p class="hint" style="margin:0 0 10px">El Excel debe tener una fila de encabezados con al menos <b>Clave</b> (o Código) y <b>Descripción</b>. Si trae columna <b>Marca</b> también se toma. Las claves repetidas se actualizan.</p>
+      <div class="src-line" id="srcLine" style="margin-bottom:10px"></div>
+      <p class="hint" style="margin:0 0 10px">La app lee automáticamente el archivo <b>materiales.xlsx</b> que está junto a ella. Para actualizar la información de todos, reemplaza ese archivo. El Excel debe tener una fila de encabezados con al menos <b>Clave</b> (o Código) y <b>Descripción</b>. Si trae <b>Marca</b> se toma, y una columna <b>Sucursal</b> o <b>Almacén</b> alimenta la lista de sucursales. Las claves repetidas se actualizan.</p>
       <div class="inline">
         <input id="catNewClave" placeholder="Clave" style="flex:0 1 140px">
         <input id="catNewDesc" placeholder="Descripción">
@@ -357,7 +364,7 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
         <div class="logo-prev" id="logoPrev">Sin logo</div>
         <label class="btn" for="sLogo">Subir logotipo</label>
         <input type="file" id="sLogo" accept="image/*" hidden>
-        <button class="btn danger" id="btnLogoDel" type="button">Quitar logo</button>
+        <button class="btn" id="btnLogoDel" type="button">Usar logo original</button>
       </div>
     </div>
     <div class="panel stack">
@@ -417,7 +424,12 @@ const store = {
   get(k, def){ try { const v = localStorage.getItem('tm_' + k); return v ? JSON.parse(v) : def; } catch(e){ return def; } },
   set(k, v){ try { localStorage.setItem('tm_' + k, JSON.stringify(v)); return true; } catch(e){ toast('No se pudo guardar en este dispositivo'); return false; } }
 };
-let settings = Object.assign({ empresa:'Mi Negocio', prefijo:'TR-', siguiente:1, marca:'AXALTA', logo:'', sucursales:['Matriz','Sucursal 2'] }, store.get('settings', {}));
+const DEFAULT_LOGO = 'img/logo-pinturas-powder.png';
+const DATA_FILE = 'materiales.xlsx';
+let settings = Object.assign({ empresa:'Pinturas Powder', prefijo:'TR-', siguiente:1, marca:'AXALTA', logo:'', sucursales:['Matriz'] }, store.get('settings', {}));
+if(settings.empresa === 'Mi Negocio') settings.empresa = 'Pinturas Powder';
+const logoSrc = () => settings.logo || DEFAULT_LOGO;
+let fuente = store.get('fuente', null);
 let catalogo = store.get('catalogo', []);
 let traspasos = store.get('traspasos', []);
 let form; // traspaso en edición
@@ -634,7 +646,7 @@ function renderSheet(t){
   }
   $('#sheet').innerHTML = `
     <div class="sh-head">
-      <div class="sh-logo">${settings.logo ? `<img src="${settings.logo}" alt="">` : ''}</div>
+      <div class="sh-logo"><img src="${esc(logoSrc())}" alt=""></div>
       <div class="sh-title"><div class="e">${esc(settings.empresa)}</div><div class="t">TRASPASO DE MATERIAL</div></div>
       <div class="sh-folio"><small>Folio</small><b>${esc(t.folio || 'BORRADOR')}</b></div>
     </div>
@@ -780,34 +792,70 @@ $('#btnCatAdd').onclick = () => {
 $('#btnCatClear').onclick = async () => {
   if(!catalogo.length) return;
   if(await confirmBox(`¿Vaciar el catálogo de ${catalogo.length} materiales? Los traspasos guardados no se modifican.`, 'Vaciar')){
-    catalogo = []; saveCatalogo(); renderCat(); toast('Catálogo vacío');
+    catalogo = []; saveCatalogo(); fuente = null; store.set('fuente', null); renderCat(); renderSource(); toast('Catálogo vacío');
   }
 };
+function parseWorkbook(wb){
+  const norm = v => String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  const items = [], sucs = new Set();
+  wb.SheetNames.forEach(name => {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header:1, defval:'' });
+    for(let r = 0; r < Math.min(rows.length, 40); r++){
+      const h = rows[r].map(norm);
+      const cClave = h.findIndex(x => /^(clave|codigo|cod\.?|sku|no\.? ?de ?parte|numero de parte|articulo)$/.test(x) || /^(clave|codigo)\b/.test(x));
+      const cDesc = h.findIndex(x => x.startsWith('descrip') || x === 'nombre' || x === 'producto');
+      const cSuc = h.findIndex(x => /^(sucursal|almacen|tienda)/.test(x));
+      if(cClave < 0 && cDesc < 0 && cSuc >= 0){ // hoja solo de sucursales
+        for(let j = r + 1; j < rows.length; j++){ const v = String(rows[j][cSuc]).trim(); if(v) sucs.add(v); }
+        break;
+      }
+      if(cClave < 0 || cDesc < 0) continue;
+      const cMarca = h.findIndex(x => x.startsWith('marca'));
+      for(let j = r + 1; j < rows.length; j++){
+        const clave = String(rows[j][cClave]).trim(), desc = String(rows[j][cDesc]).trim();
+        if(cSuc >= 0){ const v = String(rows[j][cSuc]).trim(); if(v) sucs.add(v); }
+        if(!clave || !desc || clave === '-') continue;
+        items.push({ clave, descripcion:desc, marca:cMarca >= 0 ? String(rows[j][cMarca]).trim() || settings.marca : settings.marca });
+      }
+      break;
+    }
+  });
+  // quitar claves repetidas (gana la última)
+  const map = new Map(); items.forEach(it => map.set(it.clave.toUpperCase(), it));
+  return { items:[...map.values()], sucursales:[...sucs] };
+}
+function renderSource(){
+  const el = $('#srcLine'); if(!el) return;
+  el.innerHTML = fuente
+    ? `<span class="dot on"></span><span>Fuente: <b>${esc(fuente.archivo)}</b></span><span>Leído el ${new Date(fuente.fecha).toLocaleString('es-MX')}</span><span>${fuente.materiales} materiales</span>`
+    : `<span class="dot"></span><span>Aún no se ha leído ningún Excel. Sube <b>${DATA_FILE}</b> junto a la app o usa Importar Excel.</span>`;
+}
+async function autoLoadExcel(manual){
+  if(typeof XLSX === 'undefined'){ if(manual) toast('No se cargó el módulo de Excel. Revisa tu conexión.'); return; }
+  try{
+    const res = await fetch(DATA_FILE + '?v=' + Date.now(), { cache:'no-store' });
+    if(!res.ok) throw new Error(res.status);
+    const { items, sucursales } = parseWorkbook(XLSX.read(await res.arrayBuffer(), { type:'array' }));
+    if(!items.length){ if(manual) toast(`${DATA_FILE} no tiene columnas "Clave" y "Descripción" con datos`); return; }
+    catalogo = items; saveCatalogo();
+    sucursales.forEach(addSucursal);
+    fuente = { archivo:DATA_FILE, fecha:new Date().toISOString(), materiales:items.length }; store.set('fuente', fuente);
+    renderCat(); renderSource();
+    if(manual) toast(`${items.length} materiales cargados desde ${DATA_FILE}`);
+  } catch(err){
+    if(manual) toast(`No se encontró ${DATA_FILE} junto a la app`);
+  }
+}
+$('#btnCatReload').onclick = () => autoLoadExcel(true);
 $('#catFile').addEventListener('change', async e => {
   const file = e.target.files[0]; e.target.value = ''; if(!file) return;
   if(typeof XLSX === 'undefined'){ toast('No se cargó el módulo de Excel. Revisa tu conexión.'); return; }
   try{
-    const wb = XLSX.read(await file.arrayBuffer(), { type:'array' });
-    const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-    const found = [];
-    wb.SheetNames.forEach(name => {
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header:1, defval:'' });
-      for(let r = 0; r < Math.min(rows.length, 40); r++){
-        const h = rows[r].map(norm);
-        const cClave = h.findIndex(x => /^(clave|codigo|cod\.?|sku|no\.? ?de ?parte|numero de parte|item|articulo)\b/.test(x) || x === 'clave');
-        const cDesc = h.findIndex(x => x.startsWith('descrip') || x === 'nombre' || x === 'producto');
-        if(cClave < 0 || cDesc < 0) continue;
-        const cMarca = h.findIndex(x => x.startsWith('marca'));
-        for(let j = r + 1; j < rows.length; j++){
-          const clave = String(rows[j][cClave]).trim(), desc = String(rows[j][cDesc]).trim();
-          if(!clave || !desc || clave === '-') continue;
-          found.push({ clave, descripcion:desc, marca:cMarca >= 0 ? String(rows[j][cMarca]).trim() || settings.marca : settings.marca });
-        }
-        break;
-      }
-    });
-    if(!found.length){ toast('No encontré columnas "Clave" y "Descripción" con datos en el archivo'); return; }
-    const { added, updated } = upsertCat(found);
+    const { items, sucursales } = parseWorkbook(XLSX.read(await file.arrayBuffer(), { type:'array' }));
+    if(!items.length){ toast('No encontré columnas "Clave" y "Descripción" con datos en el archivo'); return; }
+    const { added, updated } = upsertCat(items);
+    sucursales.forEach(addSucursal);
+    fuente = { archivo:file.name, fecha:new Date().toISOString(), materiales:catalogo.length }; store.set('fuente', fuente); renderSource();
     toast(`Catálogo: ${added} nuevos, ${updated} actualizados`);
   } catch(err){ toast('No se pudo leer el archivo. Verifica que sea un Excel válido.'); }
 });
@@ -820,14 +868,14 @@ function addSucursal(name){
 function renderSettings(){
   $('#sEmpresa').value = settings.empresa; $('#sPrefijo').value = settings.prefijo;
   $('#sSiguiente').value = settings.siguiente; $('#sMarca').value = settings.marca;
-  $('#brandName').textContent = settings.empresa || 'Mi Negocio';
-  const bl = $('#brandLogo'); bl.hidden = !settings.logo; if(settings.logo) bl.src = settings.logo;
-  $('#logoPrev').innerHTML = settings.logo ? `<img src="${settings.logo}" alt="Logotipo">` : 'Sin logo';
+  $('#brandName').textContent = settings.empresa || 'Pinturas Powder';
+  $('#brandLogo').src = logoSrc();
+  $('#logoPrev').innerHTML = `<img src="${esc(logoSrc())}" alt="Logotipo">`;
   $('#sucChips').innerHTML = settings.sucursales.map((s, i) => `<span class="chip">${esc(s)}<button type="button" data-sdel="${i}" aria-label="Quitar ${esc(s)}">&times;</button></span>`).join('') || '<span class="hint">Sin sucursales registradas.</span>';
   $('#dl-suc').innerHTML = settings.sucursales.map(s => `<option value="${esc(s)}"></option>`).join('');
   if(form) renderFolio();
 }
-$('#sEmpresa').addEventListener('input', e => { settings.empresa = e.target.value; saveSettings(); $('#brandName').textContent = settings.empresa || 'Mi Negocio'; });
+$('#sEmpresa').addEventListener('input', e => { settings.empresa = e.target.value; saveSettings(); $('#brandName').textContent = settings.empresa || 'Pinturas Powder'; });
 $('#sPrefijo').addEventListener('input', e => { settings.prefijo = e.target.value; saveSettings(); renderFolio(); });
 $('#sSiguiente').addEventListener('input', e => { const n = parseInt(e.target.value, 10); if(n > 0){ settings.siguiente = n; saveSettings(); renderFolio(); } });
 $('#sMarca').addEventListener('input', e => { settings.marca = e.target.value; saveSettings(); });
@@ -878,8 +926,9 @@ function show(view){
 $$('.tab').forEach(t => t.onclick = () => show(t.dataset.view));
 
 /* ---------- Inicio ---------- */
-renderSettings(); renderCat();
+renderSettings(); renderCat(); renderSource();
 loadForm(store.get('borrador', null) || blankForm());
+autoLoadExcel(false);
 })();
 </script>
 </body>
