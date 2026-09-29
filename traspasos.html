@@ -4,7 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Traspasos Pinturas Powder</title>
-<link rel="icon" href="img/logo-pinturas-powder.png">
+<link rel="icon" href="img/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<meta name="theme-color" content="#b72125">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Traspasos">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -67,6 +72,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 .brand-txt{min-width:0}
 .brand-name{font:700 1.35rem/1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brand-sub{font-size:.72rem;opacity:.7;letter-spacing:.08em;text-transform:uppercase}
+.btn-install{margin-left:auto;background:transparent;border:1.5px solid currentColor;color:inherit;border-radius:8px;padding:7px 12px;font-weight:600;font-size:.85rem;cursor:pointer;white-space:nowrap}
+.btn-install:hover{background:var(--bar-ink);color:var(--bar)}
+.steps{margin:0;padding-left:1.2rem;display:grid;gap:4px;font-size:.9rem;max-width:70ch}
 .tabs{display:flex;gap:2px;max-width:1180px;margin:10px auto 0;overflow-x:auto;scrollbar-width:none}
 .tab{background:none;border:0;color:inherit;opacity:.65;padding:10px 14px;font:700 1rem/1 var(--f-display);
   letter-spacing:.06em;text-transform:uppercase;border-radius:8px 8px 0 0;cursor:pointer;white-space:nowrap}
@@ -246,6 +254,7 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
         <div class="brand-sub">Traspasos de material entre sucursales</div>
       </div>
     </div>
+    <button class="btn-install" id="btnInstall" type="button" hidden>Instalar app</button>
   </div>
   <nav class="tabs" role="tablist">
     <button class="tab" role="tab" data-view="nuevo" aria-selected="true" id="tab-nuevo">Traspaso</button>
@@ -371,6 +380,15 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
       <h3>Sucursales / almacenes</h3>
       <div class="chips" id="sucChips"></div>
       <div class="inline"><input id="sucNew" placeholder="Nombre de la sucursal"><button class="btn" id="btnSucAdd" type="button">Agregar</button></div>
+    </div>
+    <div class="panel stack">
+      <h3>Instalar en la computadora</h3>
+      <p class="hint" style="margin:0" id="installState">Instala la app para abrirla desde su propio ícono, en su propia ventana y aun sin internet.</p>
+      <ol class="steps">
+        <li><b>Windows o Mac con Chrome o Edge:</b> pulsa <b>Instalar app</b> arriba a la derecha, o el ícono de instalar que aparece al final de la barra de direcciones.</li>
+        <li><b>Mac con Safari:</b> menú <b>Archivo → Agregar al Dock</b>.</li>
+        <li>Después la encontrarás en el menú Inicio (Windows) o en Launchpad y el Dock (Mac) como <b>Traspasos</b>.</li>
+      </ol>
     </div>
     <div class="panel stack">
       <h3>Respaldo</h3>
@@ -929,6 +947,21 @@ $$('.tab').forEach(t => t.onclick = () => show(t.dataset.view));
 renderSettings(); renderCat(); renderSource();
 loadForm(store.get('borrador', null) || blankForm());
 autoLoadExcel(false);
+
+/* ---------- App instalable (PC y Mac) ---------- */
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  navigator.serviceWorker.register('sw-traspasos.js').catch(() => {});
+}
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#btnInstall').hidden = false; });
+$('#btnInstall').onclick = async () => {
+  if(!installEvt) return;
+  installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; $('#btnInstall').hidden = true;
+};
+window.addEventListener('appinstalled', () => { $('#btnInstall').hidden = true; toast('App instalada'); });
+if(matchMedia('(display-mode: standalone)').matches || navigator.standalone){
+  $('#installState').textContent = 'La app ya está instalada en este equipo.';
+}
 })();
 </script>
 </body>
