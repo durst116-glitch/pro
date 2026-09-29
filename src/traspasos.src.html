@@ -184,7 +184,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
 .inline{display:flex;gap:8px;flex-wrap:wrap}
 .inline>input{flex:1 1 180px}
 .tag{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;white-space:nowrap}
-.chip.xl{padding-right:8px}
+.oc-line{flex-basis:100%;margin-top:4px;font-size:.82rem}
 .chip .tag{background:transparent;border-color:currentColor;color:inherit;opacity:.7}
 .map-box{display:grid;gap:10px;padding:14px;border:1px dashed var(--accent);border-radius:8px;background:var(--surface-2)}
 .rev-grid{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;margin:0;font-size:.88rem}
@@ -406,7 +406,7 @@ dialog::backdrop{background:rgba(10,16,26,.55)}
     </div>
     <div class="panel stack">
       <h3>Colaboradores</h3>
-      <p class="hint" style="margin:0">Aparecen como sugerencia en Entrega y Recibe. Los marcados con <b>Excel</b> vienen de la hoja Colaboradores; para quitarlos, bórralos del Excel.</p>
+      <p class="hint" style="margin:0">Aparecen como sugerencia en Entrega y Recibe. Los marcados con <b>Excel</b> vienen de la hoja Colaboradores. Usa <b>×</b> para eliminar cualquiera de la lista.</p>
       <div class="chips" id="colChips"></div>
       <div class="inline"><input id="colNew" placeholder="Nombre del colaborador"><button class="btn" id="btnColAdd" type="button">Agregar</button></div>
     </div>
@@ -1230,22 +1230,43 @@ $('#catFile').addEventListener('change', async e => {
 });
 
 /* ---------- Ajustes ---------- */
-/* Almacenes y colaboradores: los del Excel (no se quitan aquí) + los agregados a mano. */
-const allOf = tipo => { const seen = new Set(), out = [];
+/* Almacenes y colaboradores: los del Excel + los agregados a mano, menos los eliminados.
+   Eliminar uno del Excel lo oculta en este equipo (sigue en el Excel); se puede volver a mostrar. */
+if(!settings.ocultos) settings.ocultos = { sucursales:[], colaboradores:[] };
+const ocultosDe = tipo => settings.ocultos[tipo] || (settings.ocultos[tipo] = []);
+const allOf = tipo => { const seen = new Set(ocultosDe(tipo).map(normK)), out = [];
   [...(listas[tipo] || []), ...(settings[tipo] || [])].forEach(v => { const k = normK(v); if(k && !seen.has(k)){ seen.add(k); out.push(v); } });
   return out; };
-function addManual(tipo, name){
+// explicit = lo agregó la persona en Ajustes (vuelve a mostrar un nombre eliminado);
+// sin explicit = se registra solo al guardar un traspaso (respeta los eliminados).
+function addManual(tipo, name, explicit){
   name = String(name || '').trim().replace(/\s+/g, ' '); if(!name) return;
-  if(!allOf(tipo).some(s => normK(s) === normK(name))){ settings[tipo].push(name); saveSettings(); renderListas(); }
+  const k = normK(name);
+  if(ocultosDe(tipo).some(x => normK(x) === k)){
+    if(!explicit) return;
+    settings.ocultos[tipo] = ocultosDe(tipo).filter(x => normK(x) !== k);
+  }
+  const enExcel = (listas[tipo] || []).some(x => normK(x) === k);
+  if(!enExcel && !(settings[tipo] || []).some(x => normK(x) === k)) settings[tipo].push(name);
+  saveSettings(); renderListas();
 }
 const addSucursal = name => addManual('sucursales', name);
+async function removeFromList(tipo, v){
+  const k = normK(v), enExcel = (listas[tipo] || []).some(x => normK(x) === k);
+  const que = tipo === 'sucursales' ? 'el almacén' : 'a';
+  const msg = `¿Eliminar ${que} "${v}" de la lista?` + (enExcel ? ' Viene del Excel: dejará de aparecer en la app aunque siga en el archivo. Puedes volver a mostrarlo después.' : '');
+  if(!(await confirmBox(msg, 'Eliminar'))) return;
+  settings[tipo] = (settings[tipo] || []).filter(x => normK(x) !== k);
+  if(enExcel && !ocultosDe(tipo).some(x => normK(x) === k)) ocultosDe(tipo).push(v);
+  saveSettings(); renderListas(); toast(`"${v}" eliminado de la lista`);
+}
 function renderListas(){
   const chips = tipo => {
     const ex = new Set((listas[tipo] || []).map(normK));
-    const html = allOf(tipo).map(v => ex.has(normK(v))
-      ? `<span class="chip xl" title="Viene del Excel">${esc(v)}<span class="tag">Excel</span></span>`
-      : `<span class="chip">${esc(v)}<button type="button" data-ldel="${esc(tipo)}|${esc(v)}" aria-label="Quitar ${esc(v)}">&times;</button></span>`).join('');
-    return html || '<span class="hint">Sin registros. Agrégalos aquí o en una hoja del Excel.</span>';
+    const html = allOf(tipo).map(v => `<span class="chip"${ex.has(normK(v)) ? ' title="Viene del Excel"' : ''}>${esc(v)}${ex.has(normK(v)) ? '<span class="tag">Excel</span>' : ''}<button type="button" data-ldel="${esc(tipo)}|${esc(v)}" aria-label="Eliminar ${esc(v)}" title="Eliminar">&times;</button></span>`).join('');
+    const oc = ocultosDe(tipo).filter(x => ex.has(normK(x)));
+    const extra = oc.length ? `<div class="hint oc-line">${oc.length === 1 ? '1 eliminado que sigue' : oc.length + ' eliminados que siguen'} en el Excel: ${oc.map(esc).join(', ')}. <button class="linkish" type="button" data-lrest="${esc(tipo)}">Volver a mostrar</button></div>` : '';
+    return (html || '<span class="hint">Sin registros. Agrégalos aquí o en una hoja del Excel.</span>') + extra;
   };
   $('#sucChips').innerHTML = chips('sucursales');
   $('#colChips').innerHTML = chips('colaboradores');
@@ -1266,12 +1287,14 @@ $('#sEmpresa').addEventListener('input', e => { settings.empresa = e.target.valu
 $('#sPrefijo').addEventListener('input', e => { settings.prefijo = e.target.value; saveSettings(); renderFolio(); });
 $('#sSiguiente').addEventListener('input', e => { const n = parseInt(e.target.value, 10); if(n > 0){ settings.siguiente = n; saveSettings(); renderFolio(); } });
 ['#sucChips','#colChips'].forEach(sel => $(sel).addEventListener('click', e => {
+  const r = e.target.closest('[data-lrest]');
+  if(r){ settings.ocultos[r.dataset.lrest] = []; saveSettings(); renderListas(); toast('Se volvieron a mostrar los del Excel'); return; }
   const b = e.target.closest('[data-ldel]'); if(!b) return;
-  const i = b.dataset.ldel.indexOf('|'), tipo = b.dataset.ldel.slice(0, i), v = b.dataset.ldel.slice(i + 1);
-  settings[tipo] = settings[tipo].filter(x => x !== v); saveSettings(); renderListas();
+  const i = b.dataset.ldel.indexOf('|');
+  removeFromList(b.dataset.ldel.slice(0, i), b.dataset.ldel.slice(i + 1));
 }));
 [['#btnSucAdd','#sucNew','sucursales'],['#btnColAdd','#colNew','colaboradores']].forEach(([btn, inp, tipo]) => {
-  $(btn).onclick = () => { addManual(tipo, $(inp).value); $(inp).value = ''; };
+  $(btn).onclick = () => { addManual(tipo, $(inp).value, true); $(inp).value = ''; };
   $(inp).addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); $(btn).click(); } });
 });
 $('#sLogo').addEventListener('change', e => {
