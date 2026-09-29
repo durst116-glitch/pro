@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Traspasos Pinturas Powder</title>
+<link rel="icon" href="@@FAVICON@@">
+<meta name="theme-color" content="#b72125">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Traspasos">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: barra superior con pestañas; formulario tipo "hoja de almacén" con renglones que se apilan en celular. Hoja imprimible aparte. */
+:root{
+  --bg:#f3f1f1;
+  --surface:#ffffff;
+  --surface-2:#f8f6f6;
+  --line:#e0d9d9;
+  --ink:#231a1b;
+  --muted:#6e6263;
+  --accent:#b72125;          /* rojo Pinturas Powder */
+  --accent-ink:#ffffff;
+  --accent-soft:#fbe7e6;
+  --ok:#1d7a46;  --ok-soft:#dff3e7;
+  --warn:#9a6200; --warn-soft:#fdf0d5;
+  --bad:#b3261e; --bad-soft:#fbe3e1;
+  --info:#5b4bb0; --info-soft:#ebe7fb;
+  --f-display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --bar:#b72125; --bar-ink:#ffffff;
+  --r:10px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141011; --surface:#1f1a1b; --surface-2:#282223; --line:#3d3334;
+    --ink:#f1eaea; --muted:#b3a4a5; --accent:#f07a73; --accent-ink:#1a0707; --accent-soft:#3c1b1c;
+    --ok:#6fd49a; --ok-soft:#173526; --warn:#f0bf5a; --warn-soft:#3a2e12;
+    --bad:#ff8a80; --bad-soft:#3d1c1a; --info:#b3a6ff; --info-soft:#2a2547;
+    --bar:#4d1517; --bar-ink:#fbe9e8;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141011; --surface:#1f1a1b; --surface-2:#282223; --line:#3d3334;
+  --ink:#f1eaea; --muted:#b3a4a5; --accent:#f07a73; --accent-ink:#1a0707; --accent-soft:#3c1b1c;
+  --ok:#6fd49a; --ok-soft:#173526; --warn:#f0bf5a; --warn-soft:#3a2e12;
+  --bad:#ff8a80; --bad-soft:#3d1c1a; --info:#b3a6ff; --info-soft:#2a2547;
+  --bar:#4d1517; --bar-ink:#fbe9e8;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- Barra superior ---------- */
+.top{position:sticky;top:0;z-index:20;background:var(--bar);color:var(--bar-ink);
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 0}
+.top-row{display:flex;align-items:center;gap:12px;max-width:1180px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand img{height:48px;width:auto;object-fit:contain;border-radius:8px;background:#fff;padding:3px 5px;flex:none}
+.brand-txt{min-width:0}
+.brand-name{font:700 1.35rem/1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand-sub{font-size:.72rem;opacity:.7;letter-spacing:.08em;text-transform:uppercase}
+.btn-install{margin-left:auto;background:transparent;border:1.5px solid currentColor;color:inherit;border-radius:8px;padding:7px 12px;font-weight:600;font-size:.85rem;cursor:pointer;white-space:nowrap}
+.btn-install:hover{background:var(--bar-ink);color:var(--bar)}
+.steps{margin:0;padding-left:1.2rem;display:grid;gap:4px;font-size:.9rem;max-width:70ch}
+.tabs{display:flex;gap:2px;max-width:1180px;margin:10px auto 0;overflow-x:auto;scrollbar-width:none}
+.tab{background:none;border:0;color:inherit;opacity:.65;padding:10px 14px;font:700 1rem/1 var(--f-display);
+  letter-spacing:.06em;text-transform:uppercase;border-radius:8px 8px 0 0;cursor:pointer;white-space:nowrap}
+.tab:hover{opacity:1}
+.tab[aria-selected="true"]{opacity:1;background:var(--bg);color:var(--accent)}
+
+main{max-width:1180px;margin:0 auto;padding:20px 16px 110px}
+h2{font:800 1.7rem/1.1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;margin:0;text-wrap:balance}
+h3{font:700 1.15rem/1.2 var(--f-display);letter-spacing:.04em;text-transform:uppercase;margin:0}
+.head-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
+.hint{color:var(--muted);font-size:.85rem;margin:4px 0 0}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.stack{display:grid;gap:16px}
+
+/* ---------- Campos ---------- */
+.f{display:grid;gap:4px;min-width:0}
+.f>span{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+input[type=text],input[type=date],input[type=number],input:not([type]),select,textarea{
+  width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:40px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);background:var(--surface)}
+textarea{resize:vertical;min-height:64px}
+.grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:820px){.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:460px){.grid-4{grid-template-columns:1fr}}
+.folio-box{font:600 1.05rem/1 var(--f-mono);background:var(--accent-soft);color:var(--accent);border-radius:8px;padding:11px 10px;min-height:40px;display:flex;align-items:center}
+
+/* ---------- Botones ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);
+  border-radius:8px;padding:9px 14px;font-weight:600;font-size:.9rem;cursor:pointer;min-height:40px;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08);color:var(--accent-ink)}
+.btn.danger{color:var(--bad)}
+.btn.danger:hover{border-color:var(--bad)}
+.btn.sm{min-height:32px;padding:5px 10px;font-size:.8rem}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px}
+.icon-btn{border:0;background:none;color:var(--muted);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:1.1rem;line-height:1}
+.icon-btn:hover{background:var(--bad-soft);color:var(--bad)}
+
+/* ---------- Renglones de material ---------- */
+.items-head,.item{display:grid;grid-template-columns:28px 150px minmax(0,1fr) 100px 84px 84px minmax(0,150px) 96px 32px;gap:8px;align-items:center}
+.items-head{padding:0 10px 6px;font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.items{display:grid;gap:6px}
+.item{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.item .n{font:600 .8rem var(--f-mono);color:var(--muted);text-align:center}
+.item .f>span{display:none}
+.item input{min-height:36px;padding:6px 8px;background:var(--surface)}
+.item input.num{text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:980px){
+  .items-head{display:none}
+  .item{grid-template-columns:repeat(6,minmax(0,1fr));padding:10px;gap:8px 10px;position:relative}
+  .item .n{grid-column:1/-1;text-align:left;font-size:.75rem}
+  .item .f>span{display:block}
+  .item .c-clave{grid-column:span 2}
+  .item .c-desc{grid-column:span 4}
+  .item .c-marca{grid-column:span 2}
+  .item .c-sol,.item .c-ent{grid-column:span 2}
+  .item .c-obs{grid-column:span 4}
+  .item .c-st{grid-column:span 2;align-self:end;padding-bottom:6px}
+  .item .icon-btn{position:absolute;top:4px;right:4px}
+}
+@media (max-width:520px){
+  .item .c-clave,.item .c-marca,.item .c-sol,.item .c-ent{grid-column:span 3}
+  .item .c-desc,.item .c-obs,.item .c-st{grid-column:1/-1}
+  .item .c-clave{order:1}.item .c-marca{order:2}.item .c-desc{order:3}
+  .item .c-sol{order:4}.item .c-ent{order:5}.item .c-obs{order:6}.item .c-st{order:7;padding-bottom:0}
+}
+
+.pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.pill.Completo{background:var(--ok-soft);color:var(--ok)}
+.pill.Parcial{background:var(--warn-soft);color:var(--warn)}
+.pill.Pendiente{background:var(--bad-soft);color:var(--bad)}
+.pill.Excedente{background:var(--info-soft);color:var(--info)}
+.pill.none{background:transparent;color:var(--muted)}
+
+.totals{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.85rem;color:var(--muted);margin-top:10px}
+.totals b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* ---------- Firmas ---------- */
+.src-line{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;font-size:.85rem;color:var(--muted)}
+.src-line b{color:var(--ink)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+.dot.on{background:var(--ok)}
+.sign-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:640px){.sign-grid{grid-template-columns:1fr}}
+.sign{display:grid;gap:8px}
+.pad{position:relative;border:1px dashed var(--line);border-radius:8px;background:var(--surface-2);height:130px;touch-action:none}
+.pad canvas{width:100%;height:100%;display:block;cursor:crosshair}
+.pad .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.85rem;pointer-events:none}
+.pad .clr{position:absolute;top:6px;right:6px}
+
+/* ---------- Barra de acciones fija ---------- */
+.actionbar{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--surface);border-top:1px solid var(--line);
+  padding:10px 16px calc(env(safe-area-inset-bottom,0px) + 10px)}
+.actionbar .btn-row{max-width:1180px;margin:0 auto;justify-content:flex-end}
+@media (max-width:560px){.actionbar .btn{flex:1 1 40%}}
+
+.msg{border-radius:8px;padding:10px 12px;font-size:.88rem}
+.msg.err{background:var(--bad-soft);color:var(--bad)}
+.msg.info{background:var(--accent-soft);color:var(--ink);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px}
+.linkish{border:0;background:none;color:var(--accent);font-weight:600;cursor:pointer;padding:0;text-decoration:underline}
+
+/* ---------- Tablas (historial / catálogo) ---------- */
+.search{max-width:320px;width:100%}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
+.tbl th{text-align:left;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl .mono{font-family:var(--f-mono);font-size:.84rem}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.route{white-space:nowrap}
+.route i{font-style:normal;color:var(--muted);padding:0 4px}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:4px 6px 4px 12px;font-weight:600;font-size:.85rem}
+.chip button{border:0;background:none;color:inherit;cursor:pointer;width:22px;height:22px;border-radius:50%}
+.chip button:hover{background:var(--surface)}
+.inline{display:flex;gap:8px;flex-wrap:wrap}
+.inline>input{flex:1 1 180px}
+.tag{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;white-space:nowrap}
+.chip.xl{padding-right:8px}
+.chip .tag{background:transparent;border-color:currentColor;color:inherit;opacity:.7}
+.map-box{display:grid;gap:10px;padding:14px;border:1px dashed var(--accent);border-radius:8px;background:var(--surface-2)}
+.rev-grid{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;margin:0;font-size:.88rem}
+.rev-grid dt{color:var(--muted);font-weight:600}
+.rev-grid dd{margin:0}
+@media (max-width:560px){.rev-grid{grid-template-columns:1fr}.rev-grid dd{margin-bottom:6px}}
+.rev-h{font:700 .78rem/1 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px}
+.rev-list,.rev-probs{margin:6px 0 0;padding-left:1.2rem;font-size:.86rem;display:grid;gap:3px}
+.rev-probs li.error{color:var(--bad)}
+.rev-probs li.aviso{color:var(--warn)}
+details summary{cursor:pointer;font-weight:600;font-size:.88rem;margin-top:8px}
+.logo-prev{width:72px;height:72px;border:1px dashed var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--surface-2);color:var(--muted);font-size:.7rem}
+.logo-prev img{max-width:100%;max-height:100%}
+
+/* ---------- Diálogo y aviso ---------- */
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:20px;max-width:min(420px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(10,16,26,.55)}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 78px);transform:translateX(-50%);z-index:50;
+  background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+
+/* ---------- Hoja imprimible ---------- */
+#sheet{display:none}
+@media print{
+  @page{size:letter;margin:10mm}
+  body{background:#fff}
+  .top,main,.actionbar,.toast,dialog{display:none!important}
+  #sheet{display:block;color:#000;font:10pt/1.3 Arial,Helvetica,sans-serif}
+  #sheet *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.sh-head{display:grid;grid-template-columns:42mm 1fr 44mm;border:1px solid #000;align-items:stretch}
+.sh-logo{border-right:1px solid #000;display:flex;align-items:center;justify-content:center;padding:2mm;min-height:24mm}
+.sh-logo img{max-width:100%;max-height:22mm}
+.sh-title{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2mm}
+.sh-title .e{font-size:13pt;font-weight:700;text-transform:uppercase;color:#b72125}
+.sh-title .t{font-size:15pt;font-weight:800;letter-spacing:.5pt;margin-top:1mm}
+.sh-folio{border-left:1px solid #000;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2mm}
+.sh-folio small{font-size:8pt;text-transform:uppercase}
+.sh-folio b{font-size:14pt;color:#b00000;font-family:'Courier New',monospace}
+.sh-info{width:100%;border-collapse:collapse;margin-top:3mm}
+.sh-info td{border:1px solid #000;padding:1.3mm 2mm;font-size:9.5pt}
+.sh-info td.k{font-weight:700;width:34mm;background:#fbeeee}
+.sh-items{width:100%;border-collapse:collapse;margin-top:3mm;table-layout:fixed}
+.sh-items th{background:#b72125;color:#fff;font-size:8.5pt;padding:1.6mm 1mm;border:1px solid #8e1a1d;text-align:center}
+.sh-items td{border:1px solid #9aa5b5;padding:1.1mm 1.4mm;font-size:8.8pt;height:6.4mm;overflow:hidden;word-wrap:break-word}
+.sh-items td.c{text-align:center}
+.sh-items td.r{text-align:right}
+.sh-notes{border:1px solid #000;margin-top:3mm;padding:1.5mm 2mm;min-height:10mm;font-size:9pt}
+.sh-sign{display:grid;grid-template-columns:1fr 1fr;gap:18mm;margin-top:8mm;page-break-inside:avoid}
+.sh-sign div{text-align:center}
+.sh-sign .lbl{font-weight:700;font-size:10pt;margin-bottom:1mm}
+.sh-sign .img{height:18mm;display:flex;align-items:flex-end;justify-content:center}
+.sh-sign .img img{max-height:18mm;max-width:100%}
+.sh-sign .line{border-top:1px solid #000;padding-top:1mm;font-size:9.5pt;min-height:5mm}
+.sh-sign small{font-size:8pt;color:#333}
+.sh-foot{margin-top:4mm;font-size:7.5pt;color:#555;text-align:right}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-row">
+    <div class="brand">
+      <img id="brandLogo" alt="Pinturas Powder">
+      <div class="brand-txt">
+        <div class="brand-name" id="brandName">Pinturas Powder</div>
+        <div class="brand-sub">Traspasos de material entre sucursales</div>
+      </div>
+    </div>
+    <button class="btn-install" id="btnInstall" type="button" hidden>Instalar app</button>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-view="nuevo" aria-selected="true" id="tab-nuevo">Traspaso</button>
+    <button class="tab" role="tab" data-view="historial" aria-selected="false" id="tab-historial">Historial</button>
+    <button class="tab" role="tab" data-view="catalogo" aria-selected="false" id="tab-catalogo">Catálogo</button>
+    <button class="tab" role="tab" data-view="ajustes" aria-selected="false" id="tab-ajustes">Ajustes</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ============ NUEVO / EDITAR TRASPASO ============ -->
+  <section id="view-nuevo" class="stack">
+    <div class="head-row">
+      <div>
+        <h2 id="formTitle">Nuevo traspaso</h2>
+        <p class="hint">Escribe la clave del material y la descripción se llena sola desde el catálogo.</p>
+      </div>
+      <button class="btn" id="btnNuevo" type="button">+ Traspaso en blanco</button>
+    </div>
+
+    <div class="msg info" id="linkBanner" hidden>
+      <span>Hay materiales vinculados a <b id="linkName"></b>. Autoriza la lectura para traer los cambios del Excel.</span>
+      <button class="btn sm" id="btnLinkRefresh" type="button">Actualizar materiales</button>
+    </div>
+
+    <div class="panel">
+      <div class="grid-4">
+        <div class="f"><span>Folio</span><div class="folio-box" id="folioBox">—</div></div>
+        <label class="f"><span>Fecha</span><input type="date" id="fFecha"></label>
+        <label class="f"><span>Almacén origen</span><input id="fOrigen" list="dl-suc" placeholder="Ej. Sucursal Centro" autocomplete="off"></label>
+        <label class="f"><span>Almacén destino</span><input id="fDestino" list="dl-suc" placeholder="Ej. Sucursal Norte" autocomplete="off"></label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head-row" style="margin-bottom:12px">
+        <h3>Materiales</h3>
+        <button class="btn sm" id="btnAddRow" type="button">+ Agregar renglón</button>
+      </div>
+      <div class="items-head" aria-hidden="true">
+        <div>#</div><div>Clave</div><div>Descripción</div><div>Marca</div>
+        <div style="text-align:right">Solicitada</div><div style="text-align:right">Entregada</div>
+        <div>Observaciones</div><div>Status</div><div></div>
+      </div>
+      <div class="items" id="items"></div>
+      <div class="totals" id="totals"></div>
+    </div>
+
+    <div class="panel stack">
+      <label class="f"><span>Notas generales (opcional)</span><textarea id="fNotas" placeholder="Ej. Se envía en camioneta de reparto, cajas selladas."></textarea></label>
+      <div class="sign-grid">
+        <div class="sign">
+          <label class="f"><span>Entrega (nombre)</span><input id="fEntrega" list="dl-col" autocomplete="off"></label>
+          <div class="pad" data-pad="entrega"><canvas></canvas><div class="ph">Firma aquí con el dedo o el mouse</div><button class="btn sm clr" type="button">Borrar</button></div>
+        </div>
+        <div class="sign">
+          <label class="f"><span>Recibe (nombre)</span><input id="fRecibe" list="dl-col" autocomplete="off"></label>
+          <div class="pad" data-pad="recibe"><canvas></canvas><div class="ph">Firma aquí con el dedo o el mouse</div><button class="btn sm clr" type="button">Borrar</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="msg err" id="formErr" hidden></div>
+  </section>
+
+  <!-- ============ HISTORIAL ============ -->
+  <section id="view-historial" class="stack" hidden>
+    <div class="head-row">
+      <div><h2>Historial</h2><p class="hint" id="histCount"></p></div>
+      <div class="btn-row">
+        <input class="search" id="histSearch" placeholder="Buscar folio, sucursal o clave…" type="text">
+        <button class="btn" id="btnExportHist" type="button">Exportar a Excel</button>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Folio</th><th>Fecha</th><th>Ruta</th><th class="num">Renglones</th><th>Status</th><th></th></tr></thead>
+      <tbody id="histBody"></tbody>
+    </table></div>
+  </section>
+
+  <!-- ============ CATÁLOGO ============ -->
+  <section id="view-catalogo" class="stack" hidden>
+    <div class="head-row">
+      <div><h2>Catálogo de materiales</h2><p class="hint" id="catCount"></p></div>
+      <div class="btn-row">
+        <button class="btn primary" id="btnLink" type="button" hidden>Vincular Excel de materiales</button>
+        <label class="btn" id="lblImport" for="catFile">Importar Excel</label>
+        <input type="file" id="catFile" accept=".xlsx,.xls,.csv" hidden>
+        <button class="btn" id="btnCatReload" type="button" hidden>Actualizar desde Excel</button>
+        <button class="btn danger" id="btnCatClear" type="button">Vaciar</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="src-line" id="srcLine" style="margin-bottom:10px"></div>
+      <p class="hint" style="margin:0 0 10px" id="catHowto"></p>
+      <p class="hint" style="margin:0 0 10px">La app busca sola la hoja de materiales (columnas <b>Clave</b> y <b>Descripción</b>, y <b>Marca</b> si existe), aunque cambies columnas de lugar o agregues otras. Las hojas <b>Almacenes</b> y <b>Colaboradores</b> llenan las listas de sucursales y de nombres. Si renombras una columna, indícala en <b>Ajustar columnas</b>.</p>
+      <div class="inline">
+        <input id="catNewClave" placeholder="Clave" style="flex:0 1 140px">
+        <input id="catNewDesc" placeholder="Descripción">
+        <input id="catNewMarca" placeholder="Marca" style="flex:0 1 140px">
+        <button class="btn" id="btnCatAdd" type="button">Agregar</button>
+      </div>
+    </div>
+    <div class="panel stack" id="revPanel" hidden>
+      <div class="head-row" style="margin:0">
+        <h3>Lectura del Excel</h3>
+        <button class="btn sm" id="btnMapeo" type="button">Ajustar columnas</button>
+      </div>
+      <div class="map-box" id="mapBox" hidden>
+        <div id="mapFields"></div>
+        <p class="hint" id="mapHint" style="margin:0"></p>
+        <div class="btn-row">
+          <button class="btn primary sm" id="btnMapApply" type="button">Usar estas columnas</button>
+          <button class="btn sm" id="btnMapAuto" type="button">Detección automática</button>
+          <button class="btn sm" id="btnMapCancel" type="button">Cerrar</button>
+        </div>
+      </div>
+      <div id="revBody"></div>
+    </div>
+    <input class="search" id="catSearch" placeholder="Buscar clave, descripción o marca…" type="text">
+    <div class="tbl-wrap"><table class="tbl">
+      <thead id="catHead"></thead>
+      <tbody id="catBody"></tbody>
+    </table></div>
+  </section>
+
+  <!-- ============ AJUSTES ============ -->
+  <section id="view-ajustes" class="stack" hidden>
+    <h2>Ajustes</h2>
+    <div class="panel stack">
+      <h3>Datos del negocio</h3>
+      <div class="grid-4">
+        <label class="f" style="grid-column:span 2"><span>Nombre del negocio</span><input id="sEmpresa"></label>
+        <label class="f"><span>Prefijo de folio</span><input id="sPrefijo"></label>
+        <label class="f"><span>Siguiente folio</span><input type="number" min="1" id="sSiguiente"></label>
+      </div>
+      <div class="inline" style="align-items:center">
+        <div class="logo-prev" id="logoPrev">Sin logo</div>
+        <label class="btn" for="sLogo">Subir logotipo</label>
+        <input type="file" id="sLogo" accept="image/*" hidden>
+        <button class="btn" id="btnLogoDel" type="button">Usar logo original</button>
+      </div>
+    </div>
+    <div class="panel stack">
+      <h3>Almacenes / sucursales</h3>
+      <div class="chips" id="sucChips"></div>
+      <div class="inline"><input id="sucNew" placeholder="Nombre del almacén"><button class="btn" id="btnSucAdd" type="button">Agregar</button></div>
+    </div>
+    <div class="panel stack">
+      <h3>Colaboradores</h3>
+      <p class="hint" style="margin:0">Aparecen como sugerencia en Entrega y Recibe. Los marcados con <b>Excel</b> vienen de la hoja Colaboradores; para quitarlos, bórralos del Excel.</p>
+      <div class="chips" id="colChips"></div>
+      <div class="inline"><input id="colNew" placeholder="Nombre del colaborador"><button class="btn" id="btnColAdd" type="button">Agregar</button></div>
+    </div>
+    <div class="panel stack" id="installPanel">
+      <h3>Instalar en la computadora</h3>
+      <p class="hint" style="margin:0" id="installState">Instala la app para abrirla desde su propio ícono, en su propia ventana y aun sin internet.</p>
+      <ol class="steps">
+        <li><b>Windows o Mac con Chrome o Edge:</b> pulsa <b>Instalar app</b> arriba a la derecha, o el ícono de instalar que aparece al final de la barra de direcciones.</li>
+        <li><b>Mac con Safari:</b> menú <b>Archivo → Agregar al Dock</b>.</li>
+        <li>Después la encontrarás en el menú Inicio (Windows) o en Launchpad y el Dock (Mac) como <b>Traspasos</b>.</li>
+      </ol>
+    </div>
+    <div class="panel stack">
+      <h3>Respaldo</h3>
+      <p class="hint" style="margin:0">Los datos se guardan en este dispositivo. Descarga un respaldo para pasarlos a otro equipo o por seguridad.</p>
+      <div class="btn-row">
+        <button class="btn" id="btnBackup" type="button">Descargar respaldo</button>
+        <label class="btn" for="restoreFile">Restaurar respaldo</label>
+        <input type="file" id="restoreFile" accept=".json" hidden>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="actionbar" id="actionbar">
+  <div class="btn-row">
+    <button class="btn" id="btnExcel" type="button">Excel</button>
+    <button class="btn" id="btnPrint" type="button">Imprimir / PDF</button>
+    <button class="btn primary" id="btnSave" type="button">Guardar traspaso</button>
+  </div>
+</div>
+
+<datalist id="dl-suc"></datalist>
+<datalist id="dl-col"></datalist>
+<datalist id="dl-claves"></datalist>
+<datalist id="dl-desc"></datalist>
+
+<dialog id="confirmDlg">
+  <p id="confirmMsg" style="margin:0 0 16px"></p>
+  <div class="btn-row" style="justify-content:flex-end">
+    <button class="btn" id="confirmNo" type="button">Cancelar</button>
+    <button class="btn primary" id="confirmYes" type="button">Aceptar</button>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<div id="sheet"></div>
+
+<!-- SheetJS Community Edition 0.18.5 (Apache-2.0), incluida para que la app funcione sin internet -->
+<script>/*@@XLSX@@*/</script>
+<script>
+(function(){
+'use strict';
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = v => { const n = parseFloat(String(v ?? '').replace(',', '.')); return isFinite(n) ? n : 0; };
+const fmt = n => (Math.round(n * 100) / 100).toLocaleString('es-MX');
+const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
+const fmtDate = s => { if(!s) return ''; const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+/* ---------- Almacenamiento local ---------- */
+const store = {
+  get(k, def){ try { const v = localStorage.getItem('tm_' + k); return v ? JSON.parse(v) : def; } catch(e){ return def; } },
+  set(k, v){ try { localStorage.setItem('tm_' + k, JSON.stringify(v)); return true; } catch(e){ toast('No se pudo guardar en este dispositivo'); return false; } }
+};
+const DEFAULT_LOGO = '@@LOGO@@';
+const DATA_FILE = 'materiales.xlsx';
+let settings = Object.assign({ empresa:'Pinturas Powder', prefijo:'TR-', siguiente:1, logo:'', sucursales:[], colaboradores:[], mapeo:null }, store.get('settings', {}));
+delete settings.marca; // la marca ahora viene de cada material del Excel
+if(!Array.isArray(settings.colaboradores)) settings.colaboradores = [];
+if(settings.empresa === 'Mi Negocio') settings.empresa = 'Pinturas Powder';
+const logoSrc = () => settings.logo || DEFAULT_LOGO;
+let fuente = store.get('fuente', null);
+let catalogo = store.get('catalogo', []);
+let traspasos = store.get('traspasos', []);
+let form; // traspaso en edición
+
+const saveSettings = () => store.set('settings', settings);
+const saveCatalogo = () => store.set('catalogo', catalogo);
+const saveTraspasos = () => store.set('traspasos', traspasos);
+const saveDraft = () => store.set('borrador', form);
+
+/* ---------- Utilidades de UI ---------- */
+let toastT;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400); }
+function confirmBox(msg, okLabel){
+  return new Promise(res => {
+    const d = $('#confirmDlg'); $('#confirmMsg').textContent = msg; $('#confirmYes').textContent = okLabel || 'Aceptar';
+    const done = v => { d.close(); $('#confirmYes').onclick = $('#confirmNo').onclick = null; res(v); };
+    $('#confirmYes').onclick = () => done(true); $('#confirmNo').onclick = () => done(false);
+    d.oncancel = () => done(false);
+    d.showModal();
+  });
+}
+function download(name, blob){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+/* ---------- Status por renglón ---------- */
+function statusOf(it){
+  const s = num(it.sol), e = num(it.ent);
+  if(!s && !e && it.ent === '') return '';
+  if(it.ent === '' || e === 0) return 'Pendiente';
+  if(e < s) return 'Parcial';
+  if(e > s) return 'Excedente';
+  return 'Completo';
+}
+function statusGeneral(t){
+  const st = t.items.map(statusOf).filter(Boolean);
+  if(!st.length) return 'Pendiente';
+  if(st.every(s => s === 'Completo')) return 'Completo';
+  if(st.every(s => s === 'Pendiente')) return 'Pendiente';
+  return 'Parcial';
+}
+const pill = s => s ? `<span class="pill ${s}">${s}</span>` : '<span class="pill none">—</span>';
+
+/* ---------- Formulario ---------- */
+const blankItem = () => ({ clave:'', descripcion:'', marca:'', sol:'', ent:'', obs:'' });
+function blankForm(){
+  return { id:null, folio:'', fecha:today(), origen:'', destino:'', notas:'', entrega:'', recibe:'',
+    firmaEntrega:'', firmaRecibe:'', items:[blankItem(), blankItem(), blankItem()] };
+}
+function loadForm(t){
+  form = JSON.parse(JSON.stringify(t));
+  if(!form.items.length) form.items.push(blankItem());
+  $('#fFecha').value = form.fecha; $('#fOrigen').value = form.origen; $('#fDestino').value = form.destino;
+  $('#fNotas').value = form.notas || ''; $('#fEntrega').value = form.entrega || ''; $('#fRecibe').value = form.recibe || '';
+  $('#formTitle').textContent = form.id ? `Editando ${form.folio}` : 'Nuevo traspaso';
+  $('#formErr').hidden = true;
+  renderFolio(); renderItems();
+  pads.entrega.load(form.firmaEntrega); pads.recibe.load(form.firmaRecibe);
+  saveDraft();
+}
+function nextFolio(){ return settings.prefijo + String(settings.siguiente).padStart(4, '0'); }
+function renderFolio(){ $('#folioBox').textContent = form.folio || nextFolio(); $('#folioBox').title = form.folio ? '' : 'Se asigna al guardar'; }
+
+function renderItems(){
+  $('#items').innerHTML = form.items.map((it, i) => `
+    <div class="item" data-i="${i}">
+      <div class="n">${i + 1}</div>
+      <label class="f c-clave"><span>Clave</span><input data-k="clave" list="dl-claves" value="${esc(it.clave)}" autocomplete="off"></label>
+      <label class="f c-desc"><span>Descripción</span><input data-k="descripcion" list="dl-desc" value="${esc(it.descripcion)}" autocomplete="off"></label>
+      <label class="f c-marca"><span>Marca</span><input data-k="marca" value="${esc(it.marca)}"></label>
+      <label class="f c-sol"><span>Solicitada</span><input class="num" data-k="sol" inputmode="decimal" value="${esc(it.sol)}"></label>
+      <label class="f c-ent"><span>Entregada</span><input class="num" data-k="ent" inputmode="decimal" value="${esc(it.ent)}"></label>
+      <label class="f c-obs"><span>Observaciones</span><input data-k="obs" value="${esc(it.obs)}"></label>
+      <div class="c-st">${pill(statusOf(it))}</div>
+      <button class="icon-btn" type="button" data-del="${i}" aria-label="Quitar renglón ${i + 1}">&times;</button>
+    </div>`).join('');
+  renderTotals();
+}
+function renderTotals(){
+  const used = form.items.filter(it => it.clave || it.descripcion);
+  const sol = used.reduce((a, it) => a + num(it.sol), 0), ent = used.reduce((a, it) => a + num(it.ent), 0);
+  $('#totals').innerHTML = `<span>Renglones: <b>${used.length}</b></span><span>Total solicitado: <b>${fmt(sol)}</b></span><span>Total entregado: <b>${fmt(ent)}</b></span><span>Status: ${pill(used.length ? statusGeneral({items:used}) : '')}</span>`;
+}
+
+
+$('#items').addEventListener('input', e => {
+  const inp = e.target.closest('input[data-k]'); if(!inp) return;
+  const row = inp.closest('.item'), i = +row.dataset.i, k = inp.dataset.k, it = form.items[i];
+  it[k] = inp.value;
+  let hit;
+  if(k === 'clave'){
+    const hits = claveIndex().get(normK(inp.value)) || [];
+    if(hits.length === 1) hit = hits[0];
+    else if(hits.length > 1 && !hits.some(h => normK(h.descripcion) === normK(it.descripcion))){
+      it.descripcion = ''; it.marca = '';
+      row.querySelector('[data-k=descripcion]').value = ''; row.querySelector('[data-k=marca]').value = '';
+      toast(`La clave ${hits[0].clave} tiene ${hits.length} materiales. Elige la descripción.`);
+      row.querySelector('[data-k=descripcion]').focus();
+    }
+  }
+  if(k === 'descripcion') hit = descIndex().get(normK(inp.value));
+  if(hit){
+    it.clave = hit.clave; it.descripcion = hit.descripcion; it.marca = hit.marca || '';
+    row.querySelector('[data-k=clave]').value = it.clave;
+    row.querySelector('[data-k=descripcion]').value = it.descripcion;
+    row.querySelector('[data-k=marca]').value = it.marca;
+  }
+  row.querySelector('.c-st').innerHTML = pill(statusOf(it));
+  renderTotals(); saveDraft();
+});
+$('#items').addEventListener('keydown', e => {
+  // Enter en el último campo agrega renglón nuevo
+  if(e.key === 'Enter' && e.target.dataset.k === 'obs'){
+    const i = +e.target.closest('.item').dataset.i;
+    if(i === form.items.length - 1){ e.preventDefault(); addRow(); }
+  }
+});
+$('#items').addEventListener('click', e => {
+  const b = e.target.closest('[data-del]'); if(!b) return;
+  form.items.splice(+b.dataset.del, 1);
+  if(!form.items.length) form.items.push(blankItem());
+  renderItems(); saveDraft();
+});
+function addRow(){
+  form.items.push(blankItem()); renderItems(); saveDraft();
+  $(`.item[data-i="${form.items.length - 1}"] [data-k=clave]`).focus();
+}
+$('#btnAddRow').onclick = addRow;
+
+[['#fFecha','fecha'],['#fOrigen','origen'],['#fDestino','destino'],['#fNotas','notas'],['#fEntrega','entrega'],['#fRecibe','recibe']]
+  .forEach(([sel, k]) => $(sel).addEventListener('input', e => { form[k] = e.target.value; saveDraft(); }));
+
+$('#btnNuevo').onclick = async () => {
+  const dirty = form.items.some(it => it.clave || it.descripcion) || form.origen || form.destino;
+  if(dirty && !form.id && !(await confirmBox('Se descartará el traspaso que estás capturando. ¿Continuar?', 'Descartar'))) return;
+  loadForm(blankForm());
+};
+
+/* ---------- Firmas ---------- */
+function makePad(el, key){
+  const cv = el.querySelector('canvas'), ph = el.querySelector('.ph'), ctx = cv.getContext('2d');
+  let drawing = false, has = false, last;
+  function size(){
+    const r = cv.getBoundingClientRect(); if(!r.width) return;
+    const data = has ? cv.toDataURL() : '';
+    const dpr = window.devicePixelRatio || 1; cv.width = r.width * dpr; cv.height = r.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if(data) load(data, true);
+  }
+  function pos(e){ const r = cv.getBoundingClientRect(); return { x:e.clientX - r.left, y:e.clientY - r.top }; }
+  cv.addEventListener('pointerdown', e => { drawing = true; last = pos(e); cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e => {
+    if(!drawing) return; const p = pos(e);
+    ctx.strokeStyle = '#10213d'; ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p;
+    if(!has){ has = true; ph.hidden = true; }
+  });
+  const end = () => { if(!drawing) return; drawing = false; form[key] = has ? cv.toDataURL('image/png') : ''; saveDraft(); };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  function clear(){ ctx.clearRect(0, 0, cv.width, cv.height); has = false; ph.hidden = false; }
+  function load(data, keep){
+    clear(); if(!data) return;
+    const img = new Image(); img.onload = () => { const r = cv.getBoundingClientRect(); ctx.drawImage(img, 0, 0, r.width, r.height); };
+    img.src = data; has = true; ph.hidden = true;
+  }
+  el.querySelector('.clr').onclick = () => { clear(); form[key] = ''; saveDraft(); };
+  new ResizeObserver(size).observe(cv);
+  return { load };
+}
+const pads = {
+  entrega: makePad($('[data-pad=entrega]'), 'firmaEntrega'),
+  recibe:  makePad($('[data-pad=recibe]'), 'firmaRecibe')
+};
+
+/* ---------- Guardar ---------- */
+function cleanItems(t){ return t.items.filter(it => String(it.clave).trim() || String(it.descripcion).trim()); }
+function validate(){
+  const errs = [];
+  if(!form.fecha) errs.push('Falta la fecha.');
+  if(!form.origen.trim()) errs.push('Indica el almacén de origen.');
+  if(!form.destino.trim()) errs.push('Indica el almacén de destino.');
+  if(form.origen.trim() && form.origen.trim().toUpperCase() === form.destino.trim().toUpperCase()) errs.push('El origen y el destino no pueden ser el mismo almacén.');
+  const used = cleanItems(form);
+  if(!used.length) errs.push('Agrega al menos un material con clave o descripción.');
+  used.forEach((it, i) => { if(!(num(it.sol) > 0)) errs.push(`Renglón con clave "${it.clave || it.descripcion}": falta la cantidad solicitada.`); });
+  return errs;
+}
+function save(){
+  const errs = validate(), box = $('#formErr');
+  if(errs.length){ box.innerHTML = errs.map(esc).join('<br>'); box.hidden = false; box.scrollIntoView({behavior:'smooth', block:'center'}); return false; }
+  box.hidden = true;
+  const rec = JSON.parse(JSON.stringify(form));
+  rec.items = cleanItems(rec);
+  rec.actualizado = new Date().toISOString();
+  if(!rec.id){
+    rec.id = uid(); rec.folio = nextFolio(); rec.creado = rec.actualizado;
+    settings.siguiente++; saveSettings();
+    traspasos.unshift(rec);
+  } else {
+    const i = traspasos.findIndex(t => t.id === rec.id);
+    if(i >= 0) traspasos[i] = rec; else traspasos.unshift(rec);
+  }
+  if(!saveTraspasos()) return false;
+  addSucursal(rec.origen); addSucursal(rec.destino); addManual('colaboradores', rec.entrega); addManual('colaboradores', rec.recibe);
+  loadForm(rec);
+  toast(`Traspaso ${rec.folio} guardado`);
+  return rec;
+}
+$('#btnSave').onclick = save;
+
+/* ---------- Hoja imprimible ---------- */
+function renderSheet(t){
+  const items = cleanItems(t), rows = Math.max(items.length, 15);
+  let body = '';
+  for(let i = 0; i < rows; i++){
+    const it = items[i];
+    body += it ? `<tr><td class="c">${i + 1}</td><td>${esc(it.clave)}</td><td>${esc(it.descripcion)}</td><td class="c">${esc(it.marca)}</td>
+      <td class="r">${esc(it.sol)}</td><td class="r">${esc(it.ent)}</td><td>${esc(it.obs)}</td><td class="c">${statusOf(it)}</td></tr>`
+      : `<tr><td class="c">${i + 1}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+  }
+  $('#sheet').innerHTML = `
+    <div class="sh-head">
+      <div class="sh-logo"><img src="${esc(logoSrc())}" alt=""></div>
+      <div class="sh-title"><div class="e">${esc(settings.empresa)}</div><div class="t">TRASPASO DE MATERIAL</div></div>
+      <div class="sh-folio"><small>Folio</small><b>${esc(t.folio || 'BORRADOR')}</b></div>
+    </div>
+    <table class="sh-info">
+      <tr><td class="k">Fecha:</td><td>${fmtDate(t.fecha)}</td><td class="k">Status:</td><td>${statusGeneral({items})}</td></tr>
+      <tr><td class="k">Almacén origen:</td><td>${esc(t.origen)}</td><td class="k">Almacén destino:</td><td>${esc(t.destino)}</td></tr>
+    </table>
+    <table class="sh-items">
+      <colgroup><col style="width:6%"><col style="width:13%"><col style="width:29%"><col style="width:10%"><col style="width:9%"><col style="width:9%"><col style="width:14%"><col style="width:10%"></colgroup>
+      <thead><tr><th>#</th><th>CLAVE</th><th>DESCRIPCIÓN</th><th>MARCA</th><th>Cantidad solicitada</th><th>Cantidad entregada</th><th>Observaciones</th><th>Status</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    ${t.notas ? `<div class="sh-notes"><b>Notas:</b> ${esc(t.notas)}</div>` : ''}
+    <div class="sh-sign">
+      <div><div class="lbl">ENTREGA</div><div class="img">${t.firmaEntrega ? `<img src="${t.firmaEntrega}" alt="">` : ''}</div><div class="line">${esc(t.entrega)}</div><small>Nombre y firma</small></div>
+      <div><div class="lbl">RECIBE</div><div class="img">${t.firmaRecibe ? `<img src="${t.firmaRecibe}" alt="">` : ''}</div><div class="line">${esc(t.recibe)}</div><small>Nombre y firma</small></div>
+    </div>
+    <div class="sh-foot">Impreso el ${new Date().toLocaleString('es-MX')}</div>`;
+}
+function printT(t){
+  renderSheet(t);
+  const imgs = $$('#sheet img');
+  Promise.all(imgs.map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; }))).then(() => window.print());
+}
+$('#btnPrint').onclick = () => {
+  if(!form.id){ const r = save(); if(!r) return; }
+  printT(form);
+};
+
+/* ---------- Excel ---------- */
+function traspasoToSheet(t){
+  const items = cleanItems(t);
+  const aoa = [
+    [settings.empresa], ['TRASPASO DE MATERIAL'], [],
+    ['Folio:', t.folio || 'BORRADOR'], ['Fecha:', fmtDate(t.fecha)], ['Almacén origen:', t.origen], ['Almacén destino:', t.destino], [],
+    ['#','CLAVE','DESCRIPCIÓN','MARCA','Cantidad solicitada','Cantidad entregada','Observaciones','Status'],
+    ...items.map((it, i) => [i + 1, it.clave, it.descripcion, it.marca, num(it.sol), it.ent === '' ? '' : num(it.ent), it.obs, statusOf(it)]),
+    [], ['Notas:', t.notas || ''], [], ['ENTREGA:', t.entrega || '', '', '', 'RECIBE:', t.recibe || '']
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{wch:16},{wch:16},{wch:42},{wch:12},{wch:12},{wch:12},{wch:24},{wch:12}];
+  return ws;
+}
+function excelT(t){
+  if(typeof XLSX === 'undefined'){ toast('No se cargó el módulo de Excel. Revisa tu conexión.'); return; }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, traspasoToSheet(t), 'Traspaso de Material');
+  XLSX.writeFile(wb, `Traspaso_${(t.folio || 'borrador').replace(/[^\w-]/g, '_')}.xlsx`);
+}
+$('#btnExcel').onclick = () => { if(!form.id){ const r = save(); if(!r) return; } excelT(form); };
+
+/* ---------- Historial ---------- */
+function renderHist(){
+  const q = $('#histSearch').value.trim().toUpperCase();
+  const list = traspasos.filter(t => !q || [t.folio, t.origen, t.destino, t.entrega, t.recibe, ...t.items.map(i => i.clave + ' ' + i.descripcion)].join(' ').toUpperCase().includes(q));
+  $('#histCount').textContent = `${traspasos.length} traspaso${traspasos.length === 1 ? '' : 's'} guardado${traspasos.length === 1 ? '' : 's'}`;
+  $('#histBody').innerHTML = list.length ? list.map(t => `
+    <tr>
+      <td class="mono">${esc(t.folio)}</td>
+      <td>${fmtDate(t.fecha)}</td>
+      <td class="route">${esc(t.origen)}<i>→</i>${esc(t.destino)}</td>
+      <td class="num">${t.items.length}</td>
+      <td>${pill(statusGeneral(t))}</td>
+      <td><div class="btn-row" style="flex-wrap:nowrap">
+        <button class="btn sm" data-act="open" data-id="${t.id}">Abrir</button>
+        <button class="btn sm" data-act="print" data-id="${t.id}">Imprimir</button>
+        <button class="btn sm" data-act="xls" data-id="${t.id}">Excel</button>
+        <button class="btn sm" data-act="dup" data-id="${t.id}">Duplicar</button>
+        <button class="btn sm danger" data-act="del" data-id="${t.id}">Eliminar</button>
+      </div></td>
+    </tr>`).join('') : `<tr><td colspan="6" class="empty">${traspasos.length ? 'Ningún traspaso coincide con la búsqueda.' : 'Aún no hay traspasos. Captura el primero en la pestaña Traspaso.'}</td></tr>`;
+}
+$('#histSearch').addEventListener('input', renderHist);
+$('#histBody').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if(!b) return;
+  const t = traspasos.find(x => x.id === b.dataset.id); if(!t) return;
+  const act = b.dataset.act;
+  if(act === 'open'){ loadForm(t); show('nuevo'); }
+  if(act === 'print') printT(t);
+  if(act === 'xls') excelT(t);
+  if(act === 'dup'){
+    const c = JSON.parse(JSON.stringify(t));
+    Object.assign(c, { id:null, folio:'', fecha:today(), firmaEntrega:'', firmaRecibe:'', entrega:'', recibe:'' });
+    c.items.forEach(it => { it.ent = ''; });
+    loadForm(c); show('nuevo'); toast('Copia lista para capturar');
+  }
+  if(act === 'del' && await confirmBox(`¿Eliminar el traspaso ${t.folio}? Esta acción no se puede deshacer.`, 'Eliminar')){
+    traspasos = traspasos.filter(x => x.id !== t.id); saveTraspasos();
+    if(form.id === t.id) loadForm(blankForm());
+    renderHist(); toast(`${t.folio} eliminado`);
+  }
+});
+$('#btnExportHist').onclick = () => {
+  if(typeof XLSX === 'undefined'){ toast('No se cargó el módulo de Excel. Revisa tu conexión.'); return; }
+  if(!traspasos.length){ toast('No hay traspasos para exportar'); return; }
+  const rows = [];
+  traspasos.forEach(t => t.items.forEach(it => rows.push({
+    Folio:t.folio, Fecha:fmtDate(t.fecha), 'Almacén origen':t.origen, 'Almacén destino':t.destino,
+    Clave:it.clave, 'Descripción':it.descripcion, Marca:it.marca, 'Cant. solicitada':num(it.sol),
+    'Cant. entregada':it.ent === '' ? '' : num(it.ent), Observaciones:it.obs, Status:statusOf(it), Entrega:t.entrega, Recibe:t.recibe
+  })));
+  const wb = XLSX.utils.book_new(), ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Traspasos');
+  XLSX.writeFile(wb, `Historial_traspasos_${today()}.xlsx`);
+};
+
+/* ---------- Catálogo ---------- */
+/* Cada material: { id, clave, descripcion, marca, extra:{columna:valor}, fila, origen:'excel'|'manual' }.
+   Los materiales del Excel se reemplazan completos en cada lectura; los agregados a mano se conservan. */
+const normK = v => String(v ?? '').trim().replace(/\s+/g, ' ').toUpperCase();
+const keyOf = it => normK(it.clave) + '¦' + normK(it.descripcion);
+catalogo.forEach(c => { if(!c.origen) c.origen = 'excel'; if(!c.id) c.id = keyOf(c); if(!c.extra) c.extra = {}; });
+let revision = store.get('revision', null);   // último reporte de lectura del Excel
+let listas = Object.assign({ sucursales:[], colaboradores:[] }, store.get('listas', {}));
+let lastWb = null;                             // último libro leído (para ajustar columnas)
+
+function claveIndex(){
+  const m = new Map();
+  catalogo.forEach(c => { const k = normK(c.clave); if(!k) return; if(!m.has(k)) m.set(k, []); m.get(k).push(c); });
+  return m;
+}
+const descIndex = () => { const m = new Map(); catalogo.forEach(c => { const k = normK(c.descripcion); if(k && !m.has(k)) m.set(k, c); }); return m; };
+
+function renderCat(){
+  const q = normK($('#catSearch').value);
+  const extras = (revision && revision.extras) || [];
+  const list = catalogo.filter(c => !q || normK([c.clave, c.descripcion, c.marca, ...Object.values(c.extra || {})].join(' ')).includes(q));
+  const shown = list.slice(0, 300), cols = 4 + extras.length;
+  const nManual = catalogo.filter(c => c.origen === 'manual').length;
+  $('#catCount').textContent = `${catalogo.length} material${catalogo.length === 1 ? '' : 'es'} en el catálogo` + (nManual ? ` (${nManual} agregado${nManual === 1 ? '' : 's'} a mano)` : '');
+  $('#catHead').innerHTML = `<tr><th>Clave</th><th>Descripción</th><th>Marca</th>${extras.map(x => `<th>${esc(x)}</th>`).join('')}<th></th></tr>`;
+  $('#catBody').innerHTML = shown.length ? shown.map(c => `
+    <tr><td class="mono">${esc(c.clave)}</td><td>${esc(c.descripcion)}</td><td>${c.marca ? esc(c.marca) : '<span class="hint">Sin marca</span>'}</td>
+    ${extras.map(x => `<td>${esc((c.extra || {})[x])}</td>`).join('')}
+    <td>${c.origen === 'manual'
+      ? `<button class="icon-btn" data-cdel="${esc(c.id)}" aria-label="Quitar ${esc(c.clave)}">&times;</button>`
+      : `<span class="tag" title="Fila ${esc(c.fila)} del Excel">Excel${c.fila ? ' · ' + esc(c.fila) : ''}</span>`}</td></tr>`).join('')
+    + (list.length > shown.length ? `<tr><td colspan="${cols}" class="empty">Mostrando 300 de ${list.length}. Usa la búsqueda para encontrar el resto.</td></tr>` : '')
+    : `<tr><td colspan="${cols}" class="empty">${catalogo.length ? 'Sin coincidencias.' : 'El catálogo está vacío. Vincula o importa tu Excel de materiales para que las claves se llenen solas.'}</td></tr>`;
+  const seen = new Set();
+  $('#dl-claves').innerHTML = catalogo.map(c => `<option value="${esc(c.clave)}">${esc(c.descripcion)}${c.marca ? ' · ' + esc(c.marca) : ''}</option>`).join('');
+  $('#dl-desc').innerHTML = catalogo.filter(c => { const k = normK(c.descripcion); if(seen.has(k)) return false; seen.add(k); return true; })
+    .map(c => `<option value="${esc(c.descripcion)}">${esc(c.clave)}</option>`).join('');
+}
+$('#catSearch').addEventListener('input', renderCat);
+$('#catBody').addEventListener('click', e => {
+  const b = e.target.closest('[data-cdel]'); if(!b) return;
+  catalogo = catalogo.filter(c => c.id !== b.dataset.cdel); saveCatalogo(); renderCat();
+});
+$('#btnCatAdd').onclick = () => {
+  const clave = $('#catNewClave').value.trim(), descripcion = $('#catNewDesc').value.trim();
+  if(!clave || !descripcion){ toast('Escribe clave y descripción'); return; }
+  const it = { clave, descripcion, marca:$('#catNewMarca').value.trim(), extra:{}, origen:'manual' };
+  it.id = 'm:' + keyOf(it);
+  if(catalogo.some(c => keyOf(c) === keyOf(it))){ toast('Ese material ya está en el catálogo'); return; }
+  catalogo.push(it); saveCatalogo(); renderCat();
+  $('#catNewClave').value = $('#catNewDesc').value = $('#catNewMarca').value = ''; $('#catNewClave').focus();
+  toast('Material agregado');
+};
+$('#btnCatClear').onclick = async () => {
+  if(!catalogo.length) return;
+  if(await confirmBox(`¿Vaciar el catálogo de ${catalogo.length} materiales? Los traspasos guardados no se modifican.`, 'Vaciar')){
+    catalogo = []; saveCatalogo(); fuente = null; store.set('fuente', null); revision = null; store.set('revision', null);
+    await unlink(); renderCat(); renderRevision(); toast('Catálogo vacío');
+  }
+};
+
+/* ---------- Lectura flexible del Excel ---------- */
+const normH = v => String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const RX = {
+  clave: /^(clave|codigo|cod\b|cod\.|sku|no\.? de parte|num(ero|\.)? (de )?parte|articulo|referencia|ref\b|ref\.)/,
+  descripcion: /^(descrip|nombre|producto|material)/,
+  marca: /^(marca|proveedor|fabricante|brand)/
+};
+const RX_SUC = /almac|sucursal|tienda|bodega/, RX_COL = /colabor|emplead|personal|usuario|responsable|trabajador/;
+const RX_SKIPSHEET = /formato|plantilla|traspaso/;
+
+function sheetGrid(ws){
+  if(!ws || !ws['!ref']) return { rows:[], r0:0, c0:0 };
+  const rg = XLSX.utils.decode_range(ws['!ref']);
+  return { rows:XLSX.utils.sheet_to_json(ws, { header:1, defval:'', blankrows:true, raw:false }), r0:rg.s.r, c0:rg.s.c };
+}
+const colName = (g, j) => XLSX.utils.encode_col(g.c0 + j);
+const rowNum = (g, i) => g.r0 + i + 1;
+const cellTxt = v => String(v ?? '').trim().replace(/\s+/g, ' ');
+
+// Fila de encabezados más probable: la que tenga más celdas con texto entre las primeras 40.
+function guessHeaderRow(g){
+  let best = -1, bestN = 0;
+  g.rows.slice(0, 40).forEach((r, i) => { const n = r.filter(v => cellTxt(v) && isNaN(Number(v))).length; if(n > bestN){ best = i; bestN = n; } });
+  return best;
+}
+function findColumns(g, mapeo){
+  for(let i = 0; i < Math.min(g.rows.length, 40); i++){
+    const h = g.rows[i].map(normH);
+    let c;
+    if(mapeo){
+      c = { clave:h.indexOf(mapeo.clave), descripcion:h.indexOf(mapeo.descripcion), marca:mapeo.marca ? h.indexOf(mapeo.marca) : -1 };
+      if(mapeo.marca && c.marca < 0) continue;
+    } else {
+      c = { clave:h.findIndex(x => RX.clave.test(x)), descripcion:h.findIndex(x => RX.descripcion.test(x)), marca:h.findIndex(x => RX.marca.test(x)) };
+    }
+    if(c.clave >= 0 && c.descripcion >= 0 && c.clave !== c.descripcion) return Object.assign(c, { fila:i });
+  }
+  return null;
+}
+function parseWorkbook(wb, mapeo){
+  const problemas = [];
+  // 1) Hoja de productos: la que tenga columnas de clave y descripción y más renglones con datos.
+  let best = null;
+  const tryMapeo = mapeo && wb.Sheets[mapeo.hoja];
+  if(mapeo && !tryMapeo) problemas.push({ nivel:'aviso', texto:`La hoja "${mapeo.hoja}" que elegiste ya no existe. Se usó la detección automática.` });
+  // La hoja del formato impreso tiene los mismos encabezados pero no es el catálogo.
+  const candidates = tryMapeo ? [mapeo.hoja] : wb.SheetNames.filter(n => !RX_SKIPSHEET.test(normH(n)));
+  candidates.forEach(name => {
+    const g = sheetGrid(wb.Sheets[name]);
+    const c = findColumns(g, tryMapeo ? mapeo : null); if(!c) return;
+    const datos = g.rows.slice(c.fila + 1).filter(r => cellTxt(r[c.clave]) && cellTxt(r[c.descripcion])).length;
+    const score = datos + (/product|material|catalog|articul|inventario|lista/.test(normH(name)) ? 100000 : 0);
+    if(datos && (!best || score > best.score)) best = { name, g, c, datos, score };
+  });
+  if(!best && tryMapeo){
+    problemas.push({ nivel:'aviso', texto:`Las columnas que elegiste ya no están en la hoja "${mapeo.hoja}". Se usó la detección automática.` });
+    return Object.assign(parseWorkbook(wb, null), { avisoMapeo:true, problemasPrevios:problemas });
+  }
+  if(!best){ const e = new Error('sin-columnas'); e.hojas = wb.SheetNames; throw e; }
+
+  const { name, g, c } = best, header = g.rows[c.fila];
+  const extrasIdx = header.map((h, j) => ({ j, h:cellTxt(h) }))
+    .filter(x => x.h && ![c.clave, c.descripcion, c.marca].includes(x.j) && !/^(no\.?|#|num\.?|n°|status|observaciones)$/.test(normH(x.h)));
+  const items = [], vistos = new Map(), sinClave = [], sinDesc = [], sinMarca = [], repetidos = [];
+  g.rows.slice(c.fila + 1).forEach((r, k) => {
+    const i = c.fila + 1 + k, fila = rowNum(g, i);
+    const clave = cellTxt(r[c.clave]), descripcion = cellTxt(r[c.descripcion]), marca = c.marca >= 0 ? cellTxt(r[c.marca]) : '';
+    if(!clave && !descripcion) return;
+    if(normH(clave) === normH(header[c.clave])) return; // encabezado repetido
+    if(!clave){ sinClave.push(fila); }
+    if(!descripcion){ sinDesc.push(fila); return; }
+    if(c.marca >= 0 && !marca) sinMarca.push(fila);
+    const extra = {}; extrasIdx.forEach(x => { const v = cellTxt(r[x.j]); if(v) extra[x.h] = v; });
+    const it = { clave, descripcion, marca, extra, fila, origen:'excel' };
+    it.id = keyOf(it);
+    if(vistos.has(it.id)){ repetidos.push(fila); return; }
+    vistos.set(it.id, it); items.push(it);
+  });
+  if(!items.length){ const e = new Error('sin-columnas'); e.hojas = wb.SheetNames; throw e; }
+  // claves iguales con descripción distinta: se conservan ambas, pero se avisa
+  const porClave = new Map(); items.forEach(it => { const k = normK(it.clave); if(!k) return; (porClave.get(k) || porClave.set(k, []).get(k)).push(it); });
+  const clavesDup = [...porClave.values()].filter(v => v.length > 1);
+  const filasTxt = f => f.length > 12 ? f.slice(0, 12).join(', ') + ` y ${f.length - 12} más` : f.join(', ');
+  clavesDup.forEach(v => problemas.push({ nivel:'aviso', texto:`La clave "${v[0].clave}" se repite en las filas ${v.map(x => x.fila).join(', ')} con distinta descripción. Se conservan las dos; al capturarla elige la descripción correcta.` }));
+  if(sinClave.length) problemas.push({ nivel:'aviso', texto:`Sin clave (fila${sinClave.length > 1 ? 's' : ''} ${filasTxt(sinClave)}). Se pueden buscar por descripción.` });
+  if(sinDesc.length) problemas.push({ nivel:'error', texto:`Sin descripción (fila${sinDesc.length > 1 ? 's' : ''} ${filasTxt(sinDesc)}). No se cargaron.` });
+  if(repetidos.length) problemas.push({ nivel:'info', texto:`Renglones idénticos repetidos (fila${repetidos.length > 1 ? 's' : ''} ${filasTxt(repetidos)}). Se tomó uno solo.` });
+  if(sinMarca.length) problemas.push({ nivel:'info', texto:`Sin marca (fila${sinMarca.length > 1 ? 's' : ''} ${filasTxt(sinMarca)}).` });
+
+  // 2) Listas: hojas de almacenes/sucursales y de colaboradores (con o sin encabezado).
+  const listasOut = { sucursales:[], colaboradores:[] }, hojasListas = {};
+  const skipWords = /^(almacen(es)?|sucursal(es)?|tienda(s)?|bodega(s)?|colaborador(es)?|empleado(s)?|personal|nombre(s)?|usuario(s)?|responsable(s)?)$/;
+  wb.SheetNames.forEach(sn => {
+    if(sn === name || RX_SKIPSHEET.test(normH(sn))) return;
+    const tipo = RX_SUC.test(normH(sn)) ? 'sucursales' : RX_COL.test(normH(sn)) ? 'colaboradores' : null; if(!tipo) return;
+    const set = new Set(listasOut[tipo].map(normK));
+    sheetGrid(wb.Sheets[sn]).rows.forEach(r => r.forEach(v => {
+      const t = cellTxt(v); if(!t || skipWords.test(normH(t)) || set.has(normK(t))) return;
+      set.add(normK(t)); listasOut[tipo].push(t);
+    }));
+    hojasListas[tipo] = sn.trim();
+  });
+  return {
+    items, listas:listasOut, problemas,
+    info:{ hoja:name.trim(), fila:rowNum(g, c.fila),
+      columnas:{ clave:`${colName(g, c.clave)} · ${cellTxt(header[c.clave])}`, descripcion:`${colName(g, c.descripcion)} · ${cellTxt(header[c.descripcion])}`,
+        marca:c.marca >= 0 ? `${colName(g, c.marca)} · ${cellTxt(header[c.marca])}` : '' },
+      extras:extrasIdx.map(x => x.h), hojasListas }
+  };
+}
+
+// Compara el catálogo anterior del Excel con el nuevo: nuevos, eliminados y modificados.
+function diffCatalogo(prev, next, extrasPrev, extrasNext){
+  const comunes = new Set((extrasNext || []).filter(x => (extrasPrev || []).includes(x)));
+  const P = new Map(prev.map(x => [x.id, x])), N = new Map(next.map(x => [x.id, x]));
+  const cambiosDe = (a, b) => {
+    const out = [];
+    if(a.descripcion !== b.descripcion) out.push(`descripción: "${a.descripcion}" → "${b.descripcion}"`);
+    if((a.marca || '') !== (b.marca || '')) out.push(`marca: "${a.marca || 'sin marca'}" → "${b.marca || 'sin marca'}"`);
+    comunes.forEach(k => {
+      if(((a.extra || {})[k] || '') !== ((b.extra || {})[k] || '')) out.push(`${k}: "${(a.extra || {})[k] || '—'}" → "${(b.extra || {})[k] || '—'}"`);
+    });
+    return out;
+  };
+  const modificados = [];
+  next.forEach(b => { const a = P.get(b.id); if(a){ const d = cambiosDe(a, b); if(d.length) modificados.push({ clave:b.clave, cambios:d }); } });
+  let nuevos = next.filter(b => !P.has(b.id)), eliminados = prev.filter(a => !N.has(a.id));
+  // misma clave (única) con descripción distinta = modificado, no alta + baja
+  const uniq = arr => { const m = new Map(); arr.forEach(x => { const k = normK(x.clave); m.set(k, m.has(k) ? null : x); }); return m; };
+  const un = uniq(nuevos), ue = uniq(eliminados);
+  un.forEach((b, k) => { const a = ue.get(k); if(k && a && b){ modificados.push({ clave:b.clave, cambios:cambiosDe(a, b) }); nuevos = nuevos.filter(x => x !== b); eliminados = eliminados.filter(x => x !== a); } });
+  return { nuevos:nuevos.map(x => `${x.clave} · ${x.descripcion}`), eliminados:eliminados.map(x => `${x.clave} · ${x.descripcion}`), modificados,
+    columnasNuevas:(extrasNext || []).filter(x => !comunes.has(x)), columnasQuitadas:(extrasPrev || []).filter(x => !comunes.has(x)) };
+}
+
+function applyWorkbook(buf, name, extra, wbReady){
+  const wb = wbReady || XLSX.read(buf, { type:'array' });
+  lastWb = wb;
+  const res = parseWorkbook(wb, settings.mapeo);
+  const problemas = (res.problemasPrevios || []).concat(res.problemas);
+  const prev = catalogo.filter(c => c.origen === 'excel');
+  const manual = catalogo.filter(c => c.origen === 'manual' && !res.items.some(x => keyOf(x) === keyOf(c)));
+  const cambios = prev.length ? diffCatalogo(prev, res.items, revision ? revision.extras : [], res.info.extras) : null;
+  if(prev.length >= 20 && res.items.length < prev.length / 2)
+    problemas.unshift({ nivel:'error', texto:`Esta lectura trae ${res.items.length} materiales y la anterior ${prev.length}. Revisa que se esté leyendo la hoja y las columnas correctas.` });
+  catalogo = res.items.concat(manual); saveCatalogo();
+  listas = res.listas; store.set('listas', listas);
+  fuente = Object.assign({ archivo:name, fecha:new Date().toISOString(), materiales:catalogo.length }, extra); store.set('fuente', fuente);
+  revision = Object.assign({ fecha:fuente.fecha, archivo:name, cambios, problemas, total:res.items.length }, res.info); store.set('revision', revision);
+  renderCat(); renderSource(); renderRevision(); renderSettings(); renderListas();
+  return revision;
+}
+const nCambios = r => r.cambios ? r.cambios.nuevos.length + r.cambios.eliminados.length + r.cambios.modificados.length + (r.cambios.columnasNuevas || []).length + (r.cambios.columnasQuitadas || []).length : 0;
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const resumenCambios = r => !r.cambios ? `${r.total} materiales cargados de ${r.archivo}`
+  : !nCambios(r) ? `Excel leído: sin cambios en materiales`
+  : `Excel actualizado: ${plural(r.cambios.nuevos.length, 'nuevo')}, ${plural(r.cambios.modificados.length, 'modificado')}, ${plural(r.cambios.eliminados.length, 'eliminado')}` +
+    ((r.cambios.columnasNuevas || []).length ? `, columna nueva: ${r.cambios.columnasNuevas.join(', ')}` : '');
+const excelErr = err => err && err.message === 'sin-columnas'
+  ? 'No encontré las columnas de clave y descripción. Usa "Ajustar columnas" en Catálogo para indicarlas.'
+  : 'No se pudo leer el Excel. Si lo tienes abierto, guárdalo y vuelve a intentar.';
+function onExcelError(err, interactive){
+  if(err && err.message === 'sin-columnas'){ renderRevision(); openMapeo(); if(interactive){ show('catalogo'); } }
+  if(interactive || (err && err.message === 'sin-columnas')) toast(excelErr(err));
+}
+
+/* ---------- Panel de revisión y ajuste de columnas ---------- */
+function renderRevision(){
+  const p = $('#revPanel');
+  if(!revision){ p.hidden = !lastWb; $('#revBody').innerHTML = lastWb ? '<p class="hint" style="margin:0">No se encontraron las columnas de materiales. Indícalas con <b>Ajustar columnas</b>.</p>' : ''; return; }
+  p.hidden = false;
+  const r = revision, c = r.cambios;
+  const lis = arr => arr.slice(0, 40).map(x => `<li>${esc(x)}</li>`).join('') + (arr.length > 40 ? `<li class="hint">y ${arr.length - 40} más…</li>` : '');
+  const cambiosHtml = !c ? `<p class="hint" style="margin:0">Primera lectura: ${r.total} materiales.</p>`
+    : (c.nuevos.length + c.eliminados.length + c.modificados.length + (c.columnasNuevas || []).length + (c.columnasQuitadas || []).length) === 0 ? `<p class="hint" style="margin:0">Sin cambios en los materiales desde la lectura anterior.</p>`
+    : `<div class="chips">
+        <span class="pill Completo">${c.nuevos.length} nuevo${c.nuevos.length === 1 ? '' : 's'}</span>
+        <span class="pill Parcial">${c.modificados.length} modificado${c.modificados.length === 1 ? '' : 's'}</span>
+        <span class="pill Pendiente">${c.eliminados.length} eliminado${c.eliminados.length === 1 ? '' : 's'}</span></div>
+       ${(c.columnasNuevas || []).length ? `<p class="hint" style="margin:8px 0 0">Columna${c.columnasNuevas.length > 1 ? 's' : ''} nueva${c.columnasNuevas.length > 1 ? 's' : ''} en el Excel: <b>${c.columnasNuevas.map(esc).join(', ')}</b></p>` : ''}
+       ${(c.columnasQuitadas || []).length ? `<p class="hint" style="margin:8px 0 0">Columna${c.columnasQuitadas.length > 1 ? 's' : ''} que ya no está${c.columnasQuitadas.length > 1 ? 'n' : ''}: <b>${c.columnasQuitadas.map(esc).join(', ')}</b></p>` : ''}
+       ${c.nuevos.length ? `<details><summary>Nuevos</summary><ul class="rev-list">${lis(c.nuevos)}</ul></details>` : ''}
+       ${c.modificados.length ? `<details><summary>Modificados</summary><ul class="rev-list">${lis(c.modificados.map(m => `${m.clave}: ${m.cambios.join('; ')}`))}</ul></details>` : ''}
+       ${c.eliminados.length ? `<details><summary>Eliminados</summary><ul class="rev-list">${lis(c.eliminados)}</ul></details>` : ''}`;
+  const probs = r.problemas || [];
+  $('#revBody').innerHTML = `
+    <dl class="rev-grid">
+      <dt>Hoja de materiales</dt><dd><b>${esc(r.hoja)}</b>, encabezados en la fila ${esc(r.fila)}</dd>
+      <dt>Columnas</dt><dd>Clave: <b>${esc(r.columnas.clave)}</b> · Descripción: <b>${esc(r.columnas.descripcion)}</b> · Marca: <b>${esc(r.columnas.marca || 'no encontrada')}</b>${settings.mapeo ? ' <span class="tag">elegidas a mano</span>' : ' <span class="tag">automático</span>'}</dd>
+      ${r.extras && r.extras.length ? `<dt>Columnas adicionales</dt><dd>${r.extras.map(esc).join(', ')} (se muestran en el catálogo)</dd>` : ''}
+      <dt>Listas</dt><dd>${listas.sucursales.length} almacenes${r.hojasListas && r.hojasListas.sucursales ? ` (hoja ${esc(r.hojasListas.sucursales)})` : ''} · ${listas.colaboradores.length} colaboradores${r.hojasListas && r.hojasListas.colaboradores ? ` (hoja ${esc(r.hojasListas.colaboradores)})` : ''}</dd>
+    </dl>
+    <h4 class="rev-h">Cambios</h4>${cambiosHtml}
+    <h4 class="rev-h">Revisión de datos</h4>
+    ${probs.length ? `<ul class="rev-probs">${probs.map(x => `<li class="${x.nivel}">${esc(x.texto)}</li>`).join('')}</ul>` : '<p class="hint" style="margin:0">Sin problemas encontrados.</p>'}`;
+}
+function openMapeo(){
+  const box = $('#mapBox');
+  if(!lastWb){ box.hidden = false; $('#mapFields').innerHTML = '<p class="hint" style="margin:0">Primero actualiza o importa el Excel para ver sus columnas.</p>'; return; }
+  box.hidden = false;
+  const sheets = lastWb.SheetNames;
+  const cur = settings.mapeo && lastWb.Sheets[settings.mapeo.hoja] ? settings.mapeo.hoja : (revision && sheets.find(s => s.trim() === revision.hoja)) || sheets[0];
+  $('#mapFields').innerHTML = `
+    <div class="grid-4">
+      <label class="f"><span>Hoja</span><select id="mapHoja">${sheets.map(s => `<option value="${esc(s)}"${s === cur ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
+      <label class="f"><span>Columna de clave</span><select id="mapClave"></select></label>
+      <label class="f"><span>Columna de descripción</span><select id="mapDesc"></select></label>
+      <label class="f"><span>Columna de marca</span><select id="mapMarca"></select></label>
+    </div>`;
+  const fill = () => {
+    const g = sheetGrid(lastWb.Sheets[$('#mapHoja').value]);
+    const auto = findColumns(g, null), fila = auto ? auto.fila : guessHeaderRow(g);
+    const hdr = fila >= 0 ? g.rows[fila].map((h, j) => ({ j, h:cellTxt(h) })).filter(x => x.h) : [];
+    const opts = (sel, none) => (none ? '<option value="">— ninguna —</option>' : '') + hdr.map(x => `<option value="${esc(normH(x.h))}"${x.j === sel ? ' selected' : ''}>${esc(colName(g, x.j))} · ${esc(x.h)}</option>`).join('');
+    const m = settings.mapeo, pick = (k, d) => { if(m && m.hoja === $('#mapHoja').value){ const x = hdr.find(y => normH(y.h) === m[k]); if(x) return x.j; } return d; };
+    // Sin detección completa: adivinar cada columna por separado y no repetir ninguna.
+    const guess = rx => { const x = hdr.find(y => rx.test(normH(y.h))); return x ? x.j : -1; };
+    let gD = auto ? auto.descripcion : guess(RX.descripcion), gM = auto ? auto.marca : guess(RX.marca), gC = auto ? auto.clave : guess(RX.clave);
+    if(gC < 0){ const x = hdr.find(y => y.j !== gD && y.j !== gM); gC = x ? x.j : -1; }
+    if(gD < 0){ const x = hdr.find(y => y.j !== gC && y.j !== gM); gD = x ? x.j : -1; }
+    $('#mapClave').innerHTML = opts(pick('clave', gC));
+    $('#mapDesc').innerHTML = opts(pick('descripcion', gD));
+    $('#mapMarca').innerHTML = opts(pick('marca', gM), true);
+    $('#mapHint').textContent = hdr.length ? `Encabezados tomados de la fila ${rowNum(g, fila)}.` : 'Esta hoja no tiene una fila de encabezados reconocible.';
+  };
+  $('#mapHoja').onchange = fill; fill();
+}
+$('#btnMapeo').onclick = () => { if($('#mapBox').hidden) openMapeo(); else $('#mapBox').hidden = true; };
+$('#btnMapCancel').onclick = () => { $('#mapBox').hidden = true; };
+$('#btnMapApply').onclick = () => {
+  if(!lastWb || !$('#mapClave')) return;
+  const m = { hoja:$('#mapHoja').value, clave:$('#mapClave').value, descripcion:$('#mapDesc').value, marca:$('#mapMarca').value };
+  if(!m.clave || !m.descripcion || m.clave === m.descripcion || (m.marca && (m.marca === m.clave || m.marca === m.descripcion))){ toast('Elige una columna distinta para clave, descripción y marca'); return; }
+  const prevMapeo = settings.mapeo; settings.mapeo = m;
+  try{ const r = applyWorkbook(null, fuente ? fuente.archivo : 'Excel', fuente ? { modificado:fuente.modificado, web:fuente.web } : {}, lastWb); saveSettings(); $('#mapBox').hidden = true; toast(resumenCambios(r)); }
+  catch(err){ settings.mapeo = prevMapeo; toast(excelErr(err)); }
+};
+$('#btnMapAuto').onclick = () => {
+  const prevMapeo = settings.mapeo; settings.mapeo = null;
+  if(!lastWb){ saveSettings(); $('#mapBox').hidden = true; renderRevision(); toast('Se usará la detección automática en la próxima lectura'); return; }
+  try{ const r = applyWorkbook(null, fuente ? fuente.archivo : 'Excel', fuente ? { modificado:fuente.modificado, web:fuente.web } : {}, lastWb); saveSettings(); $('#mapBox').hidden = true; toast(resumenCambios(r)); }
+  catch(err){ settings.mapeo = prevMapeo; toast(excelErr(err)); }
+};
+
+/* Origen de los materiales:
+   1) Excel vinculado en la computadora (Chrome/Edge): se vuelve a leer al abrir la app y al regresar a ella.
+   2) materiales.xlsx junto a la app, cuando se abre desde un servidor web.
+   3) Importar Excel manualmente (cualquier navegador). El catálogo queda guardado en el equipo. */
+const canLink = 'showOpenFilePicker' in window;
+const onWeb = location.protocol.startsWith('http');
+let linked = null;
+const idb = {
+  open(){ return this._p || (this._p = new Promise((res, rej) => {
+    const r = indexedDB.open('traspasos', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  })); },
+  async run(mode, fn){ const db = await this.open(); return new Promise((res, rej) => {
+    const tx = db.transaction('kv', mode), rq = fn(tx.objectStore('kv'));
+    tx.oncomplete = () => res(rq && rq.result); tx.onerror = () => rej(tx.error);
+  }); },
+  get(k){ return this.run('readonly', s => s.get(k)).catch(() => null); },
+  set(k, v){ return this.run('readwrite', s => s.put(v, k)).catch(() => null); },
+  del(k){ return this.run('readwrite', s => s.delete(k)).catch(() => null); }
+};
+
+function renderSource(){
+  const el = $('#srcLine'); if(!el) return;
+  el.innerHTML = fuente
+    ? `<span class="dot${linked || fuente.web ? ' on' : ''}"></span><span>Fuente: <b>${esc(fuente.archivo)}</b>${linked ? ' (vinculado)' : ''}</span><span>Leído el ${new Date(fuente.fecha).toLocaleString('es-MX')}</span><span>${fuente.materiales} materiales</span>${linked ? '<button class="linkish" id="btnUnlink" type="button">Desvincular</button>' : ''}`
+    : `<span class="dot"></span><span>Aún no se ha leído ningún Excel de materiales.</span>`;
+  $('#catHowto').innerHTML = canLink
+    ? 'Pulsa <b>Vincular Excel de materiales</b> y elige tu archivo una sola vez. Cada vez que abras la app, o regreses a ella después de guardar cambios en el Excel, los materiales, almacenes y colaboradores se actualizan solos.'
+    : 'Pulsa <b>Importar Excel</b> y elige tu archivo. Los datos quedan guardados en este equipo. Cuando modifiques el Excel, vuelve a importarlo. En Chrome o Edge puedes vincularlo para que se actualice solo.';
+  $('#btnLink').hidden = !canLink;
+  $('#lblImport').classList.toggle('primary', !canLink);
+  $('#btnCatReload').hidden = !(linked || onWeb);
+  const u = $('#btnUnlink'); if(u) u.onclick = unlink;
+}
+
+async function readLinked(interactive){
+  if(!linked) return false;
+  try{
+    let perm = await linked.queryPermission({ mode:'read' });
+    if(perm !== 'granted' && interactive) perm = await linked.requestPermission({ mode:'read' });
+    if(perm !== 'granted'){ $('#linkName').textContent = linked.name; $('#linkBanner').hidden = false; return false; }
+    $('#linkBanner').hidden = true;
+    const f = await linked.getFile();
+    if(!interactive && fuente && fuente.modificado === f.lastModified && catalogo.length) return true; // sin cambios
+    const r = applyWorkbook(await f.arrayBuffer(), f.name, { modificado:f.lastModified });
+    if(interactive || nCambios(r)) toast(resumenCambios(r));
+    return true;
+  } catch(err){
+    if(err && err.name === 'NotFoundError'){ toast(`No se encontró ${linked.name}. Vuelve a vincular el Excel.`); await unlink(); }
+    else onExcelError(err, interactive);
+    return false;
+  }
+}
+async function unlink(){
+  linked = null; await idb.del('excel'); $('#linkBanner').hidden = true;
+  if(fuente){ delete fuente.modificado; store.set('fuente', fuente); }
+  renderSource();
+}
+async function autoLoadExcel(manual){
+  let buf;
+  try{
+    const res = await fetch(DATA_FILE + '?v=' + Date.now(), { cache:'no-store' });
+    if(!res.ok) throw new Error(res.status);
+    buf = await res.arrayBuffer();
+  } catch(err){ if(manual) toast(`No se encontró ${DATA_FILE} junto a la app`); return; }
+  try{
+    const r = applyWorkbook(buf, DATA_FILE, { web:true });
+    if(manual || nCambios(r)) toast(resumenCambios(r));
+  } catch(err){ onExcelError(err, manual); }
+}
+$('#btnLink').onclick = async () => {
+  try{
+    const [h] = await window.showOpenFilePicker({ multiple:false, types:[{ description:'Libro de Excel',
+      accept:{ 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx'], 'application/vnd.ms-excel.sheet.macroEnabled.12':['.xlsm'], 'application/vnd.ms-excel':['.xls'] } }] });
+    linked = h; await idb.set('excel', h);
+    await readLinked(true);
+  } catch(err){ if(err && err.name !== 'AbortError') toast('No se pudo vincular el archivo'); }
+};
+$('#btnLinkRefresh').onclick = () => readLinked(true);
+$('#btnCatReload').onclick = () => linked ? readLinked(true) : autoLoadExcel(true);
+window.addEventListener('focus', () => { if(linked) readLinked(false); });
+$('#catFile').addEventListener('change', async e => {
+  const file = e.target.files[0]; e.target.value = ''; if(!file) return;
+  try{ toast(resumenCambios(applyWorkbook(await file.arrayBuffer(), file.name, {}))); }
+  catch(err){ onExcelError(err, true); }
+});
+
+/* ---------- Ajustes ---------- */
+/* Almacenes y colaboradores: los del Excel (no se quitan aquí) + los agregados a mano. */
+const allOf = tipo => { const seen = new Set(), out = [];
+  [...(listas[tipo] || []), ...(settings[tipo] || [])].forEach(v => { const k = normK(v); if(k && !seen.has(k)){ seen.add(k); out.push(v); } });
+  return out; };
+function addManual(tipo, name){
+  name = String(name || '').trim().replace(/\s+/g, ' '); if(!name) return;
+  if(!allOf(tipo).some(s => normK(s) === normK(name))){ settings[tipo].push(name); saveSettings(); renderListas(); }
+}
+const addSucursal = name => addManual('sucursales', name);
+function renderListas(){
+  const chips = tipo => {
+    const ex = new Set((listas[tipo] || []).map(normK));
+    const html = allOf(tipo).map(v => ex.has(normK(v))
+      ? `<span class="chip xl" title="Viene del Excel">${esc(v)}<span class="tag">Excel</span></span>`
+      : `<span class="chip">${esc(v)}<button type="button" data-ldel="${esc(tipo)}|${esc(v)}" aria-label="Quitar ${esc(v)}">&times;</button></span>`).join('');
+    return html || '<span class="hint">Sin registros. Agrégalos aquí o en una hoja del Excel.</span>';
+  };
+  $('#sucChips').innerHTML = chips('sucursales');
+  $('#colChips').innerHTML = chips('colaboradores');
+  $('#dl-suc').innerHTML = allOf('sucursales').map(s => `<option value="${esc(s)}"></option>`).join('');
+  $('#dl-col').innerHTML = allOf('colaboradores').map(s => `<option value="${esc(s)}"></option>`).join('');
+}
+function renderSettings(){
+  $('#sEmpresa').value = settings.empresa; $('#sPrefijo').value = settings.prefijo;
+  $('#sSiguiente').value = settings.siguiente;
+  $('#brandName').textContent = settings.empresa || 'Pinturas Powder';
+  $('#brandLogo').src = logoSrc();
+  $('#logoPrev').innerHTML = `<img src="${esc(logoSrc())}" alt="Logotipo">`;
+  renderListas();
+  if(form) renderFolio();
+}
+$('#sEmpresa').addEventListener('input', e => { settings.empresa = e.target.value; saveSettings(); $('#brandName').textContent = settings.empresa || 'Pinturas Powder'; });
+$('#sPrefijo').addEventListener('input', e => { settings.prefijo = e.target.value; saveSettings(); renderFolio(); });
+$('#sSiguiente').addEventListener('input', e => { const n = parseInt(e.target.value, 10); if(n > 0){ settings.siguiente = n; saveSettings(); renderFolio(); } });
+['#sucChips','#colChips'].forEach(sel => $(sel).addEventListener('click', e => {
+  const b = e.target.closest('[data-ldel]'); if(!b) return;
+  const i = b.dataset.ldel.indexOf('|'), tipo = b.dataset.ldel.slice(0, i), v = b.dataset.ldel.slice(i + 1);
+  settings[tipo] = settings[tipo].filter(x => x !== v); saveSettings(); renderListas();
+}));
+[['#btnSucAdd','#sucNew','sucursales'],['#btnColAdd','#colNew','colaboradores']].forEach(([btn, inp, tipo]) => {
+  $(btn).onclick = () => { addManual(tipo, $(inp).value); $(inp).value = ''; };
+  $(inp).addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); $(btn).click(); } });
+});
+$('#sLogo').addEventListener('change', e => {
+  const file = e.target.files[0]; e.target.value = ''; if(!file) return;
+  const img = new Image(), rd = new FileReader();
+  rd.onload = () => { img.src = rd.result; };
+  img.onload = () => { // reducir a 300px para no llenar el almacenamiento
+    const s = Math.min(1, 300 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+    c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    settings.logo = c.toDataURL('image/png'); saveSettings(); renderSettings(); toast('Logotipo actualizado');
+  };
+  rd.readAsDataURL(file);
+});
+$('#btnLogoDel').onclick = () => { settings.logo = ''; saveSettings(); renderSettings(); };
+$('#btnBackup').onclick = () => {
+  const data = { app:'traspasos', version:2, fecha:new Date().toISOString(), settings, catalogo, traspasos, listas, revision, fuente };
+  download(`respaldo_traspasos_${today()}.json`, new Blob([JSON.stringify(data)], { type:'application/json' }));
+};
+$('#restoreFile').addEventListener('change', async e => {
+  const file = e.target.files[0]; e.target.value = ''; if(!file) return;
+  try{
+    const d = JSON.parse(await file.text());
+    if(d.app !== 'traspasos') throw 0;
+    if(!(await confirmBox(`El respaldo tiene ${d.traspasos.length} traspasos y ${d.catalogo.length} materiales. Reemplazará los datos de este dispositivo. ¿Continuar?`, 'Restaurar'))) return;
+    settings = Object.assign(settings, d.settings); delete settings.marca; catalogo = d.catalogo || []; traspasos = d.traspasos || [];
+    catalogo.forEach(c => { if(!c.origen) c.origen = 'excel'; if(!c.id) c.id = keyOf(c); if(!c.extra) c.extra = {}; });
+    listas = Object.assign({ sucursales:[], colaboradores:[] }, d.listas); revision = d.revision || null; fuente = d.fuente || fuente;
+    store.set('listas', listas); store.set('revision', revision); store.set('fuente', fuente);
+    saveSettings(); saveCatalogo(); saveTraspasos(); renderSettings(); renderCat(); renderHist(); renderRevision(); renderSource(); loadForm(blankForm());
+    toast('Respaldo restaurado');
+  } catch(err){ toast('Ese archivo no es un respaldo válido de esta app'); }
+});
+
+/* ---------- Navegación ---------- */
+function show(view){
+  $$('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.view === view)));
+  ['nuevo','historial','catalogo','ajustes'].forEach(v => { $('#view-' + v).hidden = v !== view; });
+  $('#actionbar').hidden = view !== 'nuevo';
+  if(view === 'historial') renderHist();
+  if(view === 'catalogo') renderCat();
+  window.scrollTo(0, 0);
+}
+$$('.tab').forEach(t => t.onclick = () => show(t.dataset.view));
+
+/* ---------- Inicio ---------- */
+renderSettings(); renderCat(); renderSource(); renderRevision();
+loadForm(store.get('borrador', null) || blankForm());
+(async () => {
+  if(canLink) linked = await idb.get('excel');
+  renderSource();
+  if(linked) readLinked(false); else if(onWeb) autoLoadExcel(false);
+})();
+
+/* ---------- App instalable (PC y Mac) ---------- */
+$('#installPanel').hidden = !onWeb;
+if(onWeb){ // instalación como app solo cuando se abre desde un sitio web; el archivo local funciona por sí solo
+  [['manifest','manifest.webmanifest'],['apple-touch-icon','img/apple-touch-icon.png']].forEach(([rel, href]) => {
+    const l = document.createElement('link'); l.rel = rel; l.href = href; document.head.appendChild(l);
+  });
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw-traspasos.js').catch(() => {});
+}
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#btnInstall').hidden = false; });
+$('#btnInstall').onclick = async () => {
+  if(!installEvt) return;
+  installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; $('#btnInstall').hidden = true;
+};
+window.addEventListener('appinstalled', () => { $('#btnInstall').hidden = true; toast('App instalada'); });
+if(matchMedia('(display-mode: standalone)').matches || navigator.standalone){
+  $('#installState').textContent = 'La app ya está instalada en este equipo.';
+}
+})();
+</script>
+</body>
+</html>
