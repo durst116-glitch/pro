@@ -2051,7 +2051,7 @@ function metasEquipoHTML(e) {
   const as = e.asesores;
   const cortos = nombresCortos(as);
   const grupos = [];
-  indicadoresActivos().filter(i => as.some(a => a.metas[i.id] > 0)).forEach(i => {
+  indicadoresVisibles().filter(i => as.some(a => a.metas[i.id] > 0)).forEach(i => {
     let g = grupos.find(x => x.nombre === i.grupo);
     if (!g) grupos.push(g = { nombre: i.grupo, inds: [] });
     g.inds.push(i);
