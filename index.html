@@ -310,6 +310,21 @@
     .btn-download-dg { background: #ffca28; color: #1a237e; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 10px rgba(255,202,40,0.3); display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; transition: transform 0.2s; }
     .btn-download-dg:hover { transform: translateY(-2px); }
 
+    /* 🎯 TARJETA DE METAS INDIVIDUALES DEL MES (exportable como imagen) */
+    .goals-card{width:480px;background:#fff;border-radius:28px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,.15);font-family:'Montserrat',sans-serif;}
+    .goals-card-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));padding:25px;display:flex;align-items:center;gap:18px;color:#fff;}
+    .goals-card-photo{width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.6);background:#fff;}
+    .goals-card-name{font-size:1.25rem;font-weight:900;text-transform:uppercase;letter-spacing:.3px;}
+    .goals-card-sub{font-size:.8rem;font-weight:700;opacity:.85;margin-top:3px;}
+    .goals-card-title{background:var(--secondary);color:#fff;text-align:center;font-weight:900;font-size:.95rem;letter-spacing:1px;padding:12px;text-transform:uppercase;}
+    .goals-card-grid{padding:20px;display:flex;flex-direction:column;gap:10px;}
+    .goal-cat-block{background:#fcfcfc;border-radius:14px;padding:12px 16px;border-left:5px solid #ccc;}
+    .goal-cat-head{display:flex;align-items:center;gap:10px;font-weight:800;font-size:.85rem;color:var(--text-main);text-transform:uppercase;}
+    .goal-cat-head i{font-size:1.1rem;width:22px;text-align:center;}
+    .goal-cat-total{margin-left:auto;font-size:1.15rem;font-weight:900;color:var(--primary);}
+    .goal-sub-row{display:flex;justify-content:space-between;font-size:.78rem;font-weight:700;color:#607d8b;padding:4px 0 0 32px;}
+    .goals-card-footer{text-align:center;font-size:.7rem;font-weight:800;color:#b0bec5;padding:14px;letter-spacing:1px;text-transform:uppercase;border-top:1px dashed #eee;}
+
     /* 🎯 ESTILOS MEJORADOS META DIARIA INDIVIDUAL */
     .adv-goals-wrapper { background: #fff; border-radius: 20px; padding: 25px; box-shadow: var(--shadow); border-top: 6px solid var(--secondary); margin-bottom: 15px; }
     .adv-goals-wrapper h3 { color: var(--primary); font-weight: 900; margin: 0 0 5px 0; display:flex; align-items:center; gap:8px;}
@@ -921,6 +936,9 @@
       <button class="fab-btn btn-daily" id="btn-tool-daily" onclick="toggleSidePanel(); downloadDailyCard()">
         <i class="fas fa-image"></i> Tarjeta del Día Azul
       </button>
+      <button class="fab-btn" id="btn-tool-goals-card" style="background:linear-gradient(135deg,#00695c,#004d40);" onclick="toggleSidePanel(); openGoalsCardModal()">
+        <i class="fas fa-bullseye"></i> Tarjeta de Metas del Mes
+      </button>
       <button class="fab-btn btn-sup" id="btn-tool-rank" onclick="toggleSidePanel(); downloadRanking()">
         <i class="fas fa-trophy"></i> Descargar Ranking
       </button>
@@ -1091,6 +1109,20 @@
       </div>
       <p style="font-size:0.85rem; color:#78909c; margin-bottom:15px;">Elige qué indicadores quieres ver en tu tablero y en el de tus asesores. Los que desmarques se ocultan, pero sus datos no se borran.</p>
       <div id="indicator-settings-list" style="max-height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:2px;"></div>
+    </div>
+  </div>
+
+  <div id="goals-card-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width:550px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color:#004d40;">Tarjeta de Metas del Mes</div>
+        <button class="close-modal" onclick="closeGoalsCardModal()">&times;</button>
+      </div>
+      <p style="font-size:0.85rem; color:#78909c; margin-bottom:15px;">Genera una tarjeta con las metas individuales del mes de cada asesor (tomadas del Presupuesto Inicial), lista para enviarle por WhatsApp.</p>
+      <button onclick="downloadAllGoalsCards()" style="background:var(--success); color:#fff; padding:14px; border:none; border-radius:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-bottom:15px;">
+        <i class="fas fa-images"></i> Descargar Todas
+      </button>
+      <div id="goals-card-list" style="max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
     </div>
   </div>
 
@@ -1534,7 +1566,7 @@ function grantAccess(role, idx, ctx) {
 function logout() { location.reload(); }
 
 const TOOL_PERMISSIONS = {
-  supervisor: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-indicators','btn-tool-cleanup','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore','btn-tool-reset','btn-tool-clone'],
+  supervisor: ['btn-tool-daily','btn-tool-goals-card','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-indicators','btn-tool-cleanup','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore','btn-tool-reset','btn-tool-clone'],
   admin: ['btn-tool-org','btn-tool-mass-import','btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf','btn-tool-backup','btn-tool-restore'],
   jefe: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf','btn-tool-budget-jefe'],
   gerente: ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-report','btn-tool-pdf'],
@@ -1542,7 +1574,7 @@ const TOOL_PERMISSIONS = {
 };
 
 function applyRoleRestrictions() {
-  const tools = ['btn-tool-daily', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-indicators', 'btn-tool-cleanup', 'btn-tool-report', 'btn-tool-pdf', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone', 'btn-tool-org', 'btn-tool-mass-import', 'btn-tool-budget-jefe'];
+  const tools = ['btn-tool-daily', 'btn-tool-goals-card', 'btn-tool-rank', 'btn-tool-excel', 'btn-tool-template', 'btn-tool-import', 'btn-tool-indicators', 'btn-tool-cleanup', 'btn-tool-report', 'btn-tool-pdf', 'btn-tool-backup', 'btn-tool-restore', 'btn-tool-reset', 'btn-tool-clone', 'btn-tool-org', 'btn-tool-mass-import', 'btn-tool-budget-jefe'];
   const isManagerView = (sessionRole === 'jefe' || sessionRole === 'gerente' || sessionRole === 'admin');
   const allowedTools = TOOL_PERMISSIONS[sessionRole] || [];
 
@@ -3289,6 +3321,113 @@ function downloadAdvisorDailyGoals() {
   exportElementToPNG(panel, `Metas_Individuales_${currentDateStr}.png`);
 }
 
+/* =========================
+   TARJETA DE METAS INDIVIDUALES DEL MES (por Asesor)
+   Toma las metas ya cargadas (típicamente desde el Presupuesto Inicial) y genera
+   una tarjeta individual por asesor, lista para compartir por WhatsApp.
+   ========================= */
+function buildGoalsCardHTML(seller){
+  const dParts = currentDateStr.split('-');
+  const monthLabel = new Date(dParts[0], dParts[1]-1, 1).toLocaleDateString('es-ES', { month:'long', year:'numeric' }).toUpperCase();
+  const centro = orgData.centros.find(c => c.id === seller.centroId);
+  const sup = orgData.supervisors.find(s => s.id === seller.supervisorId && s.centroId === seller.centroId);
+  const subLine = [centro ? centro.name : '', sup ? sup.name : ''].filter(Boolean).join(' · ');
+
+  const cats = getEffectiveCategories().filter(c => {
+    if(c.id === 'retencion') return false;
+    const k = seller.kpis[c.id] || {};
+    return (k.meta || 0) > 0;
+  });
+  const blocksHtml = cats.map(cat => {
+    const k = seller.kpis[cat.id] || {};
+    if(cat.subFields){
+      const total = k.meta || 0;
+      const subsHtml = cat.subFields.map(sf => {
+        const metaVal = k['meta'+sf.key] || 0;
+        return `<div class="goal-sub-row"><span>${escapeHtml(sf.label)}</span><span>${metaVal}</span></div>`;
+      }).join('');
+      return `
+        <div class="goal-cat-block" style="border-left-color:${cat.color}">
+          <div class="goal-cat-head"><i class="fas ${cat.icon}" style="color:${cat.color}"></i>${escapeHtml(cat.label)}<span class="goal-cat-total">${total}</span></div>
+          ${subsHtml}
+        </div>`;
+    }
+    const metaVal = k.meta || 0;
+    const suffix = cat.isPerc ? '%' : '';
+    return `
+      <div class="goal-cat-block" style="border-left-color:${cat.color}">
+        <div class="goal-cat-head"><i class="fas ${cat.icon}" style="color:${cat.color}"></i>${escapeHtml(cat.label)}<span class="goal-cat-total">${metaVal}${suffix}</span></div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="goals-card">
+      <div class="goals-card-header">
+        <img src="${seller.photo || DEFAULT_AVATAR}" class="goals-card-photo">
+        <div>
+          <div class="goals-card-name">${escapeHtml(seller.name || 'Asesor')}</div>
+          <div class="goals-card-sub">${escapeHtml(subLine)}</div>
+        </div>
+      </div>
+      <div class="goals-card-title">Metas de ${monthLabel}</div>
+      <div class="goals-card-grid">${blocksHtml || '<div style="text-align:center;color:#90a4ae;font-size:.85rem;">Aún no se han cargado metas para este asesor.</div>'}</div>
+      <div class="goals-card-footer">Telcel Pro Cloud</div>
+    </div>
+  `;
+}
+
+function slugifyFilename(str){
+  return String(str||'asesor').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') || 'asesor';
+}
+
+async function exportGoalsCardForSeller(seller){
+  const area = document.getElementById('hidden-export-area');
+  area.innerHTML = '';
+  const wrapper = document.createElement('div');
+  wrapper.style.display = 'inline-block';
+  wrapper.style.background = '#f3f6f9';
+  wrapper.style.padding = '20px';
+  wrapper.innerHTML = buildGoalsCardHTML(seller);
+  area.appendChild(wrapper);
+  await exportElementToPNG(wrapper, `metas_${slugifyFilename(seller.name)}_${currentDateStr.substring(0,7)}.png`, true);
+  area.innerHTML = '';
+}
+
+function openGoalsCardModal(){
+  if(sessionRole !== 'supervisor') return;
+  renderGoalsCardList();
+  document.getElementById('goals-card-modal').style.display = 'flex';
+}
+function closeGoalsCardModal(){ document.getElementById('goals-card-modal').style.display = 'none'; }
+
+function renderGoalsCardList(){
+  const list = document.getElementById('goals-card-list');
+  list.innerHTML = sellers.map(s => `
+    <div class="event-item">
+      <div class="event-info"><span class="event-type">${escapeHtml(s.name || 'Asesor')}</span></div>
+      <button class="btn-add-event" style="padding:8px 14px; width:auto;" onclick="downloadGoalsCardForSeller(${s.id})">Descargar</button>
+    </div>
+  `).join('') || '<div style="font-size:.85rem;color:#78909c;">No tienes asesores en tu equipo.</div>';
+}
+
+async function downloadGoalsCardForSeller(sellerId){
+  const seller = sellers.find(s => s.id === sellerId);
+  if(!seller) return;
+  await exportGoalsCardForSeller(seller);
+  toast(`Tarjeta de metas de "${escapeHtml(seller.name)}" descargada.`, 'success');
+}
+
+async function downloadAllGoalsCards(){
+  if(sellers.length === 0) return toast('No tienes asesores en tu equipo.', 'danger');
+  closeGoalsCardModal();
+  toast(`Generando ${sellers.length} tarjeta(s) de metas...`, 'info');
+  for(const seller of sellers){
+    await exportGoalsCardForSeller(seller);
+    await new Promise(r => setTimeout(r, 300));
+  }
+  toast(`${sellers.length} tarjeta(s) de metas descargadas.`, 'success');
+}
+
 function renderStaffAvailability(){
   const staff = { piso: [], vacaciones: [], incapacidad: [], admin: [], descanso: [] };
   sellers.forEach(s=>{
@@ -3697,7 +3836,7 @@ function toggleSidePanel(){
 }
 
 function setFabDisabled(disabled){
-  const ids = ['btn-tool-daily','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-indicators','btn-tool-cleanup','btn-tool-mass-import','btn-tool-budget-jefe','btn-tool-report','btn-tool-backup','btn-tool-restore','btn-tool-reset', 'btn-tool-clone'];
+  const ids = ['btn-tool-daily','btn-tool-goals-card','btn-tool-rank','btn-tool-excel','btn-tool-template','btn-tool-import','btn-tool-indicators','btn-tool-cleanup','btn-tool-mass-import','btn-tool-budget-jefe','btn-tool-report','btn-tool-backup','btn-tool-restore','btn-tool-reset', 'btn-tool-clone'];
   ids.forEach(id=>{
     const b = document.getElementById(id);
     if(!b) return;
