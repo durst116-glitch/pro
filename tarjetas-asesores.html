@@ -1097,12 +1097,13 @@ const partesId = i => { const k = i.id.indexOf('|'); return [i.id.slice(0, k), i
 function buscarIndicador(indicadores, grupo, sub) {
   return indicadores.find(i => { const [g, s] = partesId(i); return g.startsWith(grupo) && s.includes(sub); }) || null;
 }
-// Amigo Paguitos es un rubro independiente de Prepago: se muestra como su propia categoría (el id no cambia,
-// así se conservan ventas, ajustes, impulsos y capturas ya guardados).
+// Amigo Paguitos (de Prepago) y Renuévate (de Renovación) son rubros independientes: se muestran como su propia
+// categoría (el id no cambia, así se conservan ventas, ajustes, impulsos y capturas ya guardados).
 function normalizarIndicadores(indicadores) {
   (indicadores || []).forEach(i => {
     const [g, s] = partesId(i);
     if (g.startsWith('PREPAGO') && s.includes('PAGUITOS')) { i.grupo = 'AMIGO PAGUITOS'; i.sub = ''; }
+    if (g.startsWith('RENOVACION') && s.includes('RENUEVATE')) { i.grupo = 'RENUÉVATE'; i.sub = ''; }
   });
   return indicadores;
 }
@@ -2182,7 +2183,7 @@ const gSub = {}; // por categoría: 'TOTAL' o id del indicador elegido en su tar
 // Colores de cada categoría (tonos suaves) y de las «pastillas» de avance: coral = no llega, ámbar = cerca, verde = llega.
 const CATEGORIAS = [
   ['POSPAGO', '#3d9be9', '📱'], ['WIFI', '#22aebf', '📶'], ['ZEEK', '#8a6cf0', '🚗'], ['PREPAGO', '#3fae8f', '💳'], ['AMIGO PAGUITOS', '#f08a3c', '💵'],
-  ['PORTABILIDAD', '#e2559b', '🔁'], ['RENOVACION', '#e9a820', '🔄'], ['TELCEL UP', '#ef7d3a', '⬆️'],
+  ['PORTABILIDAD', '#e2559b', '🔁'], ['RENOVACION', '#e9a820', '🔄'], ['RENUEVATE', '#0ea5a4', '📲'], ['TELCEL UP', '#ef7d3a', '⬆️'],
   ['INFINITUM', '#26a996', '🏠'], ['NORTON', '#d29a1c', '🛡️'], ['ACCESORIOS', '#9d63dc', '🎧'],
   ['CLARO PAY', '#e8506a', '💰'], ['TRADE IN', '#5aab5b', '♻️'], ['BUNDLE', '#dd6aa6', '🎁'],
   ['UP GRADE', '#6878ec', '⏫'], ['TELCEL PARA SIEMPRE', '#3b7ddd', '♾️'],
