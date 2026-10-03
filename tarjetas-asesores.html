@@ -705,6 +705,18 @@
   .me-tab tbody.dias td { background: #fffbeb; border-bottom: 1px solid #fde68a; font-size: 13px; }
   .me-z { color: #cbd5e1; font-weight: 700; }
   .me-ft { text-align: center; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; color: #94a3b8; padding: 12px 0 14px; text-transform: uppercase; }
+  .card-scale.ancha { width: auto; max-width: 100%; overflow-x: auto; }
+  .card.me.horiz .me-tab th { vertical-align: bottom; }
+  .card.me.horiz .mh-g { border-top: 3px solid #e2e8f0; padding: 8px 3px 6px; font-size: 8.5px; font-weight: 900; color: #334155; line-height: 1.15; text-align: center; letter-spacing: -.02em; }
+  .card.me.horiz .mh-g .me-ic { margin: 0 auto 4px; display: flex; }
+  .card.me.horiz .mh-a { text-align: left; padding-left: 14px; font-size: 10px; font-weight: 900; color: #64748b; letter-spacing: .08em; }
+  .card.me.horiz .mh-s th { text-align: center; font-size: 8.5px; font-weight: 800; color: #64748b; padding: 3px 2px 5px; line-height: 1.15; border-bottom: 2px solid #e2e8f0; vertical-align: top; }
+  .card.me.horiz .mh-p { display: flex; align-items: center; gap: 8px; }
+  .card.me.horiz .mh-p .me-av { margin: 0; width: 32px; height: 32px; flex: none; }
+  .card.me.horiz .mh-p b { font-size: 13px; font-weight: 900; color: #1e293b; }
+  .card.me.horiz td { padding: 6px 2px; font-size: 15px; }
+  .card.me.horiz td.me-d, .card.me.horiz th.me-d { background: #fffbeb; color: #92400e; }
+  .card.me.horiz tbody.tot td { background: #e6eefc; border-top: 2px solid #93c5fd; font-weight: 900; color: #0b2a5b; }
 </style>
 </head>
 <body>
@@ -2045,13 +2057,69 @@ document.getElementById('b-aj-add').onclick = () => {
 };
 
 // ---------- Tarjeta «Metas del equipo»: todos los asesores en una sola imagen ----------
-let gMetasDet = true;
+let gMetasDet = true, gMetasOri = 'vertical', gMetasSelAbierta = false;
+// Indicadores que se muestran en las tarjetas de metas del mes (selección propia, guardada en este navegador).
+const METAS_KEY = 'tarjetas-asesores-ocultos-metas';
+let ocultosMetas = new Set();
+try { ocultosMetas = new Set(JSON.parse(localStorage.getItem(METAS_KEY) || '[]')); } catch (_) {}
+const guardarOcultosMetas = () => { try { localStorage.setItem(METAS_KEY, JSON.stringify([...ocultosMetas])); } catch (_) {} };
+const indicadoresMetas = () => indicadoresActivos().filter(i => !ocultosMetas.has(i.id));
+function gruposMetas(asesores) {
+  const grupos = [];
+  indicadoresMetas().filter(i => asesores.some(a => a.metas[i.id] > 0)).forEach(i => {
+    let g = grupos.find(x => x.nombre === i.grupo);
+    if (!g) grupos.push(g = { nombre: i.grupo, inds: [] });
+    g.inds.push(i);
+  });
+  return grupos;
+}
+const metaDe = (a, inds) => inds.reduce((t, i) => t + (a.metas[i.id] || 0), 0);
+const iniTitulo = t => t.replace(/[^A-Za-zÁÉÍÓÚÑ0-9 ]/g, '').split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+const avatarMetas = a => `<div class="me-av">${fotos[a.user] ? `<img src="${fotos[a.user]}" alt="">` : `<span>${esc(iniciales(a.nombre))}</span>`}</div>`;
+function cabeceraMetas(e) {
+  const { mes } = state.ppto;
+  return `<div class="me-hd">
+      <div class="me-logo">${esc(iniTitulo(e.nombre))}</div>
+      <div class="me-tt"><div class="me-n">${esc(e.nombre.toUpperCase())}</div>
+        <div class="me-s">${esc((e.cac || '').toUpperCase())} · Sup. ${esc(e.supervisor.toUpperCase())}</div></div>
+      <div class="me-m"><span>METAS DEL EQUIPO</span><b>${esc(MESES[mes.idx].toUpperCase())} ${mes.anio}</b></div>
+    </div>`;
+}
+
+// Horizontal: un renglón por asesor y una columna por indicador (o por producto con el desglose).
+function metasEquipoHorizHTML(e) {
+  const as = e.asesores, cortos = nombresCortos(as), grupos = gruposMetas(as);
+  const cols = grupos.flatMap(g => {
+    const conSub = g.inds.length > 1 || g.inds[0].sub;
+    return gMetasDet && conSub ? g.inds.map((i, k) => ({ g, inds: [i], sub: i.sub, primero: k === 0, span: g.inds.length })) : [{ g, inds: g.inds, primero: true, span: 1 }];
+  });
+  const colW = gMetasDet ? 58 : 76;
+  // Las columnas de una categoría sin desglose llevan su nombre completo arriba: necesitan más ancho.
+  cols.forEach(c => c.w = gMetasDet && !c.sub ? colW + 18 : colW);
+  const W = 190 + cols.reduce((t, c) => t + c.w, 0) + 56 + 56;
+  const cel = n => `<td>${n ? n : '<span class="me-z">–</span>'}</td>`;
+  const cab1 = cols.filter(c => c.primero).map(c => { const est = estiloCat(c.g.nombre); return `<th colspan="${c.span}" class="mh-g" style="border-top-color:${est.color}">
+      <span class="me-ic" style="background:${hexA(est.color, 0.16)}">${est.icono}</span><div>${esc(c.g.nombre.toUpperCase())}</div></th>`; }).join('');
+  const cab2 = cols.some(c => c.sub) ? `<tr class="mh-s"><th class="me-l"></th>${cols.map(c => `<th>${c.sub ? esc(c.sub) : ''}</th>`).join('')}<th class="me-d"></th><th class="me-t"></th></tr>` : '';
+  const dias = as.reduce((t, a) => t + (Number(a.dias) || 0), 0);
+  return `<div class="card me horiz" style="width:${W}px">
+    ${cabeceraMetas(e)}
+    <table class="me-tab" style="width:${W}px">
+      <colgroup><col style="width:190px">${cols.map(c => `<col style="width:${c.w}px">`).join('')}<col style="width:56px"><col style="width:56px"></colgroup>
+      <thead><tr><th class="me-l mh-a">ASESOR</th>${cab1}<th class="me-d mh-g">📅<div>DÍAS</div></th><th class="me-t mh-g">Σ<div>TOTAL</div></th></tr>${cab2}</thead>
+      ${as.map((a, k) => `<tbody class="${k % 2 ? 'alt' : ''}"><tr><td class="me-l mh-p">${avatarMetas(a)}<b>${esc(cap(cortos[a.user]))}</b></td>
+        ${cols.map(c => cel(metaDe(a, c.inds))).join('')}<td class="me-d">${a.dias || '–'}</td><td class="me-t">${cols.reduce((t, c) => t + metaDe(a, c.inds), 0)}</td></tr></tbody>`).join('')}
+      <tbody class="tot"><tr><td class="me-l mh-p"><div class="me-av eq">Σ</div><b>EQUIPO</b></td>${cols.map(c => `<td>${as.reduce((t, a) => t + metaDe(a, c.inds), 0)}</td>`).join('')}<td class="me-d">${dias || '–'}</td><td class="me-t">${as.reduce((t, a) => t + cols.reduce((u, c) => u + metaDe(a, c.inds), 0), 0)}</td></tr></tbody>
+    </table>
+    <div class="me-ft">${as.length} asesores · ¡Vamos por todo este mes!</div>
+  </div>`;
+}
 function metasEquipoHTML(e) {
   const { mes } = state.ppto;
   const as = e.asesores;
   const cortos = nombresCortos(as);
   const grupos = [];
-  indicadoresVisibles().filter(i => as.some(a => a.metas[i.id] > 0)).forEach(i => {
+  indicadoresMetas().filter(i => as.some(a => a.metas[i.id] > 0)).forEach(i => {
     let g = grupos.find(x => x.nombre === i.grupo);
     if (!g) grupos.push(g = { nombre: i.grupo, inds: [] });
     g.inds.push(i);
@@ -2061,7 +2129,6 @@ function metasEquipoHTML(e) {
   const cel = n => `<td style="width:${colW}px">${n ? n : '<span class="me-z">–</span>'}</td>`;
   const meta = (a, inds) => inds.reduce((t, i) => t + (a.metas[i.id] || 0), 0);
   const fila = (lbl, inds, cls) => `<tr class="${cls}"><td class="me-l">${lbl}</td>${as.map(a => cel(meta(a, inds))).join('')}<td class="me-t">${as.reduce((t, a) => t + meta(a, inds), 0)}</td></tr>`;
-  const ini = titulo => titulo.replace(/[^A-Za-zÁÉÍÓÚÑ0-9 ]/g, '').split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const cuerpo = grupos.map((g, k) => {
     const est = estiloCat(g.nombre);
     const icono = `<span class="me-ic" style="background:${hexA(est.color, 0.16)}">${est.icono}</span>`;
@@ -2071,12 +2138,7 @@ function metasEquipoHTML(e) {
   }).join('');
   const dias = as.reduce((t, a) => t + (Number(a.dias) || 0), 0);
   return `<div class="card me">
-    <div class="me-hd">
-      <div class="me-logo">${esc(ini(e.nombre))}</div>
-      <div class="me-tt"><div class="me-n">${esc(e.nombre.toUpperCase())}</div>
-        <div class="me-s">${esc((e.cac || '').toUpperCase())} · Sup. ${esc(e.supervisor.toUpperCase())}</div></div>
-      <div class="me-m"><span>METAS DEL EQUIPO</span><b>${esc(MESES[mes.idx].toUpperCase())} ${mes.anio}</b></div>
-    </div>
+    ${cabeceraMetas(e)}
     <table class="me-tab">
       <thead><tr><th class="me-l" style="width:${540 - 50 - as.length * colW}px"></th>${as.map(a => `<th style="width:${colW}px"><div class="me-av">${fotos[a.user] ? `<img src="${fotos[a.user]}" alt="">` : `<span>${esc(iniciales(a.nombre))}</span>`}</div>
         <div class="me-an">${esc(cap(cortos[a.user]))}</div></th>`).join('')}<th class="me-t"><div class="me-av eq">Σ</div><div class="me-an">Equipo</div></th></tr></thead>
@@ -2215,7 +2277,7 @@ function equipoComoAsesor(asesores) {
 
 function metasSoloHTML(eq, D) {
   const grupos = [];
-  indicadoresActivos().filter(i => eq.metas[i.id] > 0).forEach(i => {
+  indicadoresMetas().filter(i => eq.metas[i.id] > 0).forEach(i => {
     let g = grupos.find(x => x.nombre === i.grupo);
     if (!g) grupos.push(g = { nombre: i.grupo, inds: [] });
     g.inds.push(i);
@@ -2267,13 +2329,13 @@ function tarjetaSupervisorHTML(titulo, sub, asesores, g) {
         <div><div class="lbl">Corte</div><div class="val">Día ${g.dc}</div><div class="sub">Quedan ${g.quedan} días</div></div>`
       : `
         <div><div class="lbl">Asesores</div><div class="val">${asesores.length}</div><div class="sub">en el equipo</div></div>
-        <div><div class="lbl">Indicadores con meta</div><div class="val">${indicadoresActivos().filter(i => eq.metas[i.id] > 0).length}</div><div class="sub">este mes</div></div>
+        <div><div class="lbl">Indicadores con meta</div><div class="val">${indicadoresMetas().filter(i => eq.metas[i.id] > 0).length}</div><div class="sub">este mes</div></div>
         <div><div class="lbl">Días del mes</div><div class="val">${g.D}</div><div class="sub">${esc(MESES[mes.idx])} ${mes.anio}</div></div>`}
     </div>
     <div class="sec">
       <div class="sec-t">${avance ? 'Metas y avance del equipo' : 'Metas del mes'}</div>
       ${avance
-        ? `<div class="vh"><span>Indicador</span><span>Avance</span><span>Llevan</span><span>%</span><span></span></div>${ventasHTML(eq, indicadoresActivos(), ritmo, eq.reales)}`
+        ? `<div class="vh"><span>Indicador</span><span>Avance</span><span>Llevan</span><span>%</span><span></span></div>${ventasHTML(eq, indicadoresMetas(), ritmo, eq.reales)}`
         : `<div class="vh mh"><span>Indicador</span><span>Meta</span><span>Meta diaria</span></div>${metasSoloHTML(eq, g.D)}`}
     </div>
     <div class="ft"><span>${avance ? 'Ventas acumuladas al ' + document.getElementById('corte').value.split('-').reverse().join('/') : 'Metas mensuales · ' + esc(cap(state.ppto.equipos[0].cac || ''))}</span><b>¡Vamos por más!</b></div>
@@ -2812,12 +2874,24 @@ function renderPanel() {
         <option value="avance" ${gModoMetas === 'avance' ? 'selected' : ''} ${sinVentas ? 'disabled' : ''}>Metas con avance al corte${sinVentas ? ' (carga el registro de ventas)' : ''}</option>
         <option value="asesores" ${gModoMetas === 'asesores' ? 'selected' : ''}>Metas por asesor (todo el equipo en una tarjeta)</option>
       </select></label>
-      ${gModoMetas === 'asesores' ? `<label><input type="checkbox" id="g-metas-det" ${gMetasDet ? 'checked' : ''}> Desglose por producto</label>` : ''}
+      ${gModoMetas === 'asesores' ? `<label>Orientación <select id="g-metas-ori">
+        <option value="vertical" ${gMetasOri === 'vertical' ? 'selected' : ''}>Vertical (asesores en columnas)</option>
+        <option value="horizontal" ${gMetasOri === 'horizontal' ? 'selected' : ''}>Horizontal (asesores en renglones)</option></select></label>
+        <label><input type="checkbox" id="g-metas-det" ${gMetasDet ? 'checked' : ''}> Desglose por producto</label>` : ''}
       <button id="g-metas-zip">Descargar todas (ZIP)</button>
       <span id="g-metas-st" style="color:var(--muted);font-size:13px"></span>
     </div>
+    <details class="secc" id="g-metas-sel" ${gMetasSelAbierta ? 'open' : ''}><summary><b>Indicadores de la tarjeta de metas</b> <span>(${indicadoresMetas().length} de ${indicadoresActivos().length})</span></summary>
+      <p>Marca los indicadores que quieres en las tarjetas de metas del mes (las tres opciones de «Contenido»). Esta selección es independiente de la tarjeta del asesor.</p>
+      <div class="controls" style="margin-bottom:8px">
+        <button id="gm-todos">Marcar todos</button><button id="gm-ninguno">Desmarcar todos</button>
+        <button id="gm-copiar">Igual que la tarjeta del asesor</button>
+      </div>
+      <div class="ind-grid">${[...new Set(indicadoresActivos().map(i => i.grupo))].map(gr => { const items = indicadoresActivos().filter(i => i.grupo === gr); return `<div class="ind-g"><b>${esc(cap(gr))}</b>
+        ${items.map(i => `<label><input type="checkbox" class="gm-i" data-id="${esc(i.id)}" ${ocultosMetas.has(i.id) ? '' : 'checked'}> ${esc(i.sub || cap(gr))}</label>`).join('')}</div>`; }).join('')}</div>
+    </details>
     <div class="cards">${tarjetasSup.map((t, k) => `<div class="card-wrap">
-      <div class="card-scale" id="msup-${k}">${gModoMetas === 'asesores' ? metasEquipoHTML(t.e) : tarjetaSupervisorHTML(t.titulo, t.sub, t.asesores, g)}</div>
+      <div class="card-scale${gModoMetas === 'asesores' && gMetasOri === 'horizontal' ? ' ancha' : ''}" id="msup-${k}">${gModoMetas === 'asesores' ? (gMetasOri === 'horizontal' ? metasEquipoHorizHTML(t.e) : metasEquipoHTML(t.e)) : tarjetaSupervisorHTML(t.titulo, t.sub, t.asesores, g)}</div>
       <button class="b-msup" data-k="${k}">Descargar imagen</button></div>`).join('')}</div>
   </div>`;
 
@@ -2904,6 +2978,17 @@ function renderPanel() {
   document.getElementById('g-modo').onchange = ev => { gModoMetas = ev.target.value; renderPanel(); };
   const det = document.getElementById('g-metas-det');
   if (det) det.onchange = () => { gMetasDet = det.checked; renderPanel(); };
+  const ori = document.getElementById('g-metas-ori');
+  if (ori) ori.onchange = () => { gMetasOri = ori.value; renderPanel(); };
+  document.getElementById('g-metas-sel').ontoggle = ev => { gMetasSelAbierta = ev.target.open; };
+  const setMetas = ids => { ocultosMetas = new Set(ids); guardarOcultosMetas(); gMetasSelAbierta = true; renderPanel(); };
+  cuerpo.querySelectorAll('.gm-i').forEach(cb => cb.onchange = () => {
+    cb.checked ? ocultosMetas.delete(cb.dataset.id) : ocultosMetas.add(cb.dataset.id);
+    setMetas([...ocultosMetas]);
+  });
+  document.getElementById('gm-todos').onclick = () => setMetas([]);
+  document.getElementById('gm-ninguno').onclick = () => setMetas(indicadoresActivos().map(i => i.id));
+  document.getElementById('gm-copiar').onclick = () => setMetas(indicadoresActivos().filter(i => !visible(i.id)).map(i => i.id));
   cuerpo.querySelectorAll('.b-msup').forEach(b => b.onclick = async () => {
     const t = tarjetasSup[Number(b.dataset.k)];
     b.disabled = true;
