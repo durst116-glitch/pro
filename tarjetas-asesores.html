@@ -717,6 +717,14 @@
   .card.me.horiz td { padding: 6px 2px; font-size: 15px; }
   .card.me.horiz td.me-d, .card.me.horiz th.me-d { background: #fffbeb; color: #92400e; }
   .card.me.horiz tbody.tot td { background: #e6eefc; border-top: 2px solid #93c5fd; font-weight: 900; color: #0b2a5b; }
+  /* Separación por categoría en «Metas del equipo» */
+  .card.me:not(.horiz) tbody.me-g { border-top: 6px solid #fff; }
+  .card.me:not(.horiz) tbody.me-g tr td { background: var(--cf); }
+  .card.me:not(.horiz) tbody.me-g tr td.me-l { border-left: 5px solid var(--cc); }
+  .card.me:not(.horiz) tbody.me-g tr td.me-t { background: #e6eefc; }
+  .card.me:not(.horiz) tbody.me-g tr.grp td { border-top: 1px solid rgba(15,23,42,.06); }
+  .card.me:not(.horiz) tbody.me-g tr.sub td { border-top: 1px dashed #e2e8f0; }
+  .card.me.horiz tbody tr td { border-bottom: 1px solid #e6ebf3; }
 </style>
 </head>
 <body>
@@ -2097,10 +2105,14 @@ function metasEquipoHorizHTML(e) {
   // Las columnas de una categoría sin desglose llevan su nombre completo arriba: necesitan más ancho.
   cols.forEach(c => c.w = gMetasDet && !c.sub ? colW + 18 : colW);
   const W = 190 + cols.reduce((t, c) => t + c.w, 0) + 56 + 56;
-  const cel = n => `<td>${n ? n : '<span class="me-z">–</span>'}</td>`;
-  const cab1 = cols.filter(c => c.primero).map(c => { const est = estiloCat(c.g.nombre); return `<th colspan="${c.span}" class="mh-g" style="border-top-color:${est.color}">
+  // Cada categoría con su color: línea al inicio de la categoría y sombreado alterno para distinguirlas.
+  let gi = -1;
+  cols.forEach(c => { if (c.primero) gi++; c.est = estiloCat(c.g.nombre); c.par = gi % 2;
+    c.estilo = `background:${hexA(c.est.color, c.par ? 0.09 : 0.04)};${c.primero ? `border-left:2px solid ${hexA(c.est.color, 0.55)};` : 'border-left:1px dashed #e2e8f0;'}`; });
+  const cel = (n, c) => `<td style="${c.estilo}">${n ? n : '<span class="me-z">–</span>'}</td>`;
+  const cab1 = cols.filter(c => c.primero).map(c => { const est = estiloCat(c.g.nombre); return `<th colspan="${c.span}" class="mh-g" style="border-top-color:${est.color};border-left:2px solid ${hexA(est.color, 0.55)};background:${hexA(est.color, 0.16)};color:${oscurecer(est.color, 0.45)}">
       <span class="me-ic" style="background:${hexA(est.color, 0.16)}">${est.icono}</span><div>${esc(c.g.nombre.toUpperCase())}</div></th>`; }).join('');
-  const cab2 = cols.some(c => c.sub) ? `<tr class="mh-s"><th class="me-l"></th>${cols.map(c => `<th>${c.sub ? esc(c.sub) : ''}</th>`).join('')}<th class="me-d"></th><th class="me-t"></th></tr>` : '';
+  const cab2 = cols.some(c => c.sub) ? `<tr class="mh-s"><th class="me-l"></th>${cols.map(c => `<th style="${c.estilo}">${c.sub ? esc(c.sub) : ''}</th>`).join('')}<th class="me-d"></th><th class="me-t"></th></tr>` : '';
   const dias = as.reduce((t, a) => t + (Number(a.dias) || 0), 0);
   return `<div class="card me horiz" style="width:${W}px">
     ${cabeceraMetas(e)}
@@ -2108,8 +2120,8 @@ function metasEquipoHorizHTML(e) {
       <colgroup><col style="width:190px">${cols.map(c => `<col style="width:${c.w}px">`).join('')}<col style="width:56px"><col style="width:56px"></colgroup>
       <thead><tr><th class="me-l mh-a">ASESOR</th>${cab1}<th class="me-d mh-g">📅<div>DÍAS</div></th><th class="me-t mh-g">Σ<div>TOTAL</div></th></tr>${cab2}</thead>
       ${as.map((a, k) => `<tbody class="${k % 2 ? 'alt' : ''}"><tr><td class="me-l mh-p">${avatarMetas(a)}<b>${esc(cap(cortos[a.user]))}</b></td>
-        ${cols.map(c => cel(metaDe(a, c.inds))).join('')}<td class="me-d">${a.dias || '–'}</td><td class="me-t">${cols.reduce((t, c) => t + metaDe(a, c.inds), 0)}</td></tr></tbody>`).join('')}
-      <tbody class="tot"><tr><td class="me-l mh-p"><div class="me-av eq">Σ</div><b>EQUIPO</b></td>${cols.map(c => `<td>${as.reduce((t, a) => t + metaDe(a, c.inds), 0)}</td>`).join('')}<td class="me-d">${dias || '–'}</td><td class="me-t">${as.reduce((t, a) => t + cols.reduce((u, c) => u + metaDe(a, c.inds), 0), 0)}</td></tr></tbody>
+        ${cols.map(c => cel(metaDe(a, c.inds), c)).join('')}<td class="me-d">${a.dias || '–'}</td><td class="me-t">${cols.reduce((t, c) => t + metaDe(a, c.inds), 0)}</td></tr></tbody>`).join('')}
+      <tbody class="tot"><tr><td class="me-l mh-p"><div class="me-av eq">Σ</div><b>EQUIPO</b></td>${cols.map(c => `<td style="${c.primero ? `border-left:2px solid ${hexA(c.est.color, 0.55)}` : 'border-left:1px dashed #c7d7f5'}">${as.reduce((t, a) => t + metaDe(a, c.inds), 0)}</td>`).join('')}<td class="me-d">${dias || '–'}</td><td class="me-t">${as.reduce((t, a) => t + cols.reduce((u, c) => u + metaDe(a, c.inds), 0), 0)}</td></tr></tbody>
     </table>
     <div class="me-ft">${as.length} asesores · ¡Vamos por todo este mes!</div>
   </div>`;
@@ -2128,13 +2140,13 @@ function metasEquipoHTML(e) {
   const colW = Math.max(30, Math.min(46, Math.floor(318 / Math.max(as.length, 1))));
   const cel = n => `<td style="width:${colW}px">${n ? n : '<span class="me-z">–</span>'}</td>`;
   const meta = (a, inds) => inds.reduce((t, i) => t + (a.metas[i.id] || 0), 0);
-  const fila = (lbl, inds, cls) => `<tr class="${cls}"><td class="me-l">${lbl}</td>${as.map(a => cel(meta(a, inds))).join('')}<td class="me-t">${as.reduce((t, a) => t + meta(a, inds), 0)}</td></tr>`;
+  const fila = (lbl, inds, cls, color) => `<tr class="${cls}" style="--cc:${color};--cf:${hexA(color, cls === 'grp' ? 0.12 : 0.04)}"><td class="me-l">${lbl}</td>${as.map(a => cel(meta(a, inds))).join('')}<td class="me-t">${as.reduce((t, a) => t + meta(a, inds), 0)}</td></tr>`;
   const cuerpo = grupos.map((g, k) => {
     const est = estiloCat(g.nombre);
     const icono = `<span class="me-ic" style="background:${hexA(est.color, 0.16)}">${est.icono}</span>`;
     const conSub = g.inds.length > 1 || g.inds[0].sub;
-    const sub = gMetasDet && conSub ? g.inds.map(i => fila(`<span class="me-sub">${esc(i.sub)}</span>`, [i], 'sub')).join('') : '';
-    return `<tbody class="${k % 2 ? 'alt' : ''}">${fila(`${icono}<b>${esc(g.nombre.toUpperCase())}</b>`, g.inds, 'grp')}${sub}</tbody>`;
+    const sub = gMetasDet && conSub ? g.inds.map(i => fila(`<span class="me-sub">${esc(i.sub)}</span>`, [i], 'sub', est.color)).join('') : '';
+    return `<tbody class="me-g">${fila(`${icono}<b style="color:${oscurecer(est.color, 0.45)}">${esc(g.nombre.toUpperCase())}</b>`, g.inds, 'grp', est.color)}${sub}</tbody>`;
   }).join('');
   const dias = as.reduce((t, a) => t + (Number(a.dias) || 0), 0);
   return `<div class="card me">
