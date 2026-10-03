@@ -977,7 +977,7 @@ function parsePresupuesto(wb, fileName) {
     else vistos[a.user] = e.nombre;
   }));
 
-  return { archivo: fileName, mes: detectarMes(wb, fileName), indicadores, equipos, avisos };
+  return { archivo: fileName, mes: detectarMes(wb, fileName), indicadores: normalizarIndicadores(indicadores), equipos, avisos };
 }
 
 // Mes de las metas: primero la pestaña CARTA ("Asunto: Metas de septiembre 2026"), luego el nombre del archivo.
@@ -1092,8 +1092,19 @@ function descCumpl() {
   return partes.length <= 4 ? partes.join(', ').replace(/, ([^,]*)$/, ' y $1') : `${sel.length} indicadores`;
 }
 
+// El id conserva el grupo y subgrupo originales del presupuesto (GRUPO|SUB), aunque se muestre en otra categoría.
+const partesId = i => { const k = i.id.indexOf('|'); return [i.id.slice(0, k), i.id.slice(k + 1)]; };
 function buscarIndicador(indicadores, grupo, sub) {
-  return indicadores.find(i => key(i.grupo).startsWith(grupo) && key(i.sub).includes(sub)) || null;
+  return indicadores.find(i => { const [g, s] = partesId(i); return g.startsWith(grupo) && s.includes(sub); }) || null;
+}
+// Amigo Paguitos es un rubro independiente de Prepago: se muestra como su propia categoría (el id no cambia,
+// así se conservan ventas, ajustes, impulsos y capturas ya guardados).
+function normalizarIndicadores(indicadores) {
+  (indicadores || []).forEach(i => {
+    const [g, s] = partesId(i);
+    if (g.startsWith('PREPAGO') && s.includes('PAGUITOS')) { i.grupo = 'AMIGO PAGUITOS'; i.sub = ''; }
+  });
+  return indicadores;
 }
 
 function indicadorDestino(indicadores, encabezado) {
@@ -2170,7 +2181,7 @@ const gSub = {}; // por categoría: 'TOTAL' o id del indicador elegido en su tar
 // Estilo de cada categoría en las tarjetas de avance (color del título e icono).
 // Colores de cada categoría (tonos suaves) y de las «pastillas» de avance: coral = no llega, ámbar = cerca, verde = llega.
 const CATEGORIAS = [
-  ['POSPAGO', '#3d9be9', '📱'], ['WIFI', '#22aebf', '📶'], ['ZEEK', '#8a6cf0', '🚗'], ['PREPAGO', '#3fae8f', '💳'],
+  ['POSPAGO', '#3d9be9', '📱'], ['WIFI', '#22aebf', '📶'], ['ZEEK', '#8a6cf0', '🚗'], ['PREPAGO', '#3fae8f', '💳'], ['AMIGO PAGUITOS', '#f08a3c', '💵'],
   ['PORTABILIDAD', '#e2559b', '🔁'], ['RENOVACION', '#e9a820', '🔄'], ['TELCEL UP', '#ef7d3a', '⬆️'],
   ['INFINITUM', '#26a996', '🏠'], ['NORTON', '#d29a1c', '🛡️'], ['ACCESORIOS', '#9d63dc', '🎧'],
   ['CLARO PAY', '#e8506a', '💰'], ['TRADE IN', '#5aab5b', '♻️'], ['BUNDLE', '#dd6aa6', '🎁'],
@@ -2519,7 +2530,7 @@ const COLS_RANK = [
   { k: 'PAG', nombre: 'Amigo Paguitos', inds: [['PREPAGO', 'PAGUITOS']], color: '#c2410c' },
   { k: 'ACC', nombre: 'Accesorios', inds: [['ACCESORIOS', '']], color: '#047857' },
 ];
-const idsDeGrupo = ([g, sub]) => state.ppto.indicadores.filter(i => key(i.grupo).startsWith(g) && key(i.sub).includes(sub)).map(i => i.id);
+const idsDeGrupo = ([g, sub]) => state.ppto.indicadores.filter(i => { const [ig, is] = partesId(i); return ig.startsWith(g) && is.includes(sub); }).map(i => i.id);
 let gRankDis = 'lista';
 
 function rankingListaHTML(titulo, sub, lista, periodo, maxLista = 99) {
@@ -3132,7 +3143,7 @@ function renderCumpl() {
   });
   document.getElementById('b-cumpl-todos').onclick = () => guardarSel(act.map(i => i.id));
   document.getElementById('b-cumpl-pp').onclick = () =>
-    guardarSel(act.filter(i => ['POSPAGO', 'PREPAGO'].includes(key(i.grupo))).map(i => i.id));
+    guardarSel(act.filter(i => ['POSPAGO', 'PREPAGO'].includes(partesId(i)[0])).map(i => i.id));
 }
 
 function renderImpulso() {
@@ -3507,6 +3518,7 @@ function cargarGuardado() {
     const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
     if (s && s.meses) {
       state.meses = s.meses; state.mesSel = s.mesSel;
+      Object.values(state.meses).forEach(m => normalizarIndicadores(m.indicadores));
       if (s.corte) document.getElementById('corte').value = s.corte;
       return;
     }
