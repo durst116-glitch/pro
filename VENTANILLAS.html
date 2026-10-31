@@ -306,6 +306,10 @@
                         <h3 class="font-bold text-lg text-indigo-900">Mapa del CAC</h3>
                         <label class="text-sm font-semibold text-gray-600">Día:</label>
                         <select id="mapaDiaSelect" onchange="renderizarMapa()" class="border border-gray-300 rounded px-2 py-1 text-sm font-semibold"></select>
+                        <label class="text-xs font-semibold text-gray-600" title="Ventanillas en el lado izquierdo (desde la entrada)">Lado izq.</label>
+                        <input type="number" id="mapaLadoIzq" min="0" class="w-14 border border-gray-300 rounded px-1 py-1 text-sm text-center font-bold" onchange="cambiarLadosMapa()">
+                        <label class="text-xs font-semibold text-gray-600" title="Ventanillas en el lado derecho (hacia la entrada)">Lado der.</label>
+                        <input type="number" id="mapaLadoDer" min="0" class="w-14 border border-gray-300 rounded px-1 py-1 text-sm text-center font-bold" onchange="cambiarLadosMapa()">
                     </div>
                     <div class="flex gap-2">
                         <button onclick="descargarMapaPNG()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded font-bold text-sm">Descargar imagen</button>
@@ -331,7 +335,8 @@
         let configZonas = []; 
         let totalVentanillas = 22; 
         let ventanillasBloqueadas = new Set();
-        let etiquetasVentanillas = {}; // { numero: "texto a mostrar en lugar de Mantenimiento" }
+        let etiquetasVentanillas = {};
+        let mapaLados = { izq: null, der: null }; // ventanillas en cada brazo de la U (null = automático) // { numero: "texto a mostrar en lugar de Mantenimiento" }
         function etiquetaVentanilla(v) {
             const t = etiquetasVentanillas[v];
             return (t && String(t).trim()) ? String(t).trim() : 'Mantenimiento';
@@ -390,6 +395,7 @@
                 asesoresInactivos: Array.from(asesoresInactivos),
                 equiposAsignados, zonasRangos,
                 mesSelect: document.getElementById('mesSelect') ? document.getElementById('mesSelect').value : '',
+                mapaLados,
                 imprimirAdmin: document.getElementById('checkImprimirAdmin') ? document.getElementById('checkImprimirAdmin').checked : true
             };
             localStorage.setItem('SmartRolState_v8', JSON.stringify(dataState));
@@ -412,6 +418,7 @@
                     totalVentanillas = data.totalVentanillas || 22;
                     ventanillasBloqueadas = new Set(data.ventanillasBloqueadas || []);
                     etiquetasVentanillas = data.etiquetasVentanillas || {};
+                    mapaLados = data.mapaLados || { izq: null, der: null };
                     reglasSeparacion = data.reglasSeparacion || [];
                     ventanillasFijas = data.ventanillasFijas || [];
                     asesoresInactivos = new Set(data.asesoresInactivos || []);
@@ -1216,6 +1223,7 @@
             const previo = sel.value;
             sel.innerHTML = `<option value="fija">Distribución fija</option>` + dataResultante.fechas.map((f, i) => `<option value="${i}">${nombresDiaLargo[f.getDay()]} ${f.getDate()}</option>`).join('');
             sel.value = (previo !== '' && Array.from(sel.options).some(o => o.value === previo)) ? previo : 'fija';
+            sincronizarLadosMapa();
             renderizarMapa();
             document.getElementById('modalMapa').classList.remove('hidden-step');
         }
@@ -1284,14 +1292,26 @@
                 items.push({ v, zi });
             }
             const N = items.length;
-            let nTop, nIzq, nDer;
-            if (N <= 4) { nTop = N; nIzq = 0; nDer = 0; }
-            else { nTop = Math.min(11, Math.ceil(N * 0.45)); nIzq = Math.ceil((N - nTop) / 2); nDer = N - nTop - nIzq; }
+            const lados = ladosMapa(N);
+            const nIzq = lados.izq, nDer = lados.der, nTop = N - nIzq - nDer;
             const izq = items.slice(0, nIzq), arriba = items.slice(nIzq, nIzq + nTop), der = items.slice(nIzq + nTop);
 
-            const W = 1120, topY = 74, rowH = 122, cw = Math.min(94, Math.floor(1040 / Math.max(nTop, 1)));
+            const W = 1120, headH = 18, topY = 74 + headH, rowH = 122, cw = Math.min(94, Math.floor(1040 / Math.max(nTop, 1)));
             const ySide0 = topY + rowH + 6, cellH = 68, sideW = 240;
-            const sideN = Math.max(nIzq, nDer), sideH = sideN * cellH;
+            const nombreGrupo = (zi) => zi < 0 ? 'SIN ZONA' : `ZONA ${zi + 1} · ${configZonas[zi].supervisor}`;
+            // Posiciones verticales de cada brazo (de arriba hacia abajo), con encabezado de supervisor al iniciar cada zona
+            const posicionesLado = (lista) => {
+                const out = []; let y = ySide0, prev = null;
+                lista.forEach(it => {
+                    if (it.zi !== prev) { y += headH; prev = it.zi; out.push({ it, y, nuevoGrupo: true }); }
+                    else out.push({ it, y, nuevoGrupo: false });
+                    y += cellH;
+                });
+                return { out, alto: y - ySide0 };
+            };
+            const izqVisual = izq.slice().reverse();   // arriba = la más cercana al fondo
+            const posIzq = posicionesLado(izqVisual), posDer = posicionesLado(der);
+            const sideH = Math.max(posIzq.alto, posDer.alto);
             const yB = ySide0 + Math.max(sideH, 250) + 14;
 
             let tituloA, tituloD, apoyo, desc;
@@ -1322,6 +1342,16 @@
 
             // --- Fila superior (fondo de la U): asesor contra la pared, cliente hacia el centro ---
             const x0 = 40 + (1040 - arriba.length * cw) / 2;
+            for (let i = 0; i < arriba.length;) {
+                let k = i; while (k < arriba.length && arriba[k].zi === arriba[i].zi) k++;
+                const zi = arriba[i].zi, pal = zi < 0 ? PALETA_SIN_ZONA : PALETA_ZONAS[zi % 5];
+                const gx = x0 + i * cw, gw = (k - i) * cw;
+                let txt = nombreGrupo(zi); const maxC = Math.floor((gw - 8) / 6.3);
+                if (txt.length > maxC) txt = txt.substring(0, Math.max(maxC - 1, 3)) + '…';
+                s += `<rect x="${gx}" y="${topY - headH - 2}" width="${gw}" height="${headH + rowH - 4}" rx="7" fill="none" stroke="${pal.dark}" stroke-width="1.5" stroke-dasharray="5 3"/>`;
+                s += `<rect x="${gx + 4}" y="${topY - headH}" width="${gw - 8}" height="${headH - 3}" rx="4" fill="${pal.head}"/>` + T(gx + gw / 2, topY - 6, txt, { size: 9.5, weight: 800, fill: pal.dark });
+                i = k;
+            }
             arriba.forEach((it, idx) => {
                 const pal = it.zi < 0 ? PALETA_SIN_ZONA : PALETA_ZONAS[it.zi % 5], inf = infoVentanilla(it.v);
                 const cx = x0 + idx * cw, cy = topY, mx = cx + cw / 2;
@@ -1354,8 +1384,21 @@
                 lineas.forEach((ln, li) => { o += T(tx, cyM + 4 + (li - (lineas.length - 1) / 2) * 11, ln, Object.assign({ size: 9.5, weight: 800, anchor: lado === 'L' ? 'start' : 'end' }, estiloTexto(inf))); });
                 return o;
             };
-            izq.forEach((it, k) => { s += celdaLateral(it, 'L', ySide0 + sideH - (k + 1) * cellH); });   // de la entrada hacia el fondo
-            der.forEach((it, k) => { s += celdaLateral(it, 'R', ySide0 + k * cellH); });               // del fondo hacia la entrada
+            const dibujarLado = (pos, lado) => {
+                const bx = lado === 'L' ? 34 : W - 34 - sideW;
+                pos.out.forEach((p, i) => {
+                    if (!p.nuevoGrupo) return;
+                    let j = i + 1; while (j < pos.out.length && !pos.out[j].nuevoGrupo) j++;
+                    const zi = p.it.zi, pal = zi < 0 ? PALETA_SIN_ZONA : PALETA_ZONAS[zi % 5];
+                    const gy = p.y - headH, gh = headH + (j - i) * cellH - 4;
+                    let txt = nombreGrupo(zi); if (txt.length > 36) txt = txt.substring(0, 35) + '…';
+                    s += `<rect x="${bx - 4}" y="${gy - 2}" width="${sideW + 8}" height="${gh + 2}" rx="7" fill="none" stroke="${pal.dark}" stroke-width="1.5" stroke-dasharray="5 3"/>`;
+                    s += `<rect x="${bx}" y="${gy}" width="${sideW}" height="${headH - 3}" rx="4" fill="${pal.head}"/>` + T(bx + sideW / 2, gy + 12, txt, { size: 9.5, weight: 800, fill: pal.dark });
+                });
+                pos.out.forEach(p => { s += celdaLateral(p.it, lado, p.y); });
+            };
+            dibujarLado(posIzq, 'L');   // arriba el fondo, abajo la entrada
+            dibujarLado(posDer, 'R');
 
             // --- Interior de la U: sala de espera, administrativos y recepción ---
             const xc = W / 2, yI0 = ySide0;
@@ -1414,6 +1457,29 @@
             s += caja(20, tituloA, linA);
             s += caja(565, tituloD, linD);
             return s + `</svg>`;
+        }
+
+        // Cuántas ventanillas van en cada brazo de la U
+        function ladosMapa(N) {
+            if (N <= 4) return { izq: 0, der: 0 };
+            const auto = Math.floor(N / 4);
+            let izq = Number.isInteger(mapaLados.izq) ? mapaLados.izq : auto;
+            let der = Number.isInteger(mapaLados.der) ? mapaLados.der : auto;
+            izq = Math.max(0, Math.min(izq, N - 1)); der = Math.max(0, Math.min(der, N - 1 - izq));
+            return { izq, der };
+        }
+        function totalVentanillasMapa() {
+            return Math.max(totalVentanillas, ...configZonas.map(z => isNaN(z.rango[1]) ? 0 : z.rango[1]));
+        }
+        function sincronizarLadosMapa() {
+            const l = ladosMapa(totalVentanillasMapa());
+            document.getElementById('mapaLadoIzq').value = l.izq;
+            document.getElementById('mapaLadoDer').value = l.der;
+        }
+        function cambiarLadosMapa() {
+            const i = parseInt(document.getElementById('mapaLadoIzq').value), d = parseInt(document.getElementById('mapaLadoDer').value);
+            mapaLados = { izq: isNaN(i) ? null : i, der: isNaN(d) ? null : d };
+            sincronizarLadosMapa(); renderizarMapa(); guardarMemoria();
         }
 
         function diaMapaSeleccionado() {
