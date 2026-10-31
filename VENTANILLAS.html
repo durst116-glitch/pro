@@ -898,6 +898,19 @@
 
                 dataResultante = { fechas: fechasMes, diasCortos: ["DO", "LU", "MA", "MI", "JU", "VI", "SA"], maxApoyo: 0, ventanillas: {}, apoyo: [], descansos: [], admin: {}, celdasFijas: {} };
 
+                // "Casa": ventanilla habitual de cada asesor no fijo, para regresarlo a ella después de su descanso
+                const casa = {};
+                const esFijaDeOtro = (v, nombre) => ventanillasFijas.some(fx => parseInt(fx.ventanilla) === v && normNombre(fx.asesor) !== normNombre(nombre));
+                const actualizarCasa = (nombre, v, diaIndex) => {
+                    if (esFijaDeOtro(v, nombre)) return; // cubrir la ventanilla de un fijo que descansa no cambia su casa
+                    const c = casa[nombre];
+                    if (!c) { casa[nombre] = { v, desde: diaIndex }; return; }
+                    if (c.v === v) return;
+                    // Si su casa la tiene alguien con más antigüedad (o es la fija de otro), adopta la nueva ventanilla
+                    const perdida = esFijaDeOtro(c.v, nombre) || Object.keys(casa).some(n => n !== nombre && casa[n].v === c.v && casa[n].desde < c.desde);
+                    if (perdida) casa[nombre] = { v, desde: diaIndex };
+                };
+
                 fechasMes.forEach((fecha, diaIndex) => {
                     const diaSemana = fecha.getDay();
                     dataResultante.apoyo[diaIndex] = []; dataResultante.descansos[diaIndex] = [];
@@ -943,15 +956,14 @@
                         // Ocupante ya colocado (ventanilla fija) en la ventanilla de la derecha
                         const vecinoSiguiente = (v) => (dataResultante.ventanillas[v + 1] && dataResultante.ventanillas[v + 1][diaIndex]) || null;
                         let asignacionesEstables = {};
-                        if (diaIndex > 0) {
-                            for (let v = rInicio; v <= rFin; v++) {
-                                if (ventanillasBloqueadas.has(v) || !dataResultante.ventanillas[v] || dataResultante.ventanillas[v][diaIndex]) continue;
-                                let asesorAyer = dataResultante.ventanillas[v][diaIndex - 1];
-                                if (asesorAyer && asesorAyer !== "CERRADA" && asesorAyer !== "MANT." && !asesorAyer.startsWith("(A) ")) {
-                                    let pIdx = pendientes.findIndex(p => p.nombre === asesorAyer);
-                                    if (pIdx !== -1) asignacionesEstables[v] = pendientes.splice(pIdx, 1)[0]; 
-                                }
-                            }
+                        for (let v = rInicio; v <= rFin; v++) {
+                            if (ventanillasBloqueadas.has(v) || (dataResultante.ventanillas[v] && dataResultante.ventanillas[v][diaIndex])) continue;
+                            // Entre quienes tienen esta ventanilla como casa, gana quien la tiene desde antes
+                            let mejor = -1;
+                            pendientes.forEach((p, i) => {
+                                if (casa[p.nombre] && casa[p.nombre].v === v && (mejor === -1 || casa[p.nombre].desde < casa[pendientes[mejor].nombre].desde)) mejor = i;
+                            });
+                            if (mejor !== -1) asignacionesEstables[v] = pendientes.splice(mejor, 1)[0];
                         }
 
                         for (let v = rInicio; v <= rFin; v++) {
@@ -966,6 +978,7 @@
                                 } else {
                                     dataResultante.ventanillas[v][diaIndex] = asignacionesEstables[v].nombre;
                                     ultimoAsignado = asignacionesEstables[v].nombre;
+                                    actualizarCasa(asignacionesEstables[v].nombre, v, diaIndex);
                                     continue;
                                 }
                             }
@@ -978,6 +991,7 @@
                                 let elegido = pendientes.splice(cIdx, 1)[0];
                                 dataResultante.ventanillas[v][diaIndex] = elegido.nombre;
                                 ultimoAsignado = elegido.nombre;
+                                actualizarCasa(elegido.nombre, v, diaIndex);
                             } else {
                                 dataResultante.ventanillas[v][diaIndex] = "CERRADA"; ultimoAsignado = null; 
                             }
