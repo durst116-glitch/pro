@@ -357,10 +357,17 @@
         // Formatea el nombre para que salga en formato PATERNO NOMBRE
         function formatearNombreSup(nombreCompleto) {
             if (!nombreCompleto) return "";
-            const partes = String(nombreCompleto).trim().split(/\s+/);
-            if (partes.length >= 3) return `${partes[0]} ${partes[2]}`;
-            else if (partes.length === 2) return `${partes[0]} ${partes[1]}`;
-            return String(nombreCompleto);
+            // Agrupa partículas de apellidos compuestos: DEL ROSAL, DE LA CRUZ, DE LOS SANTOS, etc.
+            const particulas = new Set(['DE', 'DEL', 'LA', 'LAS', 'LOS', 'Y', 'SAN', 'SANTA', 'VAN', 'VON', 'MC', 'MAC']);
+            const tokens = []; let buf = [];
+            String(nombreCompleto).trim().split(/\s+/).forEach(p => {
+                buf.push(p);
+                if (!particulas.has(normNombre(p))) { tokens.push(buf.join(' ')); buf = []; }
+            });
+            if (buf.length) tokens.push(buf.join(' '));
+            if (tokens.length >= 3) return `${tokens[0]} ${tokens[2]}`;
+            if (tokens.length === 2) return `${tokens[0]} ${tokens[1]}`;
+            return String(nombreCompleto).trim();
         }
 
         // ==========================================
@@ -1210,157 +1217,142 @@
             return lineas.length ? lineas : [''];
         }
 
-        // Dibuja el plano del CAC (estilo oficina virtual vista desde arriba) como SVG imprimible
+        // Dibuja el plano del CAC en forma de U (vista desde arriba) como SVG imprimible
         function construirMapaSVG(d) {
             const f = dataResultante.fechas[d];
             const corto = (n) => formatearNombreSup(n);
             const T = (x, y, txt, o = {}) => `<text x="${x}" y="${y}" font-size="${o.size || 10}" font-weight="${o.weight || 700}" fill="${o.fill || '#0f172a'}" text-anchor="${o.anchor || 'middle'}"${o.italic ? ' font-style="italic"' : ''}${o.spacing ? ` letter-spacing="${o.spacing}"` : ''}>${escXML(txt)}</text>`;
 
+            // Estado de una ventanilla para el día
+            const infoVentanilla = (v) => {
+                const estado = (dataResultante.ventanillas[v] && dataResultante.ventanillas[v][d]) || 'CERRADA';
+                if (estado === 'MANT.') return { tipo: 'mant', texto: 'Mantenimiento' };
+                if (estado === 'CERRADA') return { tipo: 'cerrada', texto: 'Cerrada' };
+                const prest = String(estado).startsWith('(A) ');
+                const nombre = prest ? String(estado).substring(4) : estado;
+                const fija = !!(dataResultante.celdasFijas && dataResultante.celdasFijas[v + '|' + d]);
+                return { tipo: prest ? 'prestado' : 'ocupada', nombre, texto: (prest ? '(A) ' : '') + corto(nombre), fija };
+            };
+            const estiloTexto = (inf) => inf.tipo === 'mant' ? { fill: '#dc2626' } : inf.tipo === 'cerrada' ? { fill: '#94a3b8', italic: true } : inf.tipo === 'prestado' ? { fill: '#0369a1', italic: true } : { fill: '#0f172a' };
+            const avatar = (cx, cy, inf, pal) => {
+                if (inf.tipo === 'mant') return `<polygon points="${cx},${cy - 13} ${cx - 11},${cy + 11} ${cx + 11},${cy + 11}" fill="#f97316" stroke="#9a3412" stroke-width="1"/><rect x="${cx - 6}" y="${cy - 1}" width="12" height="4" fill="#ffffff"/>`;
+                if (inf.tipo === 'cerrada') return '';
+                return `<circle cx="${cx}" cy="${cy}" r="13" fill="${inf.tipo === 'prestado' ? '#ffffff' : pal.head}" stroke="${pal.dark}" stroke-width="1.5"${inf.tipo === 'prestado' ? ' stroke-dasharray="3 2"' : ''}/>` + T(cx, cy + 4, inicialesDe(corto(inf.nombre)), { size: 10, weight: 800, fill: pal.dark });
+            };
+            const colorEscritorio = (inf) => inf.tipo === 'mant' ? ['#fecaca', '#dc2626'] : inf.tipo === 'cerrada' ? ['#e5e7eb', '#9ca3af'] : ['#d4a373', '#92400e'];
+
             const items = [];
             configZonas.forEach((z, zi) => { for (let v = z.rango[0]; v <= z.rango[1]; v++) items.push({ v, zi }); });
-            const N = Math.max(items.length, 1);
-            const W = 1120, porFila = Math.min(11, N);
-            // Acomodar filas sin partir una zona cuando cabe completa en una fila
-            const filasItems = [[]];
-            configZonas.forEach((z, zi) => {
-                const zItems = items.filter(it => it.zi === zi);
-                if (!zItems.length) return;
-                let actual = filasItems[filasItems.length - 1];
-                if (zItems.length <= porFila && actual.length + zItems.length > porFila) { actual = []; filasItems.push(actual); }
-                zItems.forEach(it => {
-                    if (actual.length >= porFila) { actual = []; filasItems.push(actual); }
-                    actual.push(it);
-                });
-            });
-            const filas = filasItems.length;
-            const cellW = Math.min(94, Math.floor(1040 / porFila)), rowH = 152, top = 72;
-            const yW = top + filas * rowH + 4, yB = yW + 214;
+            const N = items.length;
+            let nTop, nIzq, nDer;
+            if (N <= 4) { nTop = N; nIzq = 0; nDer = 0; }
+            else { nTop = Math.min(11, Math.ceil(N * 0.45)); nIzq = Math.ceil((N - nTop) / 2); nDer = N - nTop - nIzq; }
+            const izq = items.slice(0, nIzq), arriba = items.slice(nIzq, nIzq + nTop), der = items.slice(nIzq + nTop);
+
+            const W = 1120, topY = 74, rowH = 122, cw = Math.min(94, Math.floor(1040 / Math.max(nTop, 1)));
+            const ySide0 = topY + rowH + 6, cellH = 68, sideW = 240;
+            const sideN = Math.max(nIzq, nDer), sideH = sideN * cellH;
+            const yB = ySide0 + Math.max(sideH, 250) + 14;
 
             const apoyo = (dataResultante.apoyo[d] || []).map(corto);
             const desc = [...new Set(dataResultante.descansos[d] || [])];
             const linA = partirTexto(apoyo.length ? apoyo.join(', ') : 'Nadie', 88);
             const linD = partirTexto(desc.length ? desc.join(', ') : 'Nadie', 88);
-            const legendY = yB + 40, footY = legendY + 20;
+            const zonasY = yB + 50, legendY = zonasY + 22, footY = legendY + 18;
             const footH = 30 + Math.max(linA.length, linD.length) * 13;
             const H = footY + footH + 12;
 
             let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="Arial, Helvetica, sans-serif">
-                <defs>
-                    <pattern id="pisoCac" width="36" height="36" patternUnits="userSpaceOnUse"><rect width="36" height="36" fill="#f8fafc"/><path d="M36 0H0V36" fill="none" stroke="#e2e8f0" stroke-width="1"/></pattern>
-                </defs>
+                <defs><pattern id="pisoCac" width="36" height="36" patternUnits="userSpaceOnUse"><rect width="36" height="36" fill="#f8fafc"/><path d="M36 0H0V36" fill="none" stroke="#e2e8f0" stroke-width="1"/></pattern></defs>
                 <rect width="${W}" height="${H}" fill="#ffffff"/>`;
             s += T(W / 2, 30, 'CAC · Distribución de Ventanillas', { size: 20, weight: 800 });
             s += T(W / 2, 52, `${nombresDiaLargo[f.getDay()]} ${f.getDate()} de ${mesActualDesc}`, { size: 13, weight: 600, fill: '#475569' });
-
-            // Edificio: piso y muros
             s += `<rect x="20" y="62" width="1080" height="${yB - 62}" fill="url(#pisoCac)" stroke="#1e293b" stroke-width="6" rx="4"/>`;
 
-            // Ventanillas (escritorios)
-            for (let r = 0; r < filas; r++) {
-                const fila = filasItems[r];
-                const x0 = 40 + (1040 - fila.length * cellW) / 2, y0 = top + r * rowH;
-                // Franjas de zona
-                let i = 0;
-                while (i < fila.length) {
-                    let k = i; while (k < fila.length && fila[k].zi === fila[i].zi) k++;
-                    const z = configZonas[fila[i].zi], pal = PALETA_ZONAS[fila[i].zi % 5];
-                    const bx = x0 + i * cellW + 2, bw = (k - i) * cellW - 4;
-                    let etiqueta = `ZONA ${fila[i].zi + 1} · ${z.supervisor}`;
-                    const maxC = Math.floor(bw / 6.2);
-                    if (etiqueta.length > maxC) etiqueta = etiqueta.substring(0, Math.max(maxC - 1, 3)) + '…';
-                    s += `<rect x="${bx}" y="${y0}" width="${bw}" height="${rowH - 10}" rx="8" fill="${pal.light}" stroke="${pal.head}" stroke-width="2"/>`;
-                    s += T(bx + 8, y0 + 13, etiqueta, { anchor: 'start', size: 10, weight: 800, fill: pal.dark });
-                    i = k;
-                }
-                fila.forEach((it, idx) => {
-                    const pal = PALETA_ZONAS[it.zi % 5];
-                    const cx = x0 + idx * cellW, cy = y0 + 18, mx = cx + cellW / 2;
-                    const estado = (dataResultante.ventanillas[it.v] && dataResultante.ventanillas[it.v][d]) || 'CERRADA';
-                    const esMant = estado === 'MANT.', esCerr = estado === 'CERRADA', esPrest = String(estado).startsWith('(A) ');
-                    const nombre = esPrest ? String(estado).substring(4) : estado;
+            // --- Fila superior (fondo de la U): asesor contra la pared, cliente hacia el centro ---
+            const x0 = 40 + (1040 - arriba.length * cw) / 2;
+            arriba.forEach((it, idx) => {
+                const pal = PALETA_ZONAS[it.zi % 5], inf = infoVentanilla(it.v);
+                const cx = x0 + idx * cw, cy = topY, mx = cx + cw / 2;
+                const [dF, dS] = colorEscritorio(inf);
+                s += `<rect x="${cx + 2}" y="${cy}" width="${cw - 4}" height="${rowH - 8}" rx="6" fill="${pal.light}" stroke="${pal.head}" stroke-width="1.5"/>`;
+                s += `<rect x="${mx - 18}" y="${cy + 4}" width="36" height="16" rx="4" fill="${pal.head}" stroke="${pal.dark}" stroke-width="1"/>` + T(mx, cy + 16, `V${it.v}`, { size: 11, weight: 800, fill: pal.dark });
+                s += `<rect x="${mx - 16}" y="${cy + 24}" width="32" height="16" rx="7" fill="${inf.tipo === 'ocupada' || inf.tipo === 'prestado' ? '#475569' : '#cbd5e1'}"/>`;
+                s += avatar(mx, cy + 44, inf, pal);
+                s += `<rect x="${cx + 7}" y="${cy + 54}" width="${cw - 14}" height="20" rx="3" fill="${dF}" stroke="${dS}" stroke-width="1.2"/>`;
+                if (inf.tipo === 'ocupada' || inf.tipo === 'prestado') s += `<rect x="${mx - 12}" y="${cy + 57}" width="24" height="5" rx="1" fill="#1e293b"/>`;
+                partirTexto(inf.texto, Math.floor(cw / 6.2)).slice(0, 2).forEach((ln, li) => { s += T(mx, cy + 86 + li * 10, ln, Object.assign({ size: 9, weight: 800 }, estiloTexto(inf))); });
+                if (inf.fija) s += T(cx + cw - 10, cy + 16, '📌', { size: 9 });
+                s += `<rect x="${mx - 12}" y="${cy + 102}" width="24" height="9" rx="4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>`;
+            });
 
-                    s += `<rect x="${mx - 18}" y="${cy}" width="36" height="16" rx="4" fill="${pal.head}" stroke="${pal.dark}" stroke-width="1"/>`;
-                    s += T(mx, cy + 12, `V${it.v}`, { size: 11, weight: 800, fill: pal.dark });
-                    s += `<rect x="${mx - 16}" y="${cy + 22}" width="32" height="18" rx="7" fill="${esCerr || esMant ? '#cbd5e1' : '#475569'}"/>`;
+            // --- Columnas laterales (brazos de la U) ---
+            const celdaLateral = (it, lado, y) => {
+                const pal = PALETA_ZONAS[it.zi % 5], inf = infoVentanilla(it.v);
+                const bx = lado === 'L' ? 34 : W - 34 - sideW, h = cellH - 6, cyM = y + h / 2;
+                const px = (off, w = 0) => lado === 'L' ? bx + off : bx + sideW - off - w;
+                const [dF, dS] = colorEscritorio(inf);
+                let o = `<rect x="${bx}" y="${y}" width="${sideW}" height="${h}" rx="6" fill="${pal.light}" stroke="${pal.head}" stroke-width="1.5"/>`;
+                o += `<rect x="${px(6, 34)}" y="${cyM - 8}" width="34" height="16" rx="4" fill="${pal.head}" stroke="${pal.dark}" stroke-width="1"/>` + T(px(6, 34) + 17, cyM + 4, `V${it.v}`, { size: 11, weight: 800, fill: pal.dark });
+                o += `<rect x="${px(44, 14)}" y="${cyM - 15}" width="14" height="30" rx="6" fill="${inf.tipo === 'ocupada' || inf.tipo === 'prestado' ? '#475569' : '#cbd5e1'}"/>`;
+                o += avatar(lado === 'L' ? bx + 70 : bx + sideW - 70, cyM, inf, pal);
+                o += `<rect x="${px(80, 20)}" y="${y + 5}" width="20" height="${h - 10}" rx="3" fill="${dF}" stroke="${dS}" stroke-width="1.2"/>`;
+                if (inf.tipo === 'ocupada' || inf.tipo === 'prestado') o += `<rect x="${px(83, 5)}" y="${cyM - 12}" width="5" height="24" rx="1" fill="#1e293b"/>`;
+                o += `<rect x="${px(106, 10)}" y="${cyM - 11}" width="10" height="22" rx="4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>`;
+                const lineas = partirTexto(inf.texto, 15).slice(0, 2);
+                const tx = lado === 'L' ? bx + 124 : bx + sideW - 124;
+                lineas.forEach((ln, li) => { o += T(tx, cyM + 4 + (li - (lineas.length - 1) / 2) * 11, ln, Object.assign({ size: 9.5, weight: 800, anchor: lado === 'L' ? 'start' : 'end' }, estiloTexto(inf))); });
+                if (inf.fija) o += T(lado === 'L' ? bx + sideW - 10 : bx + 10, y + 13, '📌', { size: 9 });
+                return o;
+            };
+            izq.forEach((it, k) => { s += celdaLateral(it, 'L', ySide0 + sideH - (k + 1) * cellH); });   // de la entrada hacia el fondo
+            der.forEach((it, k) => { s += celdaLateral(it, 'R', ySide0 + k * cellH); });               // del fondo hacia la entrada
 
-                    if (esMant) {
-                        s += `<polygon points="${mx},${cy + 26} ${mx - 11},${cy + 52} ${mx + 11},${cy + 52}" fill="#f97316" stroke="#9a3412" stroke-width="1"/><rect x="${mx - 6}" y="${cy + 38}" width="12" height="4" fill="#ffffff"/>`;
-                    } else if (!esCerr) {
-                        s += `<circle cx="${mx}" cy="${cy + 42}" r="13" fill="${esPrest ? '#ffffff' : pal.head}" stroke="${pal.dark}" stroke-width="1.5"${esPrest ? ' stroke-dasharray="3 2"' : ''}/>`;
-                        s += T(mx, cy + 46, inicialesDe(corto(nombre)), { size: 10, weight: 800, fill: pal.dark });
-                    }
-                    const deskFill = esMant ? '#fecaca' : esCerr ? '#e5e7eb' : '#d4a373';
-                    const deskStroke = esMant ? '#dc2626' : esCerr ? '#9ca3af' : '#92400e';
-                    s += `<rect x="${cx + 5}" y="${cy + 52}" width="${cellW - 10}" height="22" rx="3" fill="${deskFill}" stroke="${deskStroke}" stroke-width="1.2"/>`;
-                    if (!esCerr && !esMant) s += `<rect x="${mx - 12}" y="${cy + 55}" width="24" height="5" rx="1" fill="#1e293b"/><rect x="${mx - 9}" y="${cy + 64}" width="18" height="4" rx="1" fill="#f1f5f9" stroke="#64748b" stroke-width="0.5"/>`;
-
-                    let lineas, color = '#0f172a', ital = false;
-                    if (esMant) { lineas = ['Mantenimiento']; color = '#dc2626'; }
-                    else if (esCerr) { lineas = ['Cerrada']; color = '#94a3b8'; ital = true; }
-                    else { lineas = partirTexto((esPrest ? '(A) ' : '') + corto(nombre), Math.floor(cellW / 6)).slice(0, 2); if (esPrest) { color = '#0369a1'; ital = true; } }
-                    lineas.forEach((ln, li) => { s += T(mx, cy + 86 + li * 10, ln, { size: 8.5, weight: 700, fill: color, italic: ital }); });
-                    s += `<rect x="${mx - 12}" y="${cy + 106}" width="24" height="11" rx="4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>`;
-                });
+            // --- Interior de la U: sala de espera, administrativos y recepción ---
+            const xc = W / 2, yI0 = ySide0;
+            s += T(xc, yI0 + 18, 'SALA DE ESPERA', { size: 11, weight: 800, fill: '#64748b', spacing: 3 });
+            s += `<rect x="${xc - 45}" y="${yI0 + 26}" width="90" height="16" rx="2" fill="#1e293b"/>` + T(xc, yI0 + 38, 'TURNOS', { size: 8, weight: 800, fill: '#ffffff', spacing: 2 });
+            for (let fr = 0; fr < 5; fr++) for (let c = 0; c < 9; c++) {
+                s += `<rect x="${xc - 215 + c * 50}" y="${yI0 + 56 + fr * 24}" width="30" height="14" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>`;
             }
-
-            // Separación área de atención / sala
-            s += `<line x1="30" y1="${yW}" x2="1090" y2="${yW}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+            const planta = (x, y) => `<circle cx="${x}" cy="${y}" r="11" fill="#86efac" stroke="#15803d" stroke-width="1.5"/><circle cx="${x}" cy="${y}" r="4" fill="#15803d"/>`;
+            s += planta(xc - 250, yI0 + 26) + planta(xc + 250, yI0 + 26);
 
             const listaAdmin = (llave) => (administrativos[llave] || []).map((emp, i) => {
                 const est = dataResultante.admin[llave] && dataResultante.admin[llave][i] ? dataResultante.admin[llave][i][d] : '';
                 return (!est || est === 'INACTIVO' || est === 'DESC') ? null : corto(est);
             }).filter(Boolean);
-
-            const oficina = (x, titulo, nombres) => {
-                let o = `<rect x="${x}" y="${yW + 12}" width="200" height="124" rx="4" fill="#f1f5f9" stroke="#334155" stroke-width="3"/>`;
-                o += `<rect x="${x + 70}" y="${yW + 133}" width="60" height="6" fill="#f8fafc"/>`;
-                o += T(x + 100, yW + 28, titulo, { size: 10, weight: 800, spacing: 1 });
-                o += `<rect x="${x + 20}" y="${yW + 36}" width="160" height="14" rx="3" fill="#d4a373" stroke="#92400e" stroke-width="1"/>`;
-                if (!nombres.length) o += T(x + 100, yW + 76, 'Sin personal', { size: 9, weight: 600, fill: '#94a3b8', italic: true });
-                nombres.slice(0, 4).forEach((n, i) => {
-                    const yy = yW + 66 + i * 17;
-                    o += `<circle cx="${x + 26}" cy="${yy - 3}" r="7" fill="#cbd5e1" stroke="#334155" stroke-width="1"/>`;
-                    o += T(x + 26, yy, inicialesDe(n), { size: 7, weight: 800 });
-                    o += T(x + 38, yy, n, { anchor: 'start', size: 9 });
-                });
-                return o;
-            };
-            s += oficina(34, 'MESA DE CONTROL', listaAdmin('mesa'));
-            s += oficina(886, 'DESPACHADOR', listaAdmin('despachador'));
-
-            // Sala de espera
-            s += T(560, yW + 24, 'SALA DE ESPERA', { size: 11, weight: 800, fill: '#64748b', spacing: 3 });
-            s += `<rect x="515" y="${yW + 32}" width="90" height="16" rx="2" fill="#1e293b"/>` + T(560, yW + 44, 'TURNOS', { size: 8, weight: 800, fill: '#ffffff', spacing: 2 });
-            for (let fr = 0; fr < 3; fr++) for (let c = 0; c < 10; c++) {
-                s += `<rect x="${312 + c * 50}" y="${yW + 58 + fr * 24}" width="30" height="14" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>`;
-            }
-            const planta = (x, y) => `<circle cx="${x}" cy="${y}" r="11" fill="#86efac" stroke="#15803d" stroke-width="1.5"/><circle cx="${x}" cy="${y}" r="4" fill="#15803d"/>`;
-            s += planta(270, yW + 30) + planta(850, yW + 30) + planta(52, yB - 26) + planta(1068, yB - 26);
-
-            // Recepción junto a la entrada
             const recep = listaAdmin('recepcion');
             recep.slice(0, 3).forEach((n, i) => {
-                const ax = 690 + i * 40;
-                s += `<circle cx="${ax}" cy="${yW + 150}" r="11" fill="#e2e8f0" stroke="#334155" stroke-width="1.2"/>` + T(ax, yW + 154, inicialesDe(n), { size: 9, weight: 800 });
+                const ax = xc + 25 + i * 32;
+                s += `<circle cx="${ax}" cy="${yB - 64}" r="11" fill="#e2e8f0" stroke="#334155" stroke-width="1.2"/>` + T(ax, yB - 60, inicialesDe(n), { size: 9, weight: 800 });
             });
-            s += `<rect x="650" y="${yW + 158}" width="160" height="20" rx="8" fill="#d4a373" stroke="#92400e" stroke-width="1.2"/>`;
-            s += T(730, yW + 172, 'RECEPCIÓN', { size: 9, weight: 800, fill: '#78350f', spacing: 1 });
-            s += T(730, yW + 192, recep.length ? recep.join(' · ') : 'Sin personal', { size: 8.5, weight: 700, fill: recep.length ? '#0f172a' : '#94a3b8', italic: !recep.length });
+            s += `<rect x="${xc + 5}" y="${yB - 54}" width="110" height="18" rx="8" fill="#d4a373" stroke="#92400e" stroke-width="1.2"/>` + T(xc + 60, yB - 41, 'RECEPCIÓN', { size: 8.5, weight: 800, fill: '#78350f', spacing: 1 });
+            partirTexto(recep.length ? recep.join(' · ') : 'Sin personal', 22).slice(0, 2).forEach((ln, i) => { s += T(xc + 60, yB - 24 + i * 10, ln, { size: 8.5, weight: 800, fill: recep.length ? '#0f172a' : '#94a3b8', italic: !recep.length }); });
 
-            // Puerta de entrada
-            s += `<rect x="470" y="${yB - 4}" width="100" height="8" fill="#ffffff"/>`;
-            s += `<path d="M470 ${yB} A50 50 0 0 1 520 ${yB - 50}" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="4 3"/><line x1="470" y1="${yB}" x2="520" y2="${yB - 50}" stroke="#059669" stroke-width="3"/>`;
-            s += `<polygon points="520,${yB + 10} 512,${yB + 20} 528,${yB + 20}" fill="#059669"/>` + T(520, yB + 32, 'ENTRADA', { size: 10, weight: 800, fill: '#059669', spacing: 2 });
+            // Puerta de entrada (lado abierto de la U)
+            const dx0 = xc - 110;
+            s += `<rect x="${dx0}" y="${yB - 4}" width="100" height="8" fill="#ffffff"/>`;
+            s += `<path d="M${dx0} ${yB} A50 50 0 0 1 ${dx0 + 50} ${yB - 50}" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="4 3"/><line x1="${dx0}" y1="${yB}" x2="${dx0 + 50}" y2="${yB - 50}" stroke="#059669" stroke-width="3"/>`;
+            s += `<polygon points="${dx0 + 50},${yB + 8} ${dx0 + 42},${yB + 18} ${dx0 + 58},${yB + 18}" fill="#059669"/>` + T(dx0 + 50, yB + 31, 'ENTRADA', { size: 10, weight: 800, fill: '#059669', spacing: 2 });
 
-            // Leyenda
-            let lx = 640;
-            const ley = (simbolo, texto) => { const o = simbolo(lx) + T(lx + 16, legendY + 4, texto, { anchor: 'start', size: 9, weight: 600, fill: '#334155' }); lx += 22 + texto.length * 5.6; return o; };
+            // Leyenda de zonas
+            let zx = 30;
+            configZonas.forEach((z, zi) => {
+                const pal = PALETA_ZONAS[zi % 5];
+                const txt = `Zona ${zi + 1} · ${z.supervisor} (V${z.rango[0]}–V${z.rango[1]})`;
+                s += `<rect x="${zx}" y="${zonasY - 9}" width="14" height="12" rx="2" fill="${pal.head}" stroke="${pal.dark}"/>` + T(zx + 19, zonasY + 1, txt, { anchor: 'start', size: 9.5, weight: 700, fill: pal.dark });
+                zx += 34 + txt.length * 5.6;
+            });
+            // Leyenda de estados
+            let lx = 30;
+            const ley = (simbolo, texto) => { const o = simbolo(lx) + T(lx + 16, legendY + 4, texto, { anchor: 'start', size: 9, weight: 600, fill: '#334155' }); lx += 26 + texto.length * 5.6; return o; };
             s += ley(x => `<circle cx="${x + 6}" cy="${legendY}" r="6" fill="#93c5fd" stroke="#1e3a8a"/>`, 'Asesor');
             s += ley(x => `<circle cx="${x + 6}" cy="${legendY}" r="6" fill="#fff" stroke="#1e3a8a" stroke-dasharray="2 2"/>`, 'Prestado (A)');
+            s += ley(x => T(x + 6, legendY + 4, '📌', { size: 9 }), 'Ventanilla fija');
             s += ley(x => `<rect x="${x}" y="${legendY - 5}" width="12" height="10" fill="#e5e7eb" stroke="#9ca3af"/>`, 'Cerrada');
             s += ley(x => `<rect x="${x}" y="${legendY - 5}" width="12" height="10" fill="#fecaca" stroke="#dc2626"/>`, 'Mantenimiento');
 
-            // Pie: Buscar ventanilla / En descanso
             const caja = (x, titulo, lineas) => {
                 let o = `<rect x="${x}" y="${footY}" width="535" height="${footH}" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>`;
                 o += T(x + 10, footY + 16, titulo, { anchor: 'start', size: 10, weight: 800 });
@@ -1369,7 +1361,6 @@
             };
             s += caja(20, `BUSCAR VENTANILLA (${apoyo.length})`, linA);
             s += caja(565, `EN DESCANSO (${desc.length})`, linD);
-
             return s + `</svg>`;
         }
 
