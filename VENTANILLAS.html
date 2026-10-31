@@ -76,6 +76,7 @@
             @page { size: landscape; margin: 6mm 4mm; }
             body { background-color: white; padding: 0; }
             .no-print { display: none !important; }
+            .pin-fija { display: none !important; }
             #print-container { display: block !important; width: 100%; }
             .pantalla-solo-web { display: none !important; }
             
@@ -1123,7 +1124,7 @@
                             else textAMostrar = formatearNombreSup(estado);
                         }
                         const esFija = dataResultante.celdasFijas && dataResultante.celdasFijas[v + '|' + d];
-                        if (esFija) textAMostrar = "📌 " + textAMostrar;
+                        if (esFija) textAMostrar = '<span class="pin-fija">📌 </span>' + textAMostrar;
                         const tituloCelda = (estado !== "CERRADA" && estado !== "MANT.") ? ` title="${String(estado).replace(/"/g, '&quot;')}${esFija ? ' (ventanilla fija)' : ''}"` : '';
                         htmlBody += `<td class="${zona.classCell} ${cEx}"${tituloCelda}>${textAMostrar}</td>`;
                     }
@@ -1213,7 +1214,7 @@
             if(!dataResultante) return alert("Primero genera el rol mensual.");
             const sel = document.getElementById('mapaDiaSelect');
             const previo = sel.value;
-            sel.innerHTML = `<option value="fija">📌 Distribución fija</option>` + dataResultante.fechas.map((f, i) => `<option value="${i}">${nombresDiaLargo[f.getDay()]} ${f.getDate()}</option>`).join('');
+            sel.innerHTML = `<option value="fija">Distribución fija</option>` + dataResultante.fechas.map((f, i) => `<option value="${i}">${nombresDiaLargo[f.getDay()]} ${f.getDate()}</option>`).join('');
             sel.value = (previo !== '' && Array.from(sel.options).some(o => o.value === previo)) ? previo : 'fija';
             renderizarMapa();
             document.getElementById('modalMapa').classList.remove('hidden-step');
@@ -1332,7 +1333,6 @@
                 s += `<rect x="${cx + 7}" y="${cy + 54}" width="${cw - 14}" height="20" rx="3" fill="${dF}" stroke="${dS}" stroke-width="1.2"/>`;
                 if (inf.tipo === 'ocupada' || inf.tipo === 'prestado') s += `<rect x="${mx - 12}" y="${cy + 57}" width="24" height="5" rx="1" fill="#1e293b"/>`;
                 partirTexto(inf.texto, Math.floor(cw / 6.2)).slice(0, 2).forEach((ln, li) => { s += T(mx, cy + 86 + li * 10, ln, Object.assign({ size: 9, weight: 800 }, estiloTexto(inf))); });
-                if (inf.fija) s += T(cx + cw - 10, cy + 16, '📌', { size: 9 });
                 s += `<rect x="${mx - 12}" y="${cy + 102}" width="24" height="9" rx="4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>`;
             });
 
@@ -1352,7 +1352,6 @@
                 const lineas = partirTexto(inf.texto, 15).slice(0, 2);
                 const tx = lado === 'L' ? bx + 124 : bx + sideW - 124;
                 lineas.forEach((ln, li) => { o += T(tx, cyM + 4 + (li - (lineas.length - 1) / 2) * 11, ln, Object.assign({ size: 9.5, weight: 800, anchor: lado === 'L' ? 'start' : 'end' }, estiloTexto(inf))); });
-                if (inf.fija) o += T(lado === 'L' ? bx + sideW - 10 : bx + 10, y + 13, '📌', { size: 9 });
                 return o;
             };
             izq.forEach((it, k) => { s += celdaLateral(it, 'L', ySide0 + sideH - (k + 1) * cellH); });   // de la entrada hacia el fondo
@@ -1403,7 +1402,6 @@
             const ley = (simbolo, texto) => { const o = simbolo(lx) + T(lx + 16, legendY + 4, texto, { anchor: 'start', size: 9, weight: 600, fill: '#334155' }); lx += 26 + texto.length * 5.6; return o; };
             s += ley(x => `<circle cx="${x + 6}" cy="${legendY}" r="6" fill="#93c5fd" stroke="#1e3a8a"/>`, 'Asesor');
             s += ley(x => `<circle cx="${x + 6}" cy="${legendY}" r="6" fill="#fff" stroke="#1e3a8a" stroke-dasharray="2 2"/>`, 'Prestado (A)');
-            s += ley(x => T(x + 6, legendY + 4, '📌', { size: 9 }), 'Ventanilla fija');
             s += ley(x => `<rect x="${x}" y="${legendY - 5}" width="12" height="10" fill="#e5e7eb" stroke="#9ca3af"/>`, modoFijo ? 'Rotativa (sin fijo)' : 'Cerrada');
             s += ley(x => `<rect x="${x}" y="${legendY - 5}" width="12" height="10" fill="#fecaca" stroke="#dc2626"/>`, 'Fuera de servicio');
 
