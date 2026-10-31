@@ -202,6 +202,7 @@
                         </div>
                     </div>
                     <div id="panelVentanillasConfig" class="flex flex-wrap gap-1.5 bg-white p-3 rounded-lg border border-blue-100"></div>
+                    <div id="panelEtiquetasVentanillas" class="mt-3"></div>
                 </div>
 
                 <div class="flex justify-between items-center mb-4 border-b pb-2">
@@ -329,6 +330,11 @@
         let configZonas = []; 
         let totalVentanillas = 22; 
         let ventanillasBloqueadas = new Set();
+        let etiquetasVentanillas = {}; // { numero: "texto a mostrar en lugar de Mantenimiento" }
+        function etiquetaVentanilla(v) {
+            const t = etiquetasVentanillas[v];
+            return (t && String(t).trim()) ? String(t).trim() : 'Mantenimiento';
+        }
         let reglasSeparacion = []; 
         let ventanillasFijas = []; 
         let asesoresInactivos = new Set();
@@ -378,6 +384,7 @@
                 supervisores, asesores, administrativos, 
                 totalVentanillas, 
                 ventanillasBloqueadas: Array.from(ventanillasBloqueadas),
+                etiquetasVentanillas,
                 reglasSeparacion, ventanillasFijas, 
                 asesoresInactivos: Array.from(asesoresInactivos),
                 equiposAsignados, zonasRangos,
@@ -403,6 +410,7 @@
                     administrativos = data.administrativos || { mesa: [], recepcion: [], despachador: [] };
                     totalVentanillas = data.totalVentanillas || 22;
                     ventanillasBloqueadas = new Set(data.ventanillasBloqueadas || []);
+                    etiquetasVentanillas = data.etiquetasVentanillas || {};
                     reglasSeparacion = data.reglasSeparacion || [];
                     ventanillasFijas = data.ventanillasFijas || [];
                     asesoresInactivos = new Set(data.asesoresInactivos || []);
@@ -592,6 +600,24 @@
                 };
                 panel.appendChild(btn);
             }
+            renderizarEtiquetasVentanillas();
+        }
+
+        function renderizarEtiquetasVentanillas() {
+            const cont = document.getElementById('panelEtiquetasVentanillas');
+            if (!cont) return;
+            const bloq = Array.from(ventanillasBloqueadas).filter(v => v <= totalVentanillas).sort((a, b) => a - b);
+            if (!bloq.length) { cont.innerHTML = ''; return; }
+            cont.innerHTML = `<div class="bg-white p-3 rounded-lg border border-red-100">
+                <div class="text-xs font-bold text-red-800 mb-2">Nombre a mostrar para las ventanillas desactivadas (vacío = "Mantenimiento"):</div>
+                <div class="flex flex-wrap gap-2">${bloq.map(v => `
+                    <label class="flex items-center gap-1 bg-red-50 border border-red-200 rounded px-2 py-1">
+                        <span class="text-xs font-bold text-red-700">V${v}</span>
+                        <input type="text" maxlength="25" placeholder="Mantenimiento" value="${String(etiquetasVentanillas[v] || '').replace(/"/g, '&quot;')}"
+                            oninput="etiquetasVentanillas[${v}] = this.value; guardarMemoria();"
+                            class="w-36 border border-gray-300 rounded px-1.5 py-0.5 text-xs font-semibold focus:outline-none focus:border-red-400">
+                    </label>`).join('')}
+                </div></div>`;
         }
 
         // ==========================================
@@ -1091,7 +1117,7 @@
                         else if (estado === "MANT.") cEx += "cell-mantenimiento";
                         else if (String(estado).startsWith("(A) ")) cEx += "cell-prestado"; 
 
-                        let textAMostrar = estado;
+                        let textAMostrar = estado === "MANT." ? etiquetaVentanilla(v).toUpperCase() : estado;
                         if(estado !== "CERRADA" && estado !== "MANT.") {
                             if(String(estado).startsWith("(A) ")) textAMostrar = "(A) " + formatearNombreSup(String(estado).substring(4));
                             else textAMostrar = formatearNombreSup(estado);
@@ -1187,16 +1213,15 @@
             if(!dataResultante) return alert("Primero genera el rol mensual.");
             const sel = document.getElementById('mapaDiaSelect');
             const previo = sel.value;
-            sel.innerHTML = dataResultante.fechas.map((f, i) => `<option value="${i}">${nombresDiaLargo[f.getDay()]} ${f.getDate()}</option>`).join('');
-            const hoy = new Date();
-            const idxHoy = dataResultante.fechas.findIndex(f => f.toDateString() === hoy.toDateString());
-            sel.value = (previo !== '' && sel.options[previo]) ? previo : (idxHoy !== -1 ? idxHoy : 0);
+            sel.innerHTML = `<option value="fija">📌 Distribución fija</option>` + dataResultante.fechas.map((f, i) => `<option value="${i}">${nombresDiaLargo[f.getDay()]} ${f.getDate()}</option>`).join('');
+            sel.value = (previo !== '' && Array.from(sel.options).some(o => o.value === previo)) ? previo : 'fija';
             renderizarMapa();
             document.getElementById('modalMapa').classList.remove('hidden-step');
         }
 
         function cerrarMapa() { document.getElementById('modalMapa').classList.add('hidden-step'); }
 
+        const PALETA_SIN_ZONA = { head: '#cbd5e1', light: '#f8fafc', dark: '#334155' };
         const PALETA_ZONAS = [
             { head: '#fdba74', light: '#fff7ed', dark: '#7c2d12' },
             { head: '#93c5fd', light: '#eff6ff', dark: '#1e3a8a' },
@@ -1219,14 +1244,23 @@
 
         // Dibuja el plano del CAC en forma de U (vista desde arriba) como SVG imprimible
         function construirMapaSVG(d) {
-            const f = dataResultante.fechas[d];
+            const modoFijo = d === 'fija';
+            const f = modoFijo ? null : dataResultante.fechas[d];
             const corto = (n) => formatearNombreSup(n);
             const T = (x, y, txt, o = {}) => `<text x="${x}" y="${y}" font-size="${o.size || 10}" font-weight="${o.weight || 700}" fill="${o.fill || '#0f172a'}" text-anchor="${o.anchor || 'middle'}"${o.italic ? ' font-style="italic"' : ''}${o.spacing ? ` letter-spacing="${o.spacing}"` : ''}>${escXML(txt)}</text>`;
 
             // Estado de una ventanilla para el día
             const infoVentanilla = (v) => {
+                if (ventanillasBloqueadas.has(v)) return { tipo: 'mant', texto: etiquetaVentanilla(v) };
+                if (modoFijo) {
+                    // Nombre tomado de "Asignación de Ventanillas Fijas"
+                    const fx = ventanillasFijas.find(x => parseInt(x.ventanilla) === v);
+                    const a = fx ? buscarAsesor(fx.asesor) : null;
+                    if (a && !asesoresInactivos.has(a.nombre)) return { tipo: 'ocupada', nombre: a.nombre, texto: corto(a.nombre), fija: true };
+                    return { tipo: 'cerrada', texto: 'Rotativa' };
+                }
                 const estado = (dataResultante.ventanillas[v] && dataResultante.ventanillas[v][d]) || 'CERRADA';
-                if (estado === 'MANT.') return { tipo: 'mant', texto: 'Mantenimiento' };
+                if (estado === 'MANT.') return { tipo: 'mant', texto: etiquetaVentanilla(v) };
                 if (estado === 'CERRADA') return { tipo: 'cerrada', texto: 'Cerrada' };
                 const prest = String(estado).startsWith('(A) ');
                 const nombre = prest ? String(estado).substring(4) : estado;
@@ -1241,8 +1275,13 @@
             };
             const colorEscritorio = (inf) => inf.tipo === 'mant' ? ['#fecaca', '#dc2626'] : inf.tipo === 'cerrada' ? ['#e5e7eb', '#9ca3af'] : ['#d4a373', '#92400e'];
 
+            // Todas las ventanillas (1 al total), incluidas las que no pertenecen a ninguna zona
+            const maxV = Math.max(totalVentanillas, ...configZonas.map(z => isNaN(z.rango[1]) ? 0 : z.rango[1]));
             const items = [];
-            configZonas.forEach((z, zi) => { for (let v = z.rango[0]; v <= z.rango[1]; v++) items.push({ v, zi }); });
+            for (let v = 1; v <= maxV; v++) {
+                const zi = configZonas.findIndex(z => v >= z.rango[0] && v <= z.rango[1]);
+                items.push({ v, zi });
+            }
             const N = items.length;
             let nTop, nIzq, nDer;
             if (N <= 4) { nTop = N; nIzq = 0; nDer = 0; }
@@ -1254,8 +1293,19 @@
             const sideN = Math.max(nIzq, nDer), sideH = sideN * cellH;
             const yB = ySide0 + Math.max(sideH, 250) + 14;
 
-            const apoyo = (dataResultante.apoyo[d] || []).map(corto);
-            const desc = [...new Set(dataResultante.descansos[d] || [])];
+            let tituloA, tituloD, apoyo, desc;
+            if (modoFijo) {
+                const conFijo = new Set(ventanillasFijas.map(x => { const a = buscarAsesor(x.asesor); return a ? a.nombre : null; }));
+                apoyo = asesores.filter(a => !asesoresInactivos.has(a.nombre) && !conFijo.has(a.nombre)).map(a => corto(a.nombre));
+                desc = Array.from(ventanillasBloqueadas).sort((a, b) => a - b).map(v => `V${v}: ${etiquetaVentanilla(v)}`);
+                tituloA = `ASESORES SIN VENTANILLA FIJA (${apoyo.length})`;
+                tituloD = `VENTANILLAS FUERA DE SERVICIO (${desc.length})`;
+            } else {
+                apoyo = (dataResultante.apoyo[d] || []).map(corto);
+                desc = [...new Set(dataResultante.descansos[d] || [])];
+                tituloA = `BUSCAR VENTANILLA (${apoyo.length})`;
+                tituloD = `EN DESCANSO (${desc.length})`;
+            }
             const linA = partirTexto(apoyo.length ? apoyo.join(', ') : 'Nadie', 88);
             const linD = partirTexto(desc.length ? desc.join(', ') : 'Nadie', 88);
             const zonasY = yB + 50, legendY = zonasY + 22, footY = legendY + 18;
@@ -1266,13 +1316,13 @@
                 <defs><pattern id="pisoCac" width="36" height="36" patternUnits="userSpaceOnUse"><rect width="36" height="36" fill="#f8fafc"/><path d="M36 0H0V36" fill="none" stroke="#e2e8f0" stroke-width="1"/></pattern></defs>
                 <rect width="${W}" height="${H}" fill="#ffffff"/>`;
             s += T(W / 2, 30, 'CAC · Distribución de Ventanillas', { size: 20, weight: 800 });
-            s += T(W / 2, 52, `${nombresDiaLargo[f.getDay()]} ${f.getDate()} de ${mesActualDesc}`, { size: 13, weight: 600, fill: '#475569' });
+            s += T(W / 2, 52, modoFijo ? `Distribución fija · ${mesActualDesc}` : `${nombresDiaLargo[f.getDay()]} ${f.getDate()} de ${mesActualDesc}`, { size: 13, weight: 600, fill: '#475569' });
             s += `<rect x="20" y="62" width="1080" height="${yB - 62}" fill="url(#pisoCac)" stroke="#1e293b" stroke-width="6" rx="4"/>`;
 
             // --- Fila superior (fondo de la U): asesor contra la pared, cliente hacia el centro ---
             const x0 = 40 + (1040 - arriba.length * cw) / 2;
             arriba.forEach((it, idx) => {
-                const pal = PALETA_ZONAS[it.zi % 5], inf = infoVentanilla(it.v);
+                const pal = it.zi < 0 ? PALETA_SIN_ZONA : PALETA_ZONAS[it.zi % 5], inf = infoVentanilla(it.v);
                 const cx = x0 + idx * cw, cy = topY, mx = cx + cw / 2;
                 const [dF, dS] = colorEscritorio(inf);
                 s += `<rect x="${cx + 2}" y="${cy}" width="${cw - 4}" height="${rowH - 8}" rx="6" fill="${pal.light}" stroke="${pal.head}" stroke-width="1.5"/>`;
@@ -1288,7 +1338,7 @@
 
             // --- Columnas laterales (brazos de la U) ---
             const celdaLateral = (it, lado, y) => {
-                const pal = PALETA_ZONAS[it.zi % 5], inf = infoVentanilla(it.v);
+                const pal = it.zi < 0 ? PALETA_SIN_ZONA : PALETA_ZONAS[it.zi % 5], inf = infoVentanilla(it.v);
                 const bx = lado === 'L' ? 34 : W - 34 - sideW, h = cellH - 6, cyM = y + h / 2;
                 const px = (off, w = 0) => lado === 'L' ? bx + off : bx + sideW - off - w;
                 const [dF, dS] = colorEscritorio(inf);
@@ -1319,6 +1369,7 @@
             s += planta(xc - 250, yI0 + 26) + planta(xc + 250, yI0 + 26);
 
             const listaAdmin = (llave) => (administrativos[llave] || []).map((emp, i) => {
+                if (modoFijo) return asesoresInactivos.has(emp.nombre) ? null : corto(emp.nombre);
                 const est = dataResultante.admin[llave] && dataResultante.admin[llave][i] ? dataResultante.admin[llave][i][d] : '';
                 return (!est || est === 'INACTIVO' || est === 'DESC') ? null : corto(est);
             }).filter(Boolean);
@@ -1344,14 +1395,17 @@
                 s += `<rect x="${zx}" y="${zonasY - 9}" width="14" height="12" rx="2" fill="${pal.head}" stroke="${pal.dark}"/>` + T(zx + 19, zonasY + 1, txt, { anchor: 'start', size: 9.5, weight: 700, fill: pal.dark });
                 zx += 34 + txt.length * 5.6;
             });
+            if (items.some(it => it.zi < 0)) {
+                s += `<rect x="${zx}" y="${zonasY - 9}" width="14" height="12" rx="2" fill="${PALETA_SIN_ZONA.head}" stroke="${PALETA_SIN_ZONA.dark}"/>` + T(zx + 19, zonasY + 1, 'Sin zona', { anchor: 'start', size: 9.5, weight: 700, fill: PALETA_SIN_ZONA.dark });
+            }
             // Leyenda de estados
             let lx = 30;
             const ley = (simbolo, texto) => { const o = simbolo(lx) + T(lx + 16, legendY + 4, texto, { anchor: 'start', size: 9, weight: 600, fill: '#334155' }); lx += 26 + texto.length * 5.6; return o; };
             s += ley(x => `<circle cx="${x + 6}" cy="${legendY}" r="6" fill="#93c5fd" stroke="#1e3a8a"/>`, 'Asesor');
             s += ley(x => `<circle cx="${x + 6}" cy="${legendY}" r="6" fill="#fff" stroke="#1e3a8a" stroke-dasharray="2 2"/>`, 'Prestado (A)');
             s += ley(x => T(x + 6, legendY + 4, '📌', { size: 9 }), 'Ventanilla fija');
-            s += ley(x => `<rect x="${x}" y="${legendY - 5}" width="12" height="10" fill="#e5e7eb" stroke="#9ca3af"/>`, 'Cerrada');
-            s += ley(x => `<rect x="${x}" y="${legendY - 5}" width="12" height="10" fill="#fecaca" stroke="#dc2626"/>`, 'Mantenimiento');
+            s += ley(x => `<rect x="${x}" y="${legendY - 5}" width="12" height="10" fill="#e5e7eb" stroke="#9ca3af"/>`, modoFijo ? 'Rotativa (sin fijo)' : 'Cerrada');
+            s += ley(x => `<rect x="${x}" y="${legendY - 5}" width="12" height="10" fill="#fecaca" stroke="#dc2626"/>`, 'Fuera de servicio');
 
             const caja = (x, titulo, lineas) => {
                 let o = `<rect x="${x}" y="${footY}" width="535" height="${footH}" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>`;
@@ -1359,9 +1413,14 @@
                 lineas.forEach((ln, i) => { o += T(x + 10, footY + 32 + i * 13, ln, { anchor: 'start', size: 9.5, weight: 600, fill: '#334155' }); });
                 return o;
             };
-            s += caja(20, `BUSCAR VENTANILLA (${apoyo.length})`, linA);
-            s += caja(565, `EN DESCANSO (${desc.length})`, linD);
+            s += caja(20, tituloA, linA);
+            s += caja(565, tituloD, linD);
             return s + `</svg>`;
+        }
+
+        function diaMapaSeleccionado() {
+            const val = document.getElementById('mapaDiaSelect').value;
+            return val === 'fija' ? 'fija' : (parseInt(val) || 0);
         }
 
         function construirMapaHTML(d) {
@@ -1369,18 +1428,18 @@
         }
 
         function renderizarMapa() {
-            const d = parseInt(document.getElementById('mapaDiaSelect').value) || 0;
+            const d = diaMapaSeleccionado();
             document.getElementById('mapaCacContenido').innerHTML = construirMapaHTML(d);
         }
 
         function imprimirMapa() {
-            const d = parseInt(document.getElementById('mapaDiaSelect').value) || 0;
+            const d = diaMapaSeleccionado();
             document.getElementById('print-container').innerHTML = construirMapaHTML(d);
             setTimeout(() => { window.print(); }, 300);
         }
 
         function descargarMapaPNG() {
-            const d = parseInt(document.getElementById('mapaDiaSelect').value) || 0;
+            const d = diaMapaSeleccionado();
             const svgTxt = construirMapaSVG(d);
             const m = svgTxt.match(/viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/);
             const w = parseFloat(m[1]), h = parseFloat(m[2]), escala = 2;
@@ -1393,7 +1452,7 @@
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 const a = document.createElement('a');
                 a.href = canvas.toDataURL('image/png');
-                a.download = `Mapa_CAC_${mesActualDesc.replace(' ', '_')}_dia_${dataResultante.fechas[d].getDate()}.png`;
+                a.download = `Mapa_CAC_${mesActualDesc.replace(' ', '_')}_${d === 'fija' ? 'distribucion_fija' : 'dia_' + dataResultante.fechas[d].getDate()}.png`;
                 document.body.appendChild(a); a.click(); document.body.removeChild(a);
             };
             img.onerror = () => alert("No se pudo generar la imagen. Usa 'Imprimir mapa' y guarda como PDF.");
