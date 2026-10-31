@@ -562,6 +562,7 @@
                 btn.onclick = () => {
                     ventanillasBloqueadas.has(i) ? ventanillasBloqueadas.delete(i) : ventanillasBloqueadas.add(i);
                     renderizarBotonesConfig(); 
+                    actualizarListaFijos();
                     guardarMemoria();
                 };
                 panel.appendChild(btn);
@@ -610,6 +611,7 @@
                 let eFin = document.getElementById(`sup_fin_${idx}`);
                 if(eIni && eFin) zonasRangos[s.nombre] = { ini: parseInt(eIni.value), fin: parseInt(eFin.value) };
             });
+            actualizarListaFijos();
             guardarMemoria();
         }
 
@@ -744,14 +746,40 @@
             if(!nombre || isNaN(v) || v < 1) return alert("Datos inválidos.");
             if(ventanillasFijas.some(f => f.asesor === nombre)) return alert("El asesor ya tiene ventanilla fija.");
             if(ventanillasFijas.some(f => f.ventanilla === v)) return alert("Ventanilla ocupada.");
+            const prob = problemaVentanillaFija(v);
+            if(prob === 'fuera') return alert(`La ventanilla ${v} no pertenece a ninguna zona. Ajusta los rangos de los supervisores o elige otra ventanilla.`);
+            if(prob === 'mant' && !confirm(`La ventanilla ${v} está en mantenimiento. Mientras siga así, el asesor se asignará a otra ventanilla. ¿Fijarla de todos modos?`)) return;
             ventanillasFijas.push({ asesor: nombre, ventanilla: v });
             actualizarListaFijos(); guardarMemoria();
         }
         function eliminarFijo(idx) { ventanillasFijas.splice(idx, 1); actualizarListaFijos(); guardarMemoria(); }
+        // Rangos de zona actuales (de los campos en pantalla o de la memoria)
+        function rangosZonasActuales() {
+            return supervisores.map((s, idx) => {
+                const eIni = document.getElementById(`sup_inicio_${idx}`), eFin = document.getElementById(`sup_fin_${idx}`);
+                if (eIni && eFin) return [parseInt(eIni.value), parseInt(eFin.value)];
+                return zonasRangos[s.nombre] ? [zonasRangos[s.nombre].ini, zonasRangos[s.nombre].fin] : [NaN, NaN];
+            });
+        }
+        // Devuelve null si la ventanilla fija es válida, 'fuera' si no está en ninguna zona, 'mant' si está bloqueada
+        function problemaVentanillaFija(v) {
+            if (!rangosZonasActuales().some(r => v >= r[0] && v <= r[1])) return 'fuera';
+            if (ventanillasBloqueadas.has(v)) return 'mant';
+            return null;
+        }
         function actualizarListaFijos() {
             const cont = document.getElementById('listaFijos');
             if(!cont) return; cont.innerHTML = '';
-            ventanillasFijas.forEach((f, idx) => { cont.innerHTML += `<div class="bg-blue-50 text-blue-800 px-3 py-1.5 rounded-full flex gap-3 items-center text-xs font-bold border border-blue-200 shadow-sm"><span>📌 V${f.ventanilla}: ${f.asesor}</span><button onclick="eliminarFijo(${idx})" class="text-blue-500 text-base leading-none">&times;</button></div>`; });
+            ventanillasFijas.forEach((f, idx) => {
+                const prob = problemaVentanillaFija(f.ventanilla);
+                const inactivo = asesoresInactivos.has(f.asesor);
+                let aviso = '';
+                if (prob === 'fuera') aviso = ' ⚠ fuera de zona: no se respetará';
+                else if (prob === 'mant') aviso = ' ⚠ en mantenimiento';
+                else if (inactivo) aviso = ' ⚠ asesor inactivo';
+                const color = aviso ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-blue-50 text-blue-800 border-blue-200';
+                cont.innerHTML += `<div class="${color} px-3 py-1.5 rounded-full flex gap-3 items-center text-xs font-bold border shadow-sm"><span>📌 V${f.ventanilla}: ${f.asesor}${aviso}</span><button onclick="eliminarFijo(${idx})" class="text-base leading-none">&times;</button></div>`;
+            });
         }
 
         function agregarRegla() {
@@ -792,6 +820,11 @@
                     if(fin > totalVentanillas) totalVentanillas = fin;
                     configZonas.push({ id: idx, supervisor: formatearNombreSup(sup.nombre), supervisorCompleto: sup.nombre, rango: [ini, fin], classHead: `z-color-${idx % 5}-h`, classCell: `z-color-${idx % 5}-c`, equipo: [] });
                 });
+
+                const fijosConProblema = ventanillasFijas.filter(f => !asesoresInactivos.has(f.asesor) && problemaVentanillaFija(f.ventanilla));
+                if (fijosConProblema.length > 0) {
+                    alert("Atención: estas ventanillas fijas no se podrán respetar:\n\n" + fijosConProblema.map(f => `• V${f.ventanilla} - ${f.asesor}: ${problemaVentanillaFija(f.ventanilla) === 'fuera' ? 'la ventanilla no pertenece a ninguna zona' : 'la ventanilla está en mantenimiento'}`).join('\n') + "\n\nEsos asesores se asignarán a otra ventanilla.");
+                }
 
                 asesores.forEach((asesor, idx) => {
                     if(asesoresInactivos.has(asesor.nombre)) return; 
@@ -886,6 +919,8 @@
                         let rInicio = isNaN(zona.rango[0]) ? 1 : zona.rango[0];
                         let rFin = isNaN(zona.rango[1]) ? 1 : zona.rango[1];
 
+                        // Ocupante ya colocado (ventanilla fija) en la ventanilla de la derecha
+                        const vecinoSiguiente = (v) => (dataResultante.ventanillas[v + 1] && dataResultante.ventanillas[v + 1][diaIndex]) || null;
                         let asignacionesEstables = {};
                         if (diaIndex > 0) {
                             for (let v = rInicio; v <= rFin; v++) {
@@ -904,7 +939,7 @@
                             if (dataResultante.ventanillas[v][diaIndex]) { ultimoAsignado = dataResultante.ventanillas[v][diaIndex]; continue; }
 
                             if (asignacionesEstables[v]) {
-                                if (sonIncompatibles(asignacionesEstables[v].nombre, ultimoAsignado)) {
+                                if (sonIncompatibles(asignacionesEstables[v].nombre, ultimoAsignado) || sonIncompatibles(asignacionesEstables[v].nombre, vecinoSiguiente(v))) {
                                     pendientes.push(asignacionesEstables[v]);
                                     pendientes.sort((a, b) => a.prioridad - b.prioridad);
                                 } else {
@@ -916,7 +951,8 @@
 
                             if (pendientes.length > 0) {
                                 let cIdx = 0;
-                                while (cIdx < pendientes.length && sonIncompatibles(pendientes[cIdx].nombre, ultimoAsignado)) cIdx++;
+                                const sig = vecinoSiguiente(v);
+                                while (cIdx < pendientes.length && (sonIncompatibles(pendientes[cIdx].nombre, ultimoAsignado) || sonIncompatibles(pendientes[cIdx].nombre, sig))) cIdx++;
                                 if (cIdx >= pendientes.length) cIdx = 0; 
                                 let elegido = pendientes.splice(cIdx, 1)[0];
                                 dataResultante.ventanillas[v][diaIndex] = elegido.nombre;
