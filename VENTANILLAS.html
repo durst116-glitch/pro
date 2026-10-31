@@ -6,6 +6,7 @@
     <title>Smart Rol CAC - Gestión Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
         body {
@@ -61,6 +62,31 @@
         .btn-ventanilla { transition: all 0.2s; cursor: pointer; }
         .btn-ventanilla.activa { background-color: #10b981; color: white; border-color: #059669; }
         .btn-ventanilla.bloqueada { background-color: #ef4444; color: white; border-color: #b91c1c; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+
+        /* ==========================================
+           MAPA DEL CAC (pantalla e impresión)
+           ========================================== */
+        .mapa-cac { background: #fff; color: #0f172a; padding: 14px; width: 100%; max-width: 1100px; margin: 0 auto; font-family: 'Segoe UI', Arial, sans-serif; }
+        .mapa-titulo { text-align: center; font-weight: 800; font-size: 16px; margin-bottom: 2px; }
+        .mapa-subtitulo { text-align: center; font-size: 12px; color: #475569; margin-bottom: 10px; }
+        .mapa-edificio { border: 3px solid #1e293b; border-radius: 8px; padding: 10px; }
+        .mapa-zonas { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .mapa-zona { border: 2px solid #94a3b8; border-radius: 6px; overflow: hidden; }
+        .mapa-zona-head { font-size: 10px; font-weight: 800; padding: 3px 6px; text-align: center; text-transform: uppercase; }
+        .mapa-zona-body { display: flex; flex-wrap: wrap; gap: 4px; padding: 5px; }
+        .mapa-vent { width: 78px; min-height: 52px; border: 1.5px solid #334155; border-radius: 4px; background: #fff; text-align: center; padding: 2px; display: flex; flex-direction: column; justify-content: flex-start; }
+        .mapa-vent-num { font-size: 13px; font-weight: 900; border-bottom: 1px solid #cbd5e1; margin-bottom: 2px; }
+        .mapa-vent-nom { font-size: 9.5px; font-weight: 700; line-height: 1.1; word-break: break-word; }
+        .mapa-vent.mant { background: #ef4444; color: #fff; border-color: #b91c1c; }
+        .mapa-vent.cerrada { background: #e2e8f0; color: #64748b; font-style: italic; }
+        .mapa-vent.prestado .mapa-vent-nom { color: #0369a1; font-style: italic; }
+        .mapa-mostrador { margin: 6px auto 0; background: #78350f; color: #fff; text-align: center; font-size: 10px; font-weight: 800; letter-spacing: 4px; padding: 3px; border-radius: 3px; }
+        .mapa-sala { margin-top: 10px; display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 8px; }
+        .mapa-area { border: 2px solid #64748b; border-radius: 6px; padding: 5px; font-size: 10px; background: #f8fafc; }
+        .mapa-area-tit { font-weight: 800; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; margin-bottom: 3px; }
+        .mapa-espera { border: 2px dashed #94a3b8; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #94a3b8; letter-spacing: 3px; min-height: 70px; font-size: 12px; }
+        .mapa-entrada { margin: 8px auto 0; width: 160px; text-align: center; border: 2px solid #059669; color: #059669; font-weight: 800; font-size: 11px; border-radius: 4px; padding: 2px; }
+        .mapa-pie { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
 
         /* ==========================================
            CONFIGURACIÓN EXTREMA PARA IMPRESIÓN / PDF
@@ -265,6 +291,10 @@
                     
                     <div class="flex gap-2">
                         <button onclick="modificarConfiguracion()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-bold shadow flex items-center gap-2 text-sm transition-colors">Modificar Reglas</button>
+                        <button onclick="abrirMapa()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold shadow flex items-center gap-2 text-sm transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                            Mapa del CAC
+                        </button>
                         <button onclick="prepararImpresion()" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg font-bold shadow flex items-center gap-2 text-sm transition-colors">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                             Imprimir / PDF
@@ -283,6 +313,25 @@
 
         <!-- CONTENEDOR OCULTO PARA IMPRESIÓN -->
         <div id="print-container" style="display: none;"></div>
+
+        <!-- MODAL: MAPA DEL CAC -->
+        <div id="modalMapa" class="hidden-step no-print fixed inset-0 bg-black/60 z-50 overflow-y-auto p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-[1150px] mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-3 p-4 border-b">
+                    <div class="flex items-center gap-3">
+                        <h3 class="font-bold text-lg text-indigo-900">Mapa del CAC</h3>
+                        <label class="text-sm font-semibold text-gray-600">Día:</label>
+                        <select id="mapaDiaSelect" onchange="renderizarMapa()" class="border border-gray-300 rounded px-2 py-1 text-sm font-semibold"></select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="descargarMapaPNG()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded font-bold text-sm">Descargar imagen</button>
+                        <button onclick="imprimirMapa()" class="bg-gray-800 hover:bg-black text-white px-3 py-1.5 rounded font-bold text-sm">Imprimir mapa</button>
+                        <button onclick="cerrarMapa()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1.5 rounded font-bold text-sm">Cerrar</button>
+                    </div>
+                </div>
+                <div class="p-4 overflow-x-auto"><div id="mapaCacContenido"></div></div>
+            </div>
+        </div>
 
     </div>
 
@@ -658,6 +707,7 @@
             let opcionesSelect = `<option value="SIN ASIGNAR">-- Seleccionar --</option>`;
             supervisores.forEach((sup) => { opcionesSelect += `<option value="${sup.nombre}">${formatearNombreSup(sup.nombre)}</option>`; });
             let opAsesores = '<option value="">-- Seleccionar Asesor --</option>';
+            let opFijos = '<option value="">-- Seleccionar Asesor (nombre completo) --</option>';
 
             asesores.forEach((asesor, idx) => {
                 const esInactivo = asesoresInactivos.has(asesor.nombre);
@@ -673,12 +723,15 @@
                         <div class="${!esInactivo ? 'hidden' : ''} w-[140px] text-center text-xs font-bold text-gray-400">INACTIVO</div>
                     </div>
                 `;
-                if(!esInactivo) opAsesores += `<option value="${asesor.nombre}">${formatearNombreSup(asesor.nombre)}</option>`;
+                if(!esInactivo) {
+                    opAsesores += `<option value="${asesor.nombre}">${formatearNombreSup(asesor.nombre)}</option>`;
+                    opFijos += `<option value="${asesor.nombre}">${asesor.nombre}</option>`;
+                }
             });
 
             if(document.getElementById('regla_asesor_1')) document.getElementById('regla_asesor_1').innerHTML = opAsesores;
             if(document.getElementById('regla_asesor_2')) document.getElementById('regla_asesor_2').innerHTML = opAsesores;
-            if(document.getElementById('fijo_asesor')) document.getElementById('fijo_asesor').innerHTML = opAsesores;
+            if(document.getElementById('fijo_asesor')) document.getElementById('fijo_asesor').innerHTML = opFijos;
             actualizarListaReglas(); actualizarListaFijos();
         }
 
@@ -698,7 +751,7 @@
         function actualizarListaFijos() {
             const cont = document.getElementById('listaFijos');
             if(!cont) return; cont.innerHTML = '';
-            ventanillasFijas.forEach((f, idx) => { cont.innerHTML += `<div class="bg-blue-50 text-blue-800 px-3 py-1.5 rounded-full flex gap-3 items-center text-xs font-bold border border-blue-200 shadow-sm"><span>📌 V${f.ventanilla}: ${formatearNombreSup(f.asesor)}</span><button onclick="eliminarFijo(${idx})" class="text-blue-500 text-base leading-none">&times;</button></div>`; });
+            ventanillasFijas.forEach((f, idx) => { cont.innerHTML += `<div class="bg-blue-50 text-blue-800 px-3 py-1.5 rounded-full flex gap-3 items-center text-xs font-bold border border-blue-200 shadow-sm"><span>📌 V${f.ventanilla}: ${f.asesor}</span><button onclick="eliminarFijo(${idx})" class="text-blue-500 text-base leading-none">&times;</button></div>`; });
         }
 
         function agregarRegla() {
@@ -1012,6 +1065,99 @@
             }
 
             setTimeout(() => { window.print(); }, 500); 
+        }
+
+        // ==========================================
+        // MAPA DEL CAC
+        // ==========================================
+        const nombresDiaLargo = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+        function abrirMapa() {
+            if(!dataResultante) return alert("Primero genera el rol mensual.");
+            const sel = document.getElementById('mapaDiaSelect');
+            const previo = sel.value;
+            sel.innerHTML = dataResultante.fechas.map((f, i) => `<option value="${i}">${nombresDiaLargo[f.getDay()]} ${f.getDate()}</option>`).join('');
+            const hoy = new Date();
+            const idxHoy = dataResultante.fechas.findIndex(f => f.toDateString() === hoy.toDateString());
+            sel.value = (previo !== '' && sel.options[previo]) ? previo : (idxHoy !== -1 ? idxHoy : 0);
+            renderizarMapa();
+            document.getElementById('modalMapa').classList.remove('hidden-step');
+        }
+
+        function cerrarMapa() { document.getElementById('modalMapa').classList.add('hidden-step'); }
+
+        function construirMapaHTML(d) {
+            const f = dataResultante.fechas[d];
+            const nomCorto = (n) => formatearNombreSup(n);
+            let html = `<div class="mapa-cac">
+                <div class="mapa-titulo">CAC - Distribución de Ventanillas</div>
+                <div class="mapa-subtitulo">${nombresDiaLargo[f.getDay()]} ${f.getDate()} de ${mesActualDesc}</div>
+                <div class="mapa-edificio"><div class="mapa-zonas">`;
+
+            configZonas.forEach((zona, idxZona) => {
+                html += `<div class="mapa-zona"><div class="mapa-zona-head ${zona.classHead}">Zona ${idxZona + 1} · ${zona.supervisor}</div><div class="mapa-zona-body ${zona.classCell}">`;
+                for (let v = zona.rango[0]; v <= zona.rango[1]; v++) {
+                    const estado = (dataResultante.ventanillas[v] && dataResultante.ventanillas[v][d]) || "CERRADA";
+                    let cls = "", texto = "";
+                    if (estado === "MANT.") { cls = "mant"; texto = "Mantenim."; }
+                    else if (estado === "CERRADA") { cls = "cerrada"; texto = "Cerrada"; }
+                    else if (String(estado).startsWith("(A) ")) { cls = "prestado"; texto = "(A) " + nomCorto(String(estado).substring(4)); }
+                    else texto = nomCorto(estado);
+                    html += `<div class="mapa-vent ${cls}"><div class="mapa-vent-num">V${v}</div><div class="mapa-vent-nom">${texto}</div></div>`;
+                }
+                html += `</div></div>`;
+            });
+            html += `</div><div class="mapa-mostrador">MOSTRADOR DE ATENCIÓN</div>`;
+
+            const listaAdmin = (llave) => (administrativos[llave] || []).map((emp, i) => {
+                const est = dataResultante.admin[llave] && dataResultante.admin[llave][i] ? dataResultante.admin[llave][i][d] : '';
+                if (!est || est === "INACTIVO" || est === "DESC") return '';
+                return `<div>• ${nomCorto(est)}</div>`;
+            }).join('') || '<div class="text-gray-400 italic">—</div>';
+
+            html += `<div class="mapa-sala">
+                    <div class="mapa-area"><div class="mapa-area-tit">Mesa de control</div>${listaAdmin('mesa')}</div>
+                    <div class="mapa-espera">SALA DE ESPERA</div>
+                    <div class="mapa-area"><div class="mapa-area-tit">Despachador</div>${listaAdmin('despachador')}</div>
+                </div>
+                <div class="mapa-sala">
+                    <div></div>
+                    <div class="mapa-area"><div class="mapa-area-tit">Recepción</div>${listaAdmin('recepcion')}</div>
+                    <div></div>
+                </div>
+                <div class="mapa-entrada">⬆ ENTRADA ⬆</div>
+            </div>`;
+
+            const apoyo = (dataResultante.apoyo[d] || []).map(n => nomCorto(n));
+            const desc = [...new Set(dataResultante.descansos[d] || [])];
+            html += `<div class="mapa-pie">
+                    <div class="mapa-area"><div class="mapa-area-tit">Buscar ventanilla (${apoyo.length})</div>${apoyo.length ? apoyo.join(', ') : '<span class="text-gray-400 italic">Nadie</span>'}</div>
+                    <div class="mapa-area"><div class="mapa-area-tit">En descanso (${desc.length})</div>${desc.length ? desc.join(', ') : '<span class="text-gray-400 italic">Nadie</span>'}</div>
+                </div></div>`;
+            return html;
+        }
+
+        function renderizarMapa() {
+            const d = parseInt(document.getElementById('mapaDiaSelect').value) || 0;
+            document.getElementById('mapaCacContenido').innerHTML = construirMapaHTML(d);
+        }
+
+        function imprimirMapa() {
+            const d = parseInt(document.getElementById('mapaDiaSelect').value) || 0;
+            document.getElementById('print-container').innerHTML = construirMapaHTML(d);
+            setTimeout(() => { window.print(); }, 300);
+        }
+
+        function descargarMapaPNG() {
+            if (typeof html2canvas === 'undefined') return alert("No se pudo cargar el generador de imágenes. Usa 'Imprimir mapa' y guarda como PDF.");
+            const nodo = document.querySelector('#mapaCacContenido .mapa-cac');
+            const d = parseInt(document.getElementById('mapaDiaSelect').value) || 0;
+            html2canvas(nodo, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL('image/png');
+                a.download = `Mapa_CAC_${mesActualDesc.replace(' ', '_')}_dia_${dataResultante.fechas[d].getDate()}.png`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            });
         }
 
         window.onload = () => { cargarMemoria(); };
