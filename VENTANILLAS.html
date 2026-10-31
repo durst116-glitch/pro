@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Rol CAC - Gestión Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .hidden-step { display: none !important; }
+
+        .asesor-inactivo { opacity: 0.4; background-color: #f1f5f9; text-decoration: line-through; pointer-events: none; }
+        .asesor-inactivo-btn { pointer-events: auto; } 
+
+        /* Clases para Drag & Drop */
+        .draggable-card { transition: transform 0.2s, box-shadow 0.2s; }
+        .drag-handle { cursor: grab; }
+        .drag-handle:active { cursor: grabbing; }
+        .drag-over { border: 2px dashed #3b82f6 !important; background-color: #eff6ff !important; transform: scale(1.02); }
+        .dragging { opacity: 0.4; border: 2px dashed #94a3b8 !important; }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 75vh;
+            overflow-y: auto;
+            background-color: white;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            position: relative;
+            border: 1px solid #e2e8f0;
+        }
+        table.matrix-table { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
+        .matrix-table th, .matrix-table td { border: 1px solid #cbd5e1; padding: 4px; text-align: center; font-size: 0.7rem; white-space: nowrap; }
+        .matrix-table th { background-color: #1e293b; color: #fff; position: sticky; top: 0; z-index: 20; font-weight: 600; }
+        .col-posicion { position: sticky; left: 0; font-weight: 700; text-align: left; padding-left: 10px !important; z-index: 30; border-right: 2px solid #334155 !important; min-width: 200px; background-color: inherit; }
+        .matrix-table th.col-posicion { z-index: 40; }
+
+        .z-color-0-h { background-color: #fed7aa !important; color: #7c2d12 !important; } .z-color-0-c { background-color: #fff7ed; }
+        .z-color-1-h { background-color: #bfdbfe !important; color: #1e3a8a !important; } .z-color-1-c { background-color: #eff6ff; }
+        .z-color-2-h { background-color: #bbf7d0 !important; color: #14532d !important; } .z-color-2-c { background-color: #f0fdf4; }
+        .z-color-3-h { background-color: #e9d5ff !important; color: #4c1d95 !important; } .z-color-3-c { background-color: #faf5ff; }
+        .z-color-4-h { background-color: #fecaca !important; color: #7f1d1d !important; } .z-color-4-c { background-color: #fef2f2; }
+        
+        .otros-h { background-color: #cbd5e1 !important; color: #0f172a !important; }
+        .otros-c { background-color: #f8fafc; }
+        .descanso-row { background-color: #0f172a !important; color: white !important; }
+        .col-fin-semana { background-color: rgba(0,0,0,0.03); }
+        .matrix-table th.col-fin-semana { background-color: #334155; color: #fbbf24; }
+        
+        .cell-cerrada { background-color: #e2e8f0; color: #64748b; font-style: italic; }
+        .cell-mantenimiento { background-color: #ef4444; color: white; font-weight: bold; }
+        .cell-descanso { background-color: #000; color: #fff; font-weight: bold; }
+        .cell-prestado { color: #0369a1; font-weight: bold; }
+
+        .btn-ventanilla { transition: all 0.2s; cursor: pointer; }
+        .btn-ventanilla.activa { background-color: #10b981; color: white; border-color: #059669; }
+        .btn-ventanilla.bloqueada { background-color: #ef4444; color: white; border-color: #b91c1c; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+
+        /* ==========================================
+           CONFIGURACIÓN EXTREMA PARA IMPRESIÓN / PDF
+           ========================================== */
+        @media print {
+            @page { size: landscape; margin: 6mm 4mm; }
+            body { background-color: white; padding: 0; }
+            .no-print { display: none !important; }
+            #print-container { display: block !important; width: 100%; }
+            .pantalla-solo-web { display: none !important; }
+            
+            .print-table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                page-break-after: always; 
+                margin-bottom: 10px; 
+                table-layout: fixed; 
+            }
+            .print-table:last-child { page-break-after: auto; }
+            
+            /* MAXIMIZANDO EL TAMAÑO Y GROSOR DE LAS LETRAS */
+            .print-table th, .print-table td { 
+                border: 1px solid black; 
+                padding: 2px 1px; /* Reducción de padding para dar más espacio a la fuente */
+                font-family: 'Arial Narrow', 'Helvetica Condensed', sans-serif; 
+                font-size: 9.5pt; /* FUENTE AÚN MÁS GRANDE */
+                font-weight: 700; /* NEGRITA MÁS FUERTE */
+                color: #000 !important; 
+                text-align: center; 
+                white-space: normal; /* PERMITE SALTO DE LÍNEA AUTOMÁTICO */
+                line-height: 0.95; /* Si el nombre usa 2 líneas, se ven juntitas */
+                word-wrap: break-word;
+                overflow: visible; 
+            }
+            
+            .print-table th { background-color: #e2e8f0 !important; color: black !important; font-weight: bold; font-size: 8pt; }
+            
+            .print-table .col-posicion { 
+                text-align: left; 
+                padding-left: 4px !important; 
+                font-weight: 800; 
+                width: 15%; /* Balance perfecto */
+            }
+            
+            * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }
+            .z-color-0-h { background-color: #fed7aa !important; } .z-color-1-h { background-color: #bfdbfe !important; }
+            .z-color-2-h { background-color: #bbf7d0 !important; } .z-color-3-h { background-color: #e9d5ff !important; }
+            .z-color-4-h { background-color: #fecaca !important; } .otros-h { background-color: #cbd5e1 !important; }
+            
+            .descanso-row { background-color: #e2e8f0 !important; color: #064e3b !important; }
+            .descanso-row td { color: #064e3b !important; font-weight: 900 !important; }
+            
+            .cell-descanso { background-color: #64748b !important; color: white !important; }
+            .cell-mantenimiento { background-color: #ef4444 !important; color: white !important; }
+            .cell-cerrada { color: #64748b !important; font-weight: normal; } 
+            .cell-prestado { color: #000 !important; font-weight: 800 !important; font-style: italic; }
+            .print-table th.col-fin-semana { background-color: #cbd5e1 !important; }
+            .print-header { font-size: 14pt; font-weight: bold; text-align: center; margin-bottom: 8px; color: black !important; }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-[95%] mx-auto bg-slate-800 text-white rounded-lg p-2 px-4 mb-4 flex flex-col md:flex-row justify-between items-center gap-3 shadow-md no-print">
+        <div class="flex items-center gap-2 text-sm font-semibold">
+            <span id="estadoMemoria" class="flex items-center gap-1 text-emerald-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Memoria Activa
+            </span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="exportarJSON()" class="bg-slate-700 hover:bg-slate-600 text-xs font-bold py-1.5 px-3 rounded border border-slate-600 transition-colors flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Exportar Config.
+            </button>
+            <label class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-xs font-bold py-1.5 px-3 rounded border border-blue-500 transition-colors flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Importar Backup
+                <input type="file" id="jsonInput" accept=".json" class="hidden" onchange="importarJSON(event)">
+            </label>
+            <button onclick="limpiarMemoria()" class="bg-red-900 hover:bg-red-800 text-red-200 text-xs font-bold py-1.5 px-3 rounded border border-red-700 transition-colors">
+                Borrar Datos
+            </button>
+        </div>
+    </div>
+
+    <div class="max-w-[95%] mx-auto">
+        <header class="mb-6 border-b pb-4 border-gray-200 no-print flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-blue-900">Smart Rol <span class="text-blue-500">Pro</span></h1>
+                <p class="text-gray-600">Gestor inteligente de personal con reglas operativas.</p>
+            </div>
+        </header>
+
+        <!-- PASO 1 -->
+        <div id="paso1" class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center transition-all duration-300">
+            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Paso 1: Sube tu base de datos</h2>
+            <p class="text-gray-500 mb-6 max-w-lg mx-auto">Selecciona el archivo Excel (.xlsx o .csv) que contiene la plantilla de empleados.</p>
+            
+            <label id="btnUploadFile" class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-colors inline-block mb-4">
+                Seleccionar Archivo Excel
+                <input type="file" id="fileInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" class="hidden" onchange="procesarArchivo(event)">
+            </label>
+            
+            <div id="fileNameDisplay" class="text-lg text-emerald-600 mb-4 h-6"></div>
+            <div id="fileError" class="text-red-500 mt-4 text-sm font-semibold hidden bg-red-50 p-4 rounded-lg border border-red-200 max-w-2xl mx-auto"></div>
+
+            <div id="fileActions" class="mt-4 flex flex-col sm:flex-row justify-center gap-4 hidden border-t border-gray-100 pt-8">
+                <button onclick="irAPaso2()" class="bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50 font-bold py-3 px-6 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
+                    Ajustar Reglas y Equipos
+                </button>
+                <button onclick="generarDirecto()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2 text-lg">
+                    Generar Rol Mensual
+                </button>
+            </div>
+        </div>
+
+        <!-- PASO 2 -->
+        <div id="paso2" class="hidden-step transition-all duration-300">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
+                
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-8 shadow-sm">
+                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 border-b border-blue-100 pb-4">
+                        <div>
+                            <h3 class="font-bold text-blue-900 flex items-center gap-2 text-lg">1. Estructura Física (Ventanillas)</h3>
+                            <p class="text-xs text-blue-700 mt-1">Define el total y desactiva las que estén en mantenimiento (rojo).</p>
+                        </div>
+                        <div class="flex items-center gap-3 bg-white p-2 rounded-lg border border-blue-100">
+                            <label class="text-sm font-bold text-gray-700">Total:</label>
+                            <input type="number" id="inputTotalVentanillasConfig" value="22" min="1" class="w-16 border border-gray-300 rounded p-1 text-center font-bold text-blue-900 focus:outline-none">
+                            <button onclick="renderizarSupervisores(true)" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-bold shadow transition-colors">Aplicar Total</button>
+                        </div>
+                    </div>
+                    <div id="panelVentanillasConfig" class="flex flex-wrap gap-1.5 bg-white p-3 rounded-lg border border-blue-100"></div>
+                </div>
+
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">2. Configuración Avanzada</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="font-bold text-gray-700 mb-3 bg-gray-100 p-2 rounded flex items-center justify-between">
+                            <span>Supervisores (Zonas y Equipos)</span>
+                            <span class="text-[10px] text-blue-600 flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg> Arrastra o usa las flechas</span>
+                        </h3>
+                        <p class="text-xs text-emerald-600 font-bold mb-3 bg-emerald-50 p-2 rounded border border-emerald-100">✨ El sistema memorizará la posición de cada asesor día a día para brindarle estabilidad en su ventanilla.</p>
+                        <div id="configSupervisores" class="space-y-4"></div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-700 mb-3 bg-gray-100 p-2 rounded flex justify-between items-center">Plantilla General</h3>
+                        <div class="max-h-[500px] overflow-y-auto pr-2 border rounded-lg p-2" id="configAsesores"></div>
+                    </div>
+                </div>
+
+                <div class="mt-8 border-t border-gray-200 pt-6">
+                    <h3 class="font-bold text-blue-800 mb-3 bg-blue-50 p-2 rounded flex items-center gap-2 border border-blue-200">Asignación de Ventanillas Fijas</h3>
+                    <div class="flex flex-col md:flex-row gap-3 items-center bg-white p-3 rounded shadow-sm border border-blue-100">
+                        <select id="fijo_asesor" class="flex-1 border border-gray-300 rounded p-2 text-sm focus:border-blue-500 focus:outline-none"></select>
+                        <span class="text-gray-400 font-bold hidden md:inline">➔</span>
+                        <div class="flex items-center gap-2 w-full md:w-auto">
+                            <span class="text-sm text-gray-600 font-semibold">Vent.</span>
+                            <input type="number" id="fijo_ventanilla" placeholder="Ej. 1" min="1" class="w-20 border border-gray-300 rounded p-2 text-sm text-center focus:border-blue-500 focus:outline-none font-bold">
+                        </div>
+                        <button onclick="agregarFijo()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded text-sm transition-colors shadow w-full md:w-auto">Fijar Asesor</button>
+                    </div>
+                    <div id="listaFijos" class="mt-4 flex flex-wrap gap-2"></div>
+                </div>
+
+                <div class="mt-6 border-t border-gray-200 pt-6">
+                    <h3 class="font-bold text-red-800 mb-3 bg-red-50 p-2 rounded flex items-center gap-2 border border-red-200">Reglas Especiales: Evitar Consecutivas</h3>
+                    <div class="flex flex-col md:flex-row gap-3 items-center bg-white p-3 rounded shadow-sm border border-red-100">
+                        <select id="regla_asesor_1" class="flex-1 border border-gray-300 rounded p-2 text-sm focus:border-red-500 focus:outline-none"></select>
+                        <span class="text-gray-400 font-bold hidden md:inline"><=></span>
+                        <select id="regla_asesor_2" class="flex-1 border border-gray-300 rounded p-2 text-sm focus:border-red-500 focus:outline-none"></select>
+                        <button onclick="agregarRegla()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded text-sm transition-colors shadow w-full md:w-auto">Añadir Regla</button>
+                    </div>
+                    <div id="listaReglas" class="mt-4 flex flex-wrap gap-2"></div>
+                </div>
+
+                <div class="mt-8 flex justify-center gap-4 border-t pt-6">
+                    <button onclick="generarAppFinal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-10 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-lg">
+                        Generar Rol Mensual
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASO 3: ROL MENSUAL PANTALLA WEB -->
+        <div id="paso3" class="hidden-step transition-all duration-300 pantalla-solo-web">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 gap-4">
+                <div class="flex items-center gap-3">
+                    <label class="font-bold text-gray-700">Mes a generar:</label>
+                    <input type="month" id="mesSelect" class="border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:border-blue-500 font-semibold" onchange="renderizarMatrizSegura()">
+                </div>
+                
+                <div class="flex flex-col sm:flex-row items-center gap-3">
+                    <label class="flex items-center gap-2 text-xs text-gray-700 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors shadow-sm" title="Desmarca esta opción si no quieres que el área administrativa salga en la hoja impresa">
+                        <input type="checkbox" id="checkImprimirAdmin" checked onchange="guardarMemoria()" class="w-4 h-4 text-blue-600 rounded">
+                        <span class="font-semibold">Imprimir Administrativos</span>
+                    </label>
+                    
+                    <div class="flex gap-2">
+                        <button onclick="modificarConfiguracion()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-bold shadow flex items-center gap-2 text-sm transition-colors">Modificar Reglas</button>
+                        <button onclick="prepararImpresion()" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg font-bold shadow flex items-center gap-2 text-sm transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            Imprimir / PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-wrapper print:mt-0">
+                <table class="matrix-table" id="tablaRolPantalla">
+                    <thead id="tablaHeadPantalla"></thead>
+                    <tbody id="tablaBodyPantalla"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CONTENEDOR OCULTO PARA IMPRESIÓN -->
+        <div id="print-container" style="display: none;"></div>
+
+    </div>
+
+    <script>
+        // ==========================================
+        // VARIABLES GLOBALES (Con soporte a Memoria)
+        // ==========================================
+        let empleadosData = [];
+        let supervisores = [];
+        let asesores = [];
+        let administrativos = { mesa: [], recepcion: [], despachador: [] };
+        
+        let configZonas = []; 
+        let totalVentanillas = 22; 
+        let ventanillasBloqueadas = new Set();
+        let reglasSeparacion = []; 
+        let ventanillasFijas = []; 
+        let asesoresInactivos = new Set();
+        
+        let equiposAsignados = {}; 
+        let zonasRangos = {}; 
+        
+        let dataResultante = null; 
+        let mesActualDesc = "";
+        let dragSrcEl = null;
+
+        const diasDescansoMap = { 
+            "L-M": [1, 2], "M-M": [2, 3], "M-J": [3, 4], "J-V": [4, 5], 
+            "V-S": [5, 6], "S-D": [6, 0], "D-L": [0, 1] 
+        };
+
+        // Formatea el nombre para que salga en formato PATERNO NOMBRE
+        function formatearNombreSup(nombreCompleto) {
+            if (!nombreCompleto) return "";
+            const partes = String(nombreCompleto).trim().split(/\s+/);
+            if (partes.length >= 3) return `${partes[0]} ${partes[2]}`;
+            else if (partes.length === 2) return `${partes[0]} ${partes[1]}`;
+            return String(nombreCompleto);
+        }
+
+        // ==========================================
+        // LOCAL STORAGE Y JSON
+        // ==========================================
+        function guardarMemoria() {
+            const dataState = {
+                supervisores, asesores, administrativos, 
+                totalVentanillas, 
+                ventanillasBloqueadas: Array.from(ventanillasBloqueadas),
+                reglasSeparacion, ventanillasFijas, 
+                asesoresInactivos: Array.from(asesoresInactivos),
+                equiposAsignados, zonasRangos,
+                mesSelect: document.getElementById('mesSelect') ? document.getElementById('mesSelect').value : '',
+                imprimirAdmin: document.getElementById('checkImprimirAdmin') ? document.getElementById('checkImprimirAdmin').checked : true
+            };
+            localStorage.setItem('SmartRolState_v8', JSON.stringify(dataState));
+            
+            const btnMem = document.getElementById('estadoMemoria');
+            if(btnMem) {
+                btnMem.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Memoria Guardada`;
+                setTimeout(() => { btnMem.innerHTML = `<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Memoria Activa`; }, 2000);
+            }
+        }
+
+        function cargarMemoria() {
+            const saved = localStorage.getItem('SmartRolState_v8');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    supervisores = data.supervisores || [];
+                    asesores = data.asesores || [];
+                    administrativos = data.administrativos || { mesa: [], recepcion: [], despachador: [] };
+                    totalVentanillas = data.totalVentanillas || 22;
+                    ventanillasBloqueadas = new Set(data.ventanillasBloqueadas || []);
+                    reglasSeparacion = data.reglasSeparacion || [];
+                    ventanillasFijas = data.ventanillasFijas || [];
+                    asesoresInactivos = new Set(data.asesoresInactivos || []);
+                    equiposAsignados = data.equiposAsignados || {};
+                    zonasRangos = data.zonasRangos || {};
+
+                    if(data.imprimirAdmin !== undefined && document.getElementById('checkImprimirAdmin')) {
+                        document.getElementById('checkImprimirAdmin').checked = data.imprimirAdmin;
+                    }
+
+                    if (supervisores.length > 0) {
+                        document.getElementById('paso1').classList.add('hidden-step');
+                        document.getElementById('paso2').classList.remove('hidden-step');
+                        if (document.getElementById('inputTotalVentanillasConfig')) document.getElementById('inputTotalVentanillasConfig').value = totalVentanillas;
+                        
+                        renderizarSupervisores();
+                        renderizarAsesoresYReglas();
+                        
+                        if(data.mesSelect) document.getElementById('mesSelect').value = data.mesSelect;
+                    }
+                } catch(e) { console.error("Error al cargar memoria", e); }
+            }
+        }
+
+        function limpiarMemoria() {
+            if(confirm("¿Borrar configuración guardada?")) {
+                localStorage.removeItem('SmartRolState_v8');
+                location.reload();
+            }
+        }
+
+        function exportarJSON() {
+            guardarMemoria(); 
+            const saved = localStorage.getItem('SmartRolState_v8');
+            if(!saved) return alert("No hay datos para exportar.");
+            const blob = new Blob([saved], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `SmartRol_Backup.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function importarJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(data.supervisores && data.asesores) {
+                        localStorage.setItem('SmartRolState_v8', JSON.stringify(data));
+                        location.reload(); 
+                    } else throw new Error("JSON inválido.");
+                } catch(err) { alert("Error: " + err.message); }
+            };
+            reader.readAsText(file);
+        }
+
+        // ==========================================
+        // LECTURA DE ARCHIVO EXCEL
+        // ==========================================
+        function procesarArchivo(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const errorDiv = document.getElementById('fileError');
+            errorDiv.classList.add('hidden');
+            document.getElementById('fileNameDisplay').innerText = `Leyendo archivo...`;
+            document.getElementById('fileActions').classList.add('hidden');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                    
+                    if (!json || json.length === 0) throw new Error("Archivo vacío");
+                    
+                    if(clasificarEmpleados(json)) {
+                        document.getElementById('fileNameDisplay').innerHTML = `✅ Archivo validado: <span class="font-bold text-gray-800">${file.name}</span>`;
+                        document.getElementById('fileActions').classList.remove('hidden');
+                        guardarMemoria();
+                    } else {
+                        throw new Error("El archivo debe tener las columnas NOMBRE, DESCANSO y TIPO, con al menos un SUPERVISOR y un ASESOR.");
+                    }
+                } catch (error) {
+                    errorDiv.innerHTML = `<strong>Error de lectura.</strong> Detalle técnico: ${error.message}`;
+                    errorDiv.classList.remove('hidden');
+                    document.getElementById('fileNameDisplay').innerText = "";
+                    document.getElementById('fileInput').value = "";
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function clasificarEmpleados(data) {
+            supervisores = []; asesores = [];
+            administrativos = { mesa: [], recepcion: [], despachador: [] };
+            reglasSeparacion = []; ventanillasFijas = []; 
+            asesoresInactivos.clear(); ventanillasBloqueadas.clear(); 
+            equiposAsignados = {}; zonasRangos = {};
+
+            data.forEach(row => {
+                const rowLimpio = {};
+                for (let key in row) rowLimpio[String(key).trim().toUpperCase()] = row[key];
+
+                let nombre = String(rowLimpio["NOMBRE"] || "").trim();
+                let descanso = String(rowLimpio["DESCANSO"] || "").trim();
+                let tipo = String(rowLimpio["TIPO"] || "").toUpperCase().trim();
+
+                if (nombre && tipo) {
+                    const empleado = { nombre, descanso, tipo, prioridad: 99 };
+                    if (tipo.indexOf("SUPERVISOR") !== -1) supervisores.push(empleado);
+                    else if (tipo.indexOf("ASESOR") !== -1) asesores.push(empleado);
+                    else if (tipo.indexOf("MESA") !== -1) administrativos.mesa.push(empleado);
+                    else if (tipo.indexOf("RECEPCION") !== -1 || tipo.indexOf("RECEPCIÓN") !== -1) administrativos.recepcion.push(empleado);
+                    else if (tipo.indexOf("DESPACHADOR") !== -1) administrativos.despachador.push(empleado);
+                }
+            });
+
+            if (supervisores.length === 0 || asesores.length === 0) return false;
+            return true;
+        }
+
+        function irAPaso2() {
+            renderizarSupervisores(); renderizarAsesoresYReglas();
+            document.getElementById('paso1').classList.add('hidden-step');
+            document.getElementById('paso2').classList.remove('hidden-step');
+            guardarMemoria();
+        }
+
+        function generarDirecto() {
+            renderizarSupervisores(); renderizarAsesoresYReglas(); generarAppFinal();
+        }
+
+        function toggleInactividadAsesor(idxAsesor, nombre) {
+            if(asesoresInactivos.has(nombre)) asesoresInactivos.delete(nombre);
+            else asesoresInactivos.add(nombre);
+            renderizarAsesoresYReglas(); actualizarResumenEquipos(); guardarMemoria();
+        }
+
+        function renderizarBotonesConfig() {
+            const panel = document.getElementById('panelVentanillasConfig');
+            if(!panel) return;
+            panel.innerHTML = '';
+            for (let i = 1; i <= totalVentanillas; i++) {
+                const btn = document.createElement('button');
+                const isBloq = ventanillasBloqueadas.has(i);
+                btn.className = `w-10 h-10 rounded-md text-sm font-bold border transition-colors ${isBloq ? 'bg-red-500 border-red-700 text-white shadow-inner' : 'bg-emerald-500 border-emerald-600 text-white shadow'}`;
+                btn.innerText = i;
+                btn.onclick = () => {
+                    ventanillasBloqueadas.has(i) ? ventanillasBloqueadas.delete(i) : ventanillasBloqueadas.add(i);
+                    renderizarBotonesConfig(); 
+                    guardarMemoria();
+                };
+                panel.appendChild(btn);
+            }
+        }
+
+        // ==========================================
+        // DRAG AND DROP
+        // ==========================================
+        function handleDragStart(e) {
+            dragSrcEl = this; e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.index);
+            this.classList.add('dragging');
+        }
+        function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
+        function handleDragEnter(e) { e.preventDefault(); this.classList.add('drag-over'); }
+        function handleDragLeave(e) { if (!this.contains(e.relatedTarget)) this.classList.remove('drag-over'); }
+        function handleDrop(e) {
+            if (e.stopPropagation) e.stopPropagation(); 
+            this.classList.remove('drag-over');
+            if (dragSrcEl !== this) {
+                guardarRangosZonas(); 
+                let oldIdx = parseInt(dragSrcEl.dataset.index);
+                let newIdx = parseInt(this.dataset.index);
+                let movedItem = supervisores.splice(oldIdx, 1)[0];
+                supervisores.splice(newIdx, 0, movedItem);
+                renderizarSupervisores(true); renderizarAsesoresYReglas(); guardarMemoria();
+            }
+            return false;
+        }
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.draggable-card').forEach(i => i.classList.remove('drag-over'));
+        }
+
+        function moverSupervisor(idx, direccion) {
+            if (idx + direccion < 0 || idx + direccion >= supervisores.length) return;
+            guardarRangosZonas(); 
+            let temp = supervisores[idx]; supervisores[idx] = supervisores[idx + direccion]; supervisores[idx + direccion] = temp;
+            renderizarSupervisores(true); renderizarAsesoresYReglas(); guardarMemoria();
+        }
+
+        function guardarRangosZonas() {
+            supervisores.forEach((s, idx) => {
+                let eIni = document.getElementById(`sup_inicio_${idx}`);
+                let eFin = document.getElementById(`sup_fin_${idx}`);
+                if(eIni && eFin) zonasRangos[s.nombre] = { ini: parseInt(eIni.value), fin: parseInt(eFin.value) };
+            });
+            guardarMemoria();
+        }
+
+        function renderizarSupervisores(forzarSecuencial = false) {
+            const contSup = document.getElementById('configSupervisores');
+            if(!contSup) return;
+            
+            if(forzarSecuencial) {
+                let inputTotal = document.getElementById('inputTotalVentanillasConfig');
+                totalVentanillas = inputTotal ? parseInt(inputTotal.value) : 22;
+                if(isNaN(totalVentanillas) || totalVentanillas < 1) totalVentanillas = 22;
+            }
+            contSup.innerHTML = ''; renderizarBotonesConfig();
+            let sugerenciaInicio = 1;
+            const saltoBase = Math.floor(totalVentanillas / (supervisores.length || 1)); 
+
+            supervisores.forEach((sup, idx) => {
+                let size = saltoBase;
+                if (zonasRangos[sup.nombre] && !forzarSecuencial) {
+                    size = zonasRangos[sup.nombre].fin - zonasRangos[sup.nombre].ini + 1;
+                    if (size < 1) size = 1;
+                }
+                let sIni = sugerenciaInicio; let sFin = sIni + size - 1;
+                if(!forzarSecuencial && zonasRangos[sup.nombre]) { sIni = zonasRangos[sup.nombre].ini; sFin = zonasRangos[sup.nombre].fin; }
+                if (forzarSecuencial && idx === supervisores.length - 1) sFin = totalVentanillas;
+
+                let card = document.createElement('div');
+                card.className = 'draggable-card bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex flex-col gap-3';
+                card.draggable = true; card.dataset.index = idx;
+                card.addEventListener('dragstart', handleDragStart, false); card.addEventListener('dragenter', handleDragEnter, false);
+                card.addEventListener('dragover', handleDragOver, false); card.addEventListener('dragleave', handleDragLeave, false);
+                card.addEventListener('drop', handleDrop, false); card.addEventListener('dragend', handleDragEnd, false);
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2 border-b pb-2">
+                        <div class="flex flex-col gap-1 items-center justify-center mr-1">
+                            <button onclick="moverSupervisor(${idx}, -1)" class="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors ${idx === 0 ? 'invisible' : ''}" title="Subir equipo"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg></button>
+                            <div class="drag-handle text-gray-300 hover:text-blue-500 transition-colors" title="Arrastrar"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg></div>
+                            <button onclick="moverSupervisor(${idx}, 1)" class="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors ${idx === supervisores.length - 1 ? 'invisible' : ''}" title="Bajar equipo"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-bold text-sm text-gray-800">${formatearNombreSup(sup.nombre)}</div>
+                            <div class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Zona ${idx+1}</div>
+                        </div>
+                        <div class="flex items-center gap-1 bg-gray-50 p-1 rounded border" onclick="event.stopPropagation()">
+                            <span class="text-[10px] font-semibold text-gray-500">Vent.</span>
+                            <input type="number" id="sup_inicio_${idx}" value="${sIni}" onchange="guardarRangosZonas()" class="w-10 border border-gray-300 rounded p-1 text-center text-xs font-bold text-blue-800 outline-none focus:border-blue-500" min="1">
+                            <span class="text-[10px] font-semibold text-gray-500">a</span>
+                            <input type="number" id="sup_fin_${idx}" value="${sFin}" onchange="guardarRangosZonas()" class="w-10 border border-gray-300 rounded p-1 text-center text-xs font-bold text-blue-800 outline-none focus:border-blue-500" min="1">
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-100 rounded p-2 pointer-events-none">
+                        <div class="flex justify-between mb-2">
+                            <div class="text-[10px] uppercase font-bold text-slate-500">Equipo Asignado</div>
+                            <div class="text-[9px] font-bold text-blue-500">Prioridad (1-99)</div>
+                        </div>
+                        <div id="resumen_equipo_sup_${idx}" class="flex flex-col gap-1.5 min-h-[20px] pointer-events-auto"></div>
+                    </div>
+                `;
+                contSup.appendChild(card); sugerenciaInicio = parseInt(sFin) + 1;
+            });
+            actualizarResumenEquipos();
+        }
+
+        function actualizarResumenEquipos() {
+            supervisores.forEach((s, idx) => { let caja = document.getElementById(`resumen_equipo_sup_${idx}`); if(caja) caja.innerHTML = ''; });
+            asesores.forEach((asesor, idx) => {
+                if(!asesoresInactivos.has(asesor.nombre)) {
+                    let nombreSup = equiposAsignados[idx] !== undefined ? equiposAsignados[idx] : supervisores[idx % (supervisores.length || 1)].nombre;
+                    if(nombreSup !== "SIN ASIGNAR") {
+                        let idSup = supervisores.findIndex(s => s.nombre === nombreSup);
+                        if(idSup !== -1) {
+                            let caja = document.getElementById(`resumen_equipo_sup_${idSup}`);
+                            if(caja) caja.innerHTML += `<div class="flex items-center justify-between bg-white border border-blue-100 rounded px-2 py-1 shadow-sm"><span class="text-xs font-semibold text-gray-700 truncate w-3/4">${formatearNombreSup(asesor.nombre)}</span><input type="number" id="asesor_prio_${idx}" value="${asesor.prioridad}" onchange="guardarPrioridad(${idx}, this.value)" min="1" max="99" class="w-12 border border-blue-200 rounded p-0.5 text-center text-xs font-bold text-blue-700 bg-blue-50 focus:bg-white outline-none"></div>`;
+                        }
+                    }
+                }
+            });
+            supervisores.forEach((s, idx) => { let caja = document.getElementById(`resumen_equipo_sup_${idx}`); if(caja && caja.innerHTML === '') caja.innerHTML = '<span class="text-slate-400 italic text-[10px]">Sin asesores asignados</span>'; });
+        }
+
+        function guardarPrioridad(idx, valor) {
+            let val = parseInt(valor); asesores[idx].prioridad = (isNaN(val) || val < 1) ? 99 : val; guardarMemoria();
+        }
+
+        function guardarEquipoSelect(idx, valor) {
+            equiposAsignados[idx] = valor; actualizarResumenEquipos(); guardarMemoria();
+        }
+
+        function renderizarAsesoresYReglas() {
+            const contAsesores = document.getElementById('configAsesores');
+            if(!contAsesores) return;
+            contAsesores.innerHTML = '';
+            
+            let opcionesSelect = `<option value="SIN ASIGNAR">-- Seleccionar --</option>`;
+            supervisores.forEach((sup) => { opcionesSelect += `<option value="${sup.nombre}">${formatearNombreSup(sup.nombre)}</option>`; });
+            let opAsesores = '<option value="">-- Seleccionar Asesor --</option>';
+
+            asesores.forEach((asesor, idx) => {
+                const esInactivo = asesoresInactivos.has(asesor.nombre);
+                let equipoActual = equiposAsignados[idx] !== undefined ? equiposAsignados[idx] : supervisores[idx % (supervisores.length || 1)].nombre;
+                if(equiposAsignados[idx] === undefined) equiposAsignados[idx] = equipoActual;
+                let opcionesMarcadas = opcionesSelect.replace(`value="${equipoActual}"`, `value="${equipoActual}" selected`);
+
+                contAsesores.innerHTML += `
+                    <div class="flex justify-between items-center border-b border-gray-100 py-2 gap-2 px-2 hover:bg-gray-50 rounded ${esInactivo ? 'asesor-inactivo' : ''}">
+                        <button onclick="toggleInactividadAsesor(${idx}, '${asesor.nombre.replace(/'/g, "\\'")}')" class="asesor-inactivo-btn w-6 h-6 rounded flex items-center justify-center shrink-0 transition-colors ${esInactivo ? 'bg-green-100' : 'bg-red-50'}">${esInactivo ? '✅' : '❌'}</button>
+                        <div class="flex-1 min-w-0"><div class="text-xs font-bold text-gray-700 truncate">${formatearNombreSup(asesor.nombre)}</div><div class="text-[10px] text-gray-400">Descanso: ${asesor.descanso}</div></div>
+                        <select id="asesor_equipo_${idx}" onchange="guardarEquipoSelect(${idx}, this.value)" class="w-[140px] border rounded p-1.5 text-xs bg-white text-blue-700 font-semibold shadow-sm outline-none ${esInactivo ? 'hidden' : ''}">${opcionesMarcadas}</select>
+                        <div class="${!esInactivo ? 'hidden' : ''} w-[140px] text-center text-xs font-bold text-gray-400">INACTIVO</div>
+                    </div>
+                `;
+                if(!esInactivo) opAsesores += `<option value="${asesor.nombre}">${formatearNombreSup(asesor.nombre)}</option>`;
+            });
+
+            if(document.getElementById('regla_asesor_1')) document.getElementById('regla_asesor_1').innerHTML = opAsesores;
+            if(document.getElementById('regla_asesor_2')) document.getElementById('regla_asesor_2').innerHTML = opAsesores;
+            if(document.getElementById('fijo_asesor')) document.getElementById('fijo_asesor').innerHTML = opAsesores;
+            actualizarListaReglas(); actualizarListaFijos();
+        }
+
+        // ==========================================
+        // REGLAS 
+        // ==========================================
+        function agregarFijo() {
+            const nombre = document.getElementById('fijo_asesor').value;
+            const v = parseInt(document.getElementById('fijo_ventanilla').value);
+            if(!nombre || isNaN(v) || v < 1) return alert("Datos inválidos.");
+            if(ventanillasFijas.some(f => f.asesor === nombre)) return alert("El asesor ya tiene ventanilla fija.");
+            if(ventanillasFijas.some(f => f.ventanilla === v)) return alert("Ventanilla ocupada.");
+            ventanillasFijas.push({ asesor: nombre, ventanilla: v });
+            actualizarListaFijos(); guardarMemoria();
+        }
+        function eliminarFijo(idx) { ventanillasFijas.splice(idx, 1); actualizarListaFijos(); guardarMemoria(); }
+        function actualizarListaFijos() {
+            const cont = document.getElementById('listaFijos');
+            if(!cont) return; cont.innerHTML = '';
+            ventanillasFijas.forEach((f, idx) => { cont.innerHTML += `<div class="bg-blue-50 text-blue-800 px-3 py-1.5 rounded-full flex gap-3 items-center text-xs font-bold border border-blue-200 shadow-sm"><span>📌 V${f.ventanilla}: ${formatearNombreSup(f.asesor)}</span><button onclick="eliminarFijo(${idx})" class="text-blue-500 text-base leading-none">&times;</button></div>`; });
+        }
+
+        function agregarRegla() {
+            const a1 = document.getElementById('regla_asesor_1').value;
+            const a2 = document.getElementById('regla_asesor_2').value;
+            if(!a1 || !a2 || a1===a2) return alert("Selección inválida.");
+            if(!reglasSeparacion.some(r => (r.a1===a1 && r.a2===a2) || (r.a1===a2 && r.a2===a1))) {
+                reglasSeparacion.push({a1, a2}); actualizarListaReglas(); guardarMemoria();
+            } else alert("Regla existente.");
+        }
+        function eliminarRegla(idx) { reglasSeparacion.splice(idx, 1); actualizarListaReglas(); guardarMemoria(); }
+        function actualizarListaReglas() {
+            const cont = document.getElementById('listaReglas');
+            if(!cont) return; cont.innerHTML = '';
+            reglasSeparacion.forEach((r, idx) => { cont.innerHTML += `<div class="bg-red-50 text-red-700 px-3 py-1.5 rounded-full flex gap-3 items-center text-xs font-bold border border-red-200 shadow-sm"><span>❌ ${formatearNombreSup(r.a1)} y ${formatearNombreSup(r.a2)}</span><button onclick="eliminarRegla(${idx})" class="text-red-500 text-base leading-none">&times;</button></div>`; });
+        }
+        function sonIncompatibles(nom1, nom2) {
+            if(!nom1 || !nom2 || nom1 === "CERRADA" || nom2 === "CERRADA" || nom1 === "MANT." || nom2 === "MANT.") return false;
+            if(String(nom1).startsWith("(A) ")) nom1 = String(nom1).substring(4);
+            if(String(nom2).startsWith("(A) ")) nom2 = String(nom2).substring(4);
+            return reglasSeparacion.some(r => (r.a1 === nom1 && r.a2 === nom2) || (r.a1 === nom2 && r.a2 === nom1));
+        }
+
+        // ==========================================
+        // MATRIZ Y GENERACIÓN
+        // ==========================================
+        function generarAppFinal() {
+            try {
+                guardarRangosZonas(); 
+
+                configZonas = [];
+                supervisores.forEach((sup, idx) => {
+                    let eIni = document.getElementById(`sup_inicio_${idx}`);
+                    let eFin = document.getElementById(`sup_fin_${idx}`);
+                    let ini = eIni ? parseInt(eIni.value) : 1;
+                    let fin = eFin ? parseInt(eFin.value) : 1;
+                    
+                    if(fin > totalVentanillas) totalVentanillas = fin;
+                    configZonas.push({ id: idx, supervisor: formatearNombreSup(sup.nombre), supervisorCompleto: sup.nombre, rango: [ini, fin], classHead: `z-color-${idx % 5}-h`, classCell: `z-color-${idx % 5}-c`, equipo: [] });
+                });
+
+                asesores.forEach((asesor, idx) => {
+                    if(asesoresInactivos.has(asesor.nombre)) return; 
+                    const supNombre = equiposAsignados[idx];
+                    if (supNombre !== "SIN ASIGNAR") {
+                        const zonaIdx = configZonas.findIndex(z => z.supervisorCompleto === supNombre);
+                        if(zonaIdx !== -1) configZonas[zonaIdx].equipo.push(asesor);
+                    }
+                });
+
+                const hoy = new Date();
+                if(!document.getElementById('mesSelect').value) {
+                    document.getElementById('mesSelect').value = `${hoy.getFullYear()}-${(hoy.getMonth() + 1).toString().padStart(2, '0')}`;
+                }
+
+                document.getElementById('paso1').classList.add('hidden-step');
+                document.getElementById('paso2').classList.add('hidden-step');
+                document.getElementById('paso3').classList.remove('hidden-step');
+                renderizarMatrizSegura();
+                guardarMemoria();
+            } catch(e) { alert("Error al generar: " + e.message); }
+        }
+
+        function modificarConfiguracion() {
+            document.getElementById('paso3').classList.add('hidden-step');
+            document.getElementById('paso2').classList.remove('hidden-step');
+        }
+
+        function estaDescansandoSeguro(descansoStr, diaSemana) {
+            if (!descansoStr) return false;
+            const dias = diasDescansoMap[String(descansoStr).trim().toUpperCase()];
+            return dias ? dias.includes(diaSemana) : false;
+        }
+
+        function renderizarMatrizSegura() {
+            try {
+                let inputVal = document.getElementById('mesSelect').value;
+                let year, mes;
+                if (inputVal && inputVal.includes('-')) {
+                    const parts = inputVal.split('-');
+                    year = parseInt(parts[0]); mes = parseInt(parts[1]) - 1;
+                } else {
+                    const hoy = new Date(); year = hoy.getFullYear(); mes = hoy.getMonth();
+                }
+
+                const diasEnMes = new Date(year, mes + 1, 0).getDate();
+                const fechasMes = [];
+                for (let d = 1; d <= diasEnMes; d++) fechasMes.push(new Date(year, mes, d));
+
+                const nombreMes = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][mes];
+                mesActualDesc = `${nombreMes} ${year}`;
+
+                dataResultante = { fechas: fechasMes, diasCortos: ["DO", "LU", "MA", "MI", "JU", "VI", "SA"], maxApoyo: 0, ventanillas: {}, apoyo: [], descansos: [], admin: {} };
+
+                fechasMes.forEach((fecha, diaIndex) => {
+                    const diaSemana = fecha.getDay();
+                    dataResultante.apoyo[diaIndex] = []; dataResultante.descansos[diaIndex] = [];
+                    let ultimoAsignado = null; let asignadosFijosHoy = new Set(); 
+
+                    ventanillasFijas.forEach(fijo => {
+                        if(asesoresInactivos.has(fijo.asesor)) return;
+                        // Si la ventanilla fija no pertenece a ninguna zona, el asesor se asigna normalmente (antes desaparecía del rol)
+                        if(!configZonas.some(z => fijo.ventanilla >= z.rango[0] && fijo.ventanilla <= z.rango[1])) return;
+                        let objA = asesores.find(a => a.nombre === fijo.asesor);
+                        if (objA) {
+                            if (!estaDescansandoSeguro(objA.descanso, diaSemana)) {
+                                if (!ventanillasBloqueadas.has(fijo.ventanilla)) {
+                                    if (!dataResultante.ventanillas[fijo.ventanilla]) dataResultante.ventanillas[fijo.ventanilla] = [];
+                                    dataResultante.ventanillas[fijo.ventanilla][diaIndex] = fijo.asesor;
+                                    asignadosFijosHoy.add(fijo.asesor);
+                                }
+                            } else {
+                                dataResultante.descansos[diaIndex].push(formatearNombreSup(fijo.asesor));
+                                asignadosFijosHoy.add(fijo.asesor); 
+                            }
+                        }
+                    });
+
+                    let poolGeneralSobrantes = [];
+
+                    configZonas.forEach(zona => {
+                        let pendientes = [];
+                        zona.equipo.forEach(a => {
+                            if (!asignadosFijosHoy.has(a.nombre)) {
+                                if (estaDescansandoSeguro(a.descanso, diaSemana)) dataResultante.descansos[diaIndex].push(formatearNombreSup(a.nombre));
+                                else pendientes.push(a);
+                            }
+                        });
+
+                        pendientes.sort((a, b) => a.prioridad - b.prioridad);
+
+                        let rInicio = isNaN(zona.rango[0]) ? 1 : zona.rango[0];
+                        let rFin = isNaN(zona.rango[1]) ? 1 : zona.rango[1];
+
+                        let asignacionesEstables = {};
+                        if (diaIndex > 0) {
+                            for (let v = rInicio; v <= rFin; v++) {
+                                if (ventanillasBloqueadas.has(v) || !dataResultante.ventanillas[v] || dataResultante.ventanillas[v][diaIndex]) continue;
+                                let asesorAyer = dataResultante.ventanillas[v][diaIndex - 1];
+                                if (asesorAyer && asesorAyer !== "CERRADA" && asesorAyer !== "MANT." && !asesorAyer.startsWith("(A) ")) {
+                                    let pIdx = pendientes.findIndex(p => p.nombre === asesorAyer);
+                                    if (pIdx !== -1) asignacionesEstables[v] = pendientes.splice(pIdx, 1)[0]; 
+                                }
+                            }
+                        }
+
+                        for (let v = rInicio; v <= rFin; v++) {
+                            if (!dataResultante.ventanillas[v]) dataResultante.ventanillas[v] = [];
+                            if (ventanillasBloqueadas.has(v)) { dataResultante.ventanillas[v][diaIndex] = "MANT."; ultimoAsignado = null; continue; }
+                            if (dataResultante.ventanillas[v][diaIndex]) { ultimoAsignado = dataResultante.ventanillas[v][diaIndex]; continue; }
+
+                            if (asignacionesEstables[v]) {
+                                if (sonIncompatibles(asignacionesEstables[v].nombre, ultimoAsignado)) {
+                                    pendientes.push(asignacionesEstables[v]);
+                                    pendientes.sort((a, b) => a.prioridad - b.prioridad);
+                                } else {
+                                    dataResultante.ventanillas[v][diaIndex] = asignacionesEstables[v].nombre;
+                                    ultimoAsignado = asignacionesEstables[v].nombre;
+                                    continue;
+                                }
+                            }
+
+                            if (pendientes.length > 0) {
+                                let cIdx = 0;
+                                while (cIdx < pendientes.length && sonIncompatibles(pendientes[cIdx].nombre, ultimoAsignado)) cIdx++;
+                                if (cIdx >= pendientes.length) cIdx = 0; 
+                                let elegido = pendientes.splice(cIdx, 1)[0];
+                                dataResultante.ventanillas[v][diaIndex] = elegido.nombre;
+                                ultimoAsignado = elegido.nombre;
+                            } else {
+                                dataResultante.ventanillas[v][diaIndex] = "CERRADA"; ultimoAsignado = null; 
+                            }
+                        }
+                        pendientes.forEach(p => poolGeneralSobrantes.push(p.nombre));
+                    });
+
+                    if (poolGeneralSobrantes.length > 0) {
+                        for (let v = 1; v <= totalVentanillas; v++) {
+                            if (dataResultante.ventanillas[v] && dataResultante.ventanillas[v][diaIndex] === "CERRADA" && poolGeneralSobrantes.length > 0) {
+                                let prestado = poolGeneralSobrantes.shift();
+                                dataResultante.ventanillas[v][diaIndex] = "(A) " + prestado;
+                            }
+                        }
+                    }
+
+                    poolGeneralSobrantes.forEach(p => dataResultante.apoyo[diaIndex].push(p));
+                    if (dataResultante.apoyo[diaIndex].length > dataResultante.maxApoyo) dataResultante.maxApoyo = dataResultante.apoyo[diaIndex].length;
+
+                    const procesarFijosAdmin = (area, arrayFijos) => {
+                        if(!dataResultante.admin[area]) dataResultante.admin[area] = [];
+                        arrayFijos.forEach((emp, i) => {
+                            if(!dataResultante.admin[area][i]) dataResultante.admin[area][i] = [];
+                            if(asesoresInactivos.has(emp.nombre)) { dataResultante.admin[area][i][diaIndex] = "INACTIVO"; return; }
+                            dataResultante.admin[area][i][diaIndex] = estaDescansandoSeguro(emp.descanso, diaSemana) ? "DESC" : emp.nombre;
+                        });
+                    };
+                    procesarFijosAdmin('mesa', administrativos.mesa);
+                    procesarFijosAdmin('recepcion', administrativos.recepcion);
+                    procesarFijosAdmin('despachador', administrativos.despachador);
+                });
+
+                pintarTabla(document.getElementById('tablaHeadPantalla'), document.getElementById('tablaBodyPantalla'), 0, diasEnMes - 1, true);
+                guardarMemoria(); 
+            } catch (err) { alert("Error calculando el rol: " + err.message); }
+        }
+
+        function pintarTabla(elHead, elBody, diaInicio, diaFin, incluirAdmin) {
+            let htmlHead = `<tr><th class="col-posicion">POSICIÓN / EQUIPO</th>`;
+            for(let d = diaInicio; d <= diaFin; d++) {
+                const f = dataResultante.fechas[d];
+                const ds = f.getDay();
+                htmlHead += `<th class="${(ds===0||ds===6)?'col-fin-semana':''}"><div class="text-[9px] font-normal">${dataResultante.diasCortos[ds]}</div><div>${f.getDate()}</div></th>`;
+            }
+            htmlHead += `</tr>`;
+            elHead.innerHTML = htmlHead;
+
+            let htmlBody = ``;
+            
+            configZonas.forEach((zona, idxZona) => {
+                htmlBody += `<tr><td class="col-posicion ${zona.classHead} text-[10px]" colspan="${(diaFin - diaInicio) + 2}">ZONA ${idxZona + 1} - SUPERVISOR: <span class="font-extrabold uppercase">${zona.supervisor}</span></td></tr>`;
+                for (let v = zona.rango[0]; v <= zona.rango[1]; v++) {
+                    htmlBody += `<tr><td class="col-posicion ${zona.classCell}">Ventanilla ${v}</td>`;
+                    for(let d = diaInicio; d <= diaFin; d++) {
+                        const estado = (dataResultante.ventanillas[v] && dataResultante.ventanillas[v][d]) || "CERRADA";
+                        const esFin = (dataResultante.fechas[d].getDay()===0 || dataResultante.fechas[d].getDay()===6);
+                        let cEx = esFin ? "col-fin-semana " : "";
+                        
+                        if (estado === "CERRADA") cEx += "cell-cerrada";
+                        else if (estado === "MANT.") cEx += "cell-mantenimiento";
+                        else if (String(estado).startsWith("(A) ")) cEx += "cell-prestado"; 
+
+                        let textAMostrar = estado;
+                        if(estado !== "CERRADA" && estado !== "MANT.") {
+                            if(String(estado).startsWith("(A) ")) textAMostrar = "(A) " + formatearNombreSup(String(estado).substring(4));
+                            else textAMostrar = formatearNombreSup(estado);
+                        }
+                        htmlBody += `<td class="${zona.classCell} ${cEx}">${textAMostrar}</td>`;
+                    }
+                    htmlBody += `</tr>`;
+                }
+            });
+
+            if (incluirAdmin) {
+                const renderAdmin = (llave, titulo, prefijo) => {
+                    if(administrativos[llave].length === 0) return;
+                    htmlBody += `<tr><td class="col-posicion otros-h text-[10px]" colspan="${(diaFin - diaInicio) + 2}">${titulo}</td></tr>`;
+                    administrativos[llave].forEach((emp, idx) => {
+                        const filaDatos = (dataResultante.admin[llave] && dataResultante.admin[llave][idx]) || [];
+                        if(filaDatos.length > 0 && filaDatos.every(v => v === "INACTIVO")) return;
+                        htmlBody += `<tr><td class="col-posicion otros-c">${prefijo} ${idx+1}</td>`;
+                        for(let d = diaInicio; d <= diaFin; d++) {
+                            const est = filaDatos[d];
+                            const esF = (dataResultante.fechas[d].getDay()===0 || dataResultante.fechas[d].getDay()===6);
+                            let c = esF ? "col-fin-semana " : "";
+                            if(est === 'DESC') c += "cell-descanso";
+                            htmlBody += `<td class="otros-c ${c}">${formatearNombreSup(est)}</td>`;
+                        }
+                        htmlBody += `</tr>`;
+                    });
+                };
+                renderAdmin('mesa', 'MESA DE CONTROL', 'Mesa');
+                renderAdmin('recepcion', 'RECEPCIÓN', 'Recep.');
+                renderAdmin('despachador', 'DESPACHADOR', 'Desp.');
+            }
+
+            htmlBody += `<tr><td class="col-posicion otros-h text-[10px]" colspan="${(diaFin - diaInicio) + 2}">PICKUP</td></tr>`;
+            const iterApoyo = dataResultante.maxApoyo > 0 ? dataResultante.maxApoyo : 1;
+            for (let i = 0; i < iterApoyo; i++) {
+                htmlBody += `<tr><td class="col-posicion otros-c text-gray-500">Buscar ventanilla</td>`;
+                for(let d = diaInicio; d <= diaFin; d++) {
+                    const nombre = dataResultante.apoyo[d][i];
+                    const esF = (dataResultante.fechas[d].getDay()===0 || dataResultante.fechas[d].getDay()===6);
+                    htmlBody += `<td class="otros-c font-semibold ${esF?'col-fin-semana':''}">${nombre ? formatearNombreSup(nombre) : '-'}</td>`;
+                }
+                htmlBody += `</tr>`;
+            }
+
+            htmlBody += `<tr class="descanso-row"><td class="col-posicion font-bold text-[10px] uppercase">EN DESCANSO HOY</td>`;
+            for(let d = diaInicio; d <= diaFin; d++) {
+                const nombres = dataResultante.descansos[d];
+                const unicos = [...new Set(nombres)];
+                htmlBody += `<td class="text-[8px] align-top pt-1 leading-[1.1] text-yellow-300">${unicos.length > 0 ? unicos.join('<br>') : '<span class="text-gray-500">NADIE</span>'}</td>`;
+            }
+            htmlBody += `</tr>`;
+
+            elBody.innerHTML = htmlBody;
+        }
+
+        function prepararImpresion() {
+            if(!dataResultante) return;
+            const diasTotales = dataResultante.fechas.length;
+            const printContainer = document.getElementById('print-container');
+            printContainer.innerHTML = ''; 
+
+            const objCheck = document.getElementById('checkImprimirAdmin');
+            const incluirAdminPrint = objCheck ? objCheck.checked : true;
+            const corte = 15; 
+
+            const tabla1 = document.createElement('table');
+            tabla1.className = 'print-table';
+            tabla1.innerHTML = `<caption class="print-header">Rol Operativo CAC - ${mesActualDesc} (Días 1 al 15)</caption><thead id="ptHead1"></thead><tbody id="ptBody1"></tbody>`;
+            printContainer.appendChild(tabla1);
+            pintarTabla(document.getElementById('ptHead1'), document.getElementById('ptBody1'), 0, corte - 1, incluirAdminPrint);
+
+            if (diasTotales > corte) {
+                const tabla2 = document.createElement('table');
+                tabla2.className = 'print-table';
+                tabla2.innerHTML = `<caption class="print-header">Rol Operativo CAC - ${mesActualDesc} (Días 16 al ${diasTotales})</caption><thead id="ptHead2"></thead><tbody id="ptBody2"></tbody>`;
+                printContainer.appendChild(tabla2);
+                pintarTabla(document.getElementById('ptHead2'), document.getElementById('ptBody2'), corte, diasTotales - 1, incluirAdminPrint);
+            }
+
+            setTimeout(() => { window.print(); }, 500); 
+        }
+
+        window.onload = () => { cargarMemoria(); };
+    </script>
+</body>
+</html>
+
+
