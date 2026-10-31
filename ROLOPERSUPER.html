@@ -34,6 +34,7 @@ header{background:linear-gradient(135deg,var(--blue),var(--blue2));color:white;p
 <div class="buttons"><button class="btn secondary" onclick="addVacation()">Agregar rango</button></div><div id="vacList" class="vac-list"></div>
 <h2 style="margin-top:18px">4. Generación</h2>
 <label class="opt"><input type="checkbox" id="avoidConsec" checked onchange="generateSchedule()"><span>Evitar Operativo en días consecutivos<small>Solo se asigna O dos días seguidos cuando no hay otra persona disponible.</small></span></label>
+<label class="opt"><input type="checkbox" id="reduceVac" checked onchange="generateSchedule()"><span>Reducir Operativos por tener vacaciones<small>Quien tenga vacaciones recibe menos O, en proporción a los días que sí trabaja (también en fines de semana y quincena). Desactivado: a todos les toca la misma cantidad.</small></span></label>
 <label class="opt"><input type="checkbox" id="balanceWeekends" checked onchange="generateSchedule()"><span>Equidad de Operativo en fines de semana<small>Reparte por igual los O de sábado y domingo.</small></span></label>
 <label class="opt"><input type="checkbox" id="balanceSpecial" checked onchange="generateSchedule()"><span>Equidad de Operativo en días de quincena<small>Reparte por igual los O de los días indicados (si el mes es más corto, se usa el último día).</small></span></label>
 <div class="opt-inline">Días: <input id="specialDays" value="15,30" placeholder="15,30" onchange="generateSchedule()"></div>
@@ -140,9 +141,11 @@ function getSpecialDays(n){
  const raw=String($('specialDays').value||'').split(/[^0-9]+/).map(x=>parseInt(x,10)).filter(x=>x>=1&&x<=31);
  return [...new Set(raw.map(x=>Math.min(x,n)))].sort((a,b)=>a-b);
 }
-function genOptions(n){return {avoidConsec:$('avoidConsec').checked,balanceWknd:$('balanceWeekends').checked,balanceSpecial:$('balanceSpecial').checked,special:new Set(getSpecialDays(n))}}
+function genOptions(n){return {reduceVac:$('reduceVac').checked,avoidConsec:$('avoidConsec').checked,balanceWknd:$('balanceWeekends').checked,balanceSpecial:$('balanceSpecial').checked,special:new Set(getSpecialDays(n))}}
 // Un intento: asignación voraz con desempate aleatorio
-function buildOnce(y,m,n,opt,base){
+function buildOnce(y,m,n,opt,base,avail){
+ const ratio=(i,k,ak)=>avail[i][ak]>0?counts[i][k]/avail[i][ak]:Infinity,EPS=1e-9;
+ const cmp=(a,b,k,ak)=>{const d=ratio(a,k,ak)-ratio(b,k,ak);return Math.abs(d)<EPS?0:d};
  const counts=supervisors.map(()=>({A:0,O:0,R:0,D:0,V:0,wkndO:0,qO:0,consec:0}));
  const sched=base.map(r=>[...r]);
  base.forEach((r,i)=>r.forEach(c=>{if(c)counts[i][c]++}));
@@ -153,9 +156,10 @@ function buildOnce(y,m,n,opt,base){
   const prevO=i=>d>1&&sched[i][d-2]==='O'?1:0;
   const cand=shuffled(available).sort((a,b)=>{
    if(opt.avoidConsec&&prevO(a)!==prevO(b))return prevO(a)-prevO(b);
-   if(isQ&&opt.balanceSpecial&&counts[a].qO!==counts[b].qO)return counts[a].qO-counts[b].qO;
-   if(weekend&&opt.balanceWknd&&counts[a].wkndO!==counts[b].wkndO)return counts[a].wkndO-counts[b].wkndO;
-   if(counts[a].O!==counts[b].O)return counts[a].O-counts[b].O;
+   let c;
+   if(isQ&&opt.balanceSpecial&&(c=cmp(a,b,'qO','q')))return c;
+   if(weekend&&opt.balanceWknd&&(c=cmp(a,b,'wkndO','w')))return c;
+   if((c=cmp(a,b,'O','all')))return c;
    return (counts[a].A+counts[a].O)-(counts[b].A+counts[b].O);
   });
   const ops=new Set(cand.slice(0,Math.min(reqO,available.length)));
@@ -182,13 +186,13 @@ function generateSchedule(fromButton=false){
   const opt=genOptions(n);
   // Base fija: vacaciones y descansos
   const base=supervisors.map((s,i)=>Array.from({length:n},(_,j)=>{const d=j+1;if(isVacation(i,iso(y,m,d)))return 'V';if(s.off.includes(new Date(y,m,d).getDay()))return 'D';return ''}));
-  // Cuota esperada: igual para todos; solo las vacaciones la reducen (los descansos no)
-  const avail=base.map(r=>{const a={all:0,w:0,q:0};r.forEach((c,j)=>{if(c!=='V'){a.all++;if(isWeekend(y,m,j+1))a.w++;if(opt.special.has(j+1))a.q++}});return a});
+  // Cuota de cada supervisor: los descansos no la reducen; las vacaciones solo si está activada la opción
+  const avail=base.map(r=>{const a={all:0,w:0,q:0};r.forEach((c,j)=>{if(c!=='V'||!opt.reduceVac){a.all++;if(isWeekend(y,m,j+1))a.w++;if(opt.special.has(j+1))a.q++}});return a});
   // Varias combinaciones distintas; se excluyen las que ya se mostraron en la generación anterior
   const K=toInt($('altCount').value,5)||5,prevKeys=new Set(alternatives.map(a=>a.key));
   const pool=new Map();
   for(let t=0;t<1500;t++){
-   const res=buildOnce(y,m,n,opt,base),key=res.sched.map(r=>r.join('')).join('|');
+   const res=buildOnce(y,m,n,opt,base,avail),key=res.sched.map(r=>r.join('')).join('|');
    if(pool.has(key))continue;
    pool.set(key,{...res,key,sc:scoreOf(res.counts,avail,opt)});
   }
@@ -259,7 +263,7 @@ function recountAndRender(){
 }
 
 /* ---------- Guardar / restaurar ---------- */
-function collectState(){return {supervisors,vacations,month:$('month').value,year:$('year').value,adminReq:$('adminReq').value,operReq:$('operReq').value,dailyReqs,balanceWknd:$('balanceWeekends').checked,avoidConsec:$('avoidConsec').checked,balanceSpecial:$('balanceSpecial').checked,specialDays:$('specialDays').value,altCount:$('altCount').value,schedule:current}}
+function collectState(){return {supervisors,vacations,month:$('month').value,year:$('year').value,adminReq:$('adminReq').value,operReq:$('operReq').value,dailyReqs,balanceWknd:$('balanceWeekends').checked,avoidConsec:$('avoidConsec').checked,balanceSpecial:$('balanceSpecial').checked,specialDays:$('specialDays').value,reduceVac:$('reduceVac').checked,altCount:$('altCount').value,schedule:current}}
 function applyState(d){
  if(!d||!Array.isArray(d.supervisors)||!d.supervisors.length)throw new Error('El respaldo no contiene supervisores.');
  supervisors=d.supervisors.map(s=>({name:String(s?.name||'SIN NOMBRE'),off:Array.isArray(s?.off)?s.off.map(Number).filter(x=>Number.isInteger(x)&&x>=0&&x<=6):[]}));
@@ -268,7 +272,7 @@ function applyState(d){
  if(mo>=0&&mo<=11)$('month').value=mo;
  if(yr>=2024&&yr<=2100)$('year').value=yr;
  $('adminReq').value=d.adminReq??2;$('operReq').value=d.operReq??1;
- if(d.balanceWknd!==undefined)$('balanceWeekends').checked=!!d.balanceWknd;if(d.avoidConsec!==undefined)$('avoidConsec').checked=!!d.avoidConsec;if(d.balanceSpecial!==undefined)$('balanceSpecial').checked=!!d.balanceSpecial;if(d.specialDays!==undefined)$('specialDays').value=String(d.specialDays);if(d.altCount)$('altCount').value=String(d.altCount);alternatives=[];
+ if(d.balanceWknd!==undefined)$('balanceWeekends').checked=!!d.balanceWknd;if(d.avoidConsec!==undefined)$('avoidConsec').checked=!!d.avoidConsec;if(d.balanceSpecial!==undefined)$('balanceSpecial').checked=!!d.balanceSpecial;if(d.specialDays!==undefined)$('specialDays').value=String(d.specialDays);if(d.reduceVac!==undefined)$('reduceVac').checked=!!d.reduceVac;if(d.altCount)$('altCount').value=String(d.altCount);alternatives=[];
  dailyReqs=Array.isArray(d.dailyReqs)?d.dailyReqs:[];
  renderSupervisors();buildDailyRequirements(true);
  const {n}=getPeriod();
