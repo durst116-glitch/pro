@@ -284,6 +284,7 @@
                 </div>
             </div>
             
+            <div id="avisosFijos" class="hidden no-print mb-4 bg-amber-50 border border-amber-300 text-amber-900 text-sm rounded-lg p-3"></div>
             <div class="table-wrapper print:mt-0">
                 <table class="matrix-table" id="tablaRolPantalla">
                     <thead id="tablaHeadPantalla"></thead>
@@ -343,6 +344,15 @@
             "L-M": [1, 2], "M-M": [2, 3], "M-J": [3, 4], "J-V": [4, 5], 
             "V-S": [5, 6], "S-D": [6, 0], "D-L": [0, 1] 
         };
+
+        // Normaliza nombres para compararlos sin importar acentos, mayúsculas o espacios extra
+        function normNombre(n) {
+            return String(n || "").normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+        }
+        function buscarAsesor(nombre) {
+            const k = normNombre(nombre);
+            return asesores.find(a => normNombre(a.nombre) === k);
+        }
 
         // Formatea el nombre para que salga en formato PATERNO NOMBRE
         function formatearNombreSup(nombreCompleto) {
@@ -486,6 +496,18 @@
         }
 
         function clasificarEmpleados(data) {
+            // Guardar configuración previa (por nombre) para no perderla al volver a subir el Excel
+            const prev = {
+                fijos: ventanillasFijas.slice(), reglas: reglasSeparacion.slice(),
+                inactivos: new Set(Array.from(asesoresInactivos).map(normNombre)),
+                bloqueadas: new Set(ventanillasBloqueadas), rangos: Object.assign({}, zonasRangos),
+                equipos: {}, prioridades: {}
+            };
+            asesores.forEach((a, idx) => {
+                if (equiposAsignados[idx] !== undefined) prev.equipos[normNombre(a.nombre)] = equiposAsignados[idx];
+                prev.prioridades[normNombre(a.nombre)] = a.prioridad;
+            });
+
             supervisores = []; asesores = [];
             administrativos = { mesa: [], recepcion: [], despachador: [] };
             reglasSeparacion = []; ventanillasFijas = []; 
@@ -511,6 +533,21 @@
             });
 
             if (supervisores.length === 0 || asesores.length === 0) return false;
+
+            // Restaurar la configuración de las personas que siguen en la plantilla
+            const supPorNorm = {}; supervisores.forEach(sp => supPorNorm[normNombre(sp.nombre)] = sp.nombre);
+            asesores.forEach((a, idx) => {
+                const k = normNombre(a.nombre);
+                if (prev.prioridades[k] !== undefined) a.prioridad = prev.prioridades[k];
+                const eq = prev.equipos[k];
+                if (eq === "SIN ASIGNAR") equiposAsignados[idx] = eq;
+                else if (eq && supPorNorm[normNombre(eq)]) equiposAsignados[idx] = supPorNorm[normNombre(eq)];
+                if (prev.inactivos.has(k)) asesoresInactivos.add(a.nombre);
+            });
+            prev.fijos.forEach(f => { const a = buscarAsesor(f.asesor); if (a) ventanillasFijas.push({ asesor: a.nombre, ventanilla: f.ventanilla }); });
+            prev.reglas.forEach(r => { const a1 = buscarAsesor(r.a1), a2 = buscarAsesor(r.a2); if (a1 && a2) reglasSeparacion.push({ a1: a1.nombre, a2: a2.nombre }); });
+            ventanillasBloqueadas = prev.bloqueadas;
+            Object.keys(prev.rangos).forEach(n => { if (supPorNorm[normNombre(n)]) zonasRangos[supPorNorm[normNombre(n)]] = prev.rangos[n]; });
             return true;
         }
 
@@ -744,6 +781,7 @@
         }
         // Devuelve null si la ventanilla fija es válida, 'fuera' si no está en ninguna zona, 'mant' si está bloqueada
         function problemaVentanillaFija(v) {
+            v = parseInt(v);
             if (!rangosZonasActuales().some(r => v >= r[0] && v <= r[1])) return 'fuera';
             if (ventanillasBloqueadas.has(v)) return 'mant';
             return null;
@@ -858,7 +896,7 @@
                 const nombreMes = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][mes];
                 mesActualDesc = `${nombreMes} ${year}`;
 
-                dataResultante = { fechas: fechasMes, diasCortos: ["DO", "LU", "MA", "MI", "JU", "VI", "SA"], maxApoyo: 0, ventanillas: {}, apoyo: [], descansos: [], admin: {} };
+                dataResultante = { fechas: fechasMes, diasCortos: ["DO", "LU", "MA", "MI", "JU", "VI", "SA"], maxApoyo: 0, ventanillas: {}, apoyo: [], descansos: [], admin: {}, celdasFijas: {} };
 
                 fechasMes.forEach((fecha, diaIndex) => {
                     const diaSemana = fecha.getDay();
@@ -869,17 +907,19 @@
                         if(asesoresInactivos.has(fijo.asesor)) return;
                         // Si la ventanilla fija no pertenece a ninguna zona, el asesor se asigna normalmente (antes desaparecía del rol)
                         if(!configZonas.some(z => fijo.ventanilla >= z.rango[0] && fijo.ventanilla <= z.rango[1])) return;
-                        let objA = asesores.find(a => a.nombre === fijo.asesor);
-                        if (objA) {
+                        let objA = buscarAsesor(fijo.asesor);
+                        if (objA && !asesoresInactivos.has(objA.nombre)) {
+                            const vf = parseInt(fijo.ventanilla);
                             if (!estaDescansandoSeguro(objA.descanso, diaSemana)) {
-                                if (!ventanillasBloqueadas.has(fijo.ventanilla)) {
-                                    if (!dataResultante.ventanillas[fijo.ventanilla]) dataResultante.ventanillas[fijo.ventanilla] = [];
-                                    dataResultante.ventanillas[fijo.ventanilla][diaIndex] = fijo.asesor;
-                                    asignadosFijosHoy.add(fijo.asesor);
+                                if (!ventanillasBloqueadas.has(vf)) {
+                                    if (!dataResultante.ventanillas[vf]) dataResultante.ventanillas[vf] = [];
+                                    dataResultante.ventanillas[vf][diaIndex] = objA.nombre;
+                                    dataResultante.celdasFijas[vf + '|' + diaIndex] = true;
+                                    asignadosFijosHoy.add(objA.nombre);
                                 }
                             } else {
-                                dataResultante.descansos[diaIndex].push(formatearNombreSup(fijo.asesor));
-                                asignadosFijosHoy.add(fijo.asesor); 
+                                dataResultante.descansos[diaIndex].push(formatearNombreSup(objA.nombre));
+                                asignadosFijosHoy.add(objA.nombre); 
                             }
                         }
                     });
@@ -970,9 +1010,39 @@
                     procesarFijosAdmin('despachador', administrativos.despachador);
                 });
 
+                mostrarAvisosFijos(verificarFijos());
                 pintarTabla(document.getElementById('tablaHeadPantalla'), document.getElementById('tablaBodyPantalla'), 0, diasEnMes - 1, true);
                 guardarMemoria(); 
             } catch (err) { alert("Error calculando el rol: " + err.message); }
+        }
+
+        // Revisa día por día que cada asesor fijo esté en su ventanilla cuando trabaja
+        function verificarFijos() {
+            const avisos = [];
+            ventanillasFijas.forEach(fijo => {
+                const vf = parseInt(fijo.ventanilla);
+                const objA = buscarAsesor(fijo.asesor);
+                if (!objA) { avisos.push(`V${vf} - ${fijo.asesor}: no se encontró en la plantilla (revisa que el nombre sea igual al del Excel).`); return; }
+                if (asesoresInactivos.has(objA.nombre)) return;
+                const prob = problemaVentanillaFija(vf);
+                if (prob === 'fuera') { avisos.push(`V${vf} - ${objA.nombre}: la ventanilla no pertenece a ninguna zona.`); return; }
+                if (prob === 'mant') { avisos.push(`V${vf} - ${objA.nombre}: la ventanilla está en mantenimiento.`); return; }
+                const diasMal = [];
+                dataResultante.fechas.forEach((f, d) => {
+                    if (estaDescansandoSeguro(objA.descanso, f.getDay())) return;
+                    if (!dataResultante.ventanillas[vf] || dataResultante.ventanillas[vf][d] !== objA.nombre) diasMal.push(f.getDate());
+                });
+                if (diasMal.length) avisos.push(`V${vf} - ${objA.nombre}: no quedó en su ventanilla los días ${diasMal.join(', ')}.`);
+            });
+            return avisos;
+        }
+
+        function mostrarAvisosFijos(avisos) {
+            const caja = document.getElementById('avisosFijos');
+            if (!caja) return;
+            if (!avisos.length) { caja.classList.add('hidden'); caja.innerHTML = ''; return; }
+            caja.innerHTML = `<div class="font-bold mb-1">⚠ Ventanillas fijas que no se pudieron respetar:</div>` + avisos.map(a => `<div>• ${a}</div>`).join('');
+            caja.classList.remove('hidden');
         }
 
         function pintarTabla(elHead, elBody, diaInicio, diaFin, incluirAdmin) {
@@ -1005,7 +1075,10 @@
                             if(String(estado).startsWith("(A) ")) textAMostrar = "(A) " + formatearNombreSup(String(estado).substring(4));
                             else textAMostrar = formatearNombreSup(estado);
                         }
-                        htmlBody += `<td class="${zona.classCell} ${cEx}">${textAMostrar}</td>`;
+                        const esFija = dataResultante.celdasFijas && dataResultante.celdasFijas[v + '|' + d];
+                        if (esFija) textAMostrar = "📌 " + textAMostrar;
+                        const tituloCelda = (estado !== "CERRADA" && estado !== "MANT.") ? ` title="${String(estado).replace(/"/g, '&quot;')}${esFija ? ' (ventanilla fija)' : ''}"` : '';
+                        htmlBody += `<td class="${zona.classCell} ${cEx}"${tituloCelda}>${textAMostrar}</td>`;
                     }
                     htmlBody += `</tr>`;
                 }
